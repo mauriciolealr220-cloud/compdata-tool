@@ -32,6 +32,16 @@
       </div>
     </header>
 
+    <section class="mb-6">
+      <div class="flex flex-wrap items-center gap-3">
+        <label for="competitionSelect" class="text-sm font-medium text-slate-700">Competition Filter</label>
+        <select id="competitionSelect" class="p-2 rounded border bg-white min-w-[16rem]">
+          <option value="">All competitions</option>
+        </select>
+        <span id="competitionSummary" class="text-sm text-slate-600"></span>
+      </div>
+    </section>
+
     <!-- ===================== -->
     <!-- CompObj Editor -->
     <!-- ===================== -->
@@ -373,36 +383,163 @@
     }
 
     let rows = [];
-    let weatherRows = [];
+    let compRawLines = [];
+    let compDelimiter = ',';
+    let activeCompetitionId = '';
+    let activeScopeIds = null;
+
     const tbody = document.getElementById('tbody');
+    const competitionSelect = document.getElementById('competitionSelect');
+    const competitionSummary = document.getElementById('competitionSummary');
+
+    let weatherRows = [];
+    let weatherRawLines = [];
+
+    function normalizeId(value){
+      return String(value ?? '').trim();
+    }
+
+    function rowMatchesScope(row, keys){
+      if(!activeScopeIds) return true;
+      return keys.some(key=>activeScopeIds.has(normalizeId(row[key])));
+    }
+
+    function getVisibleIndexes(rowsArray, keys){
+      if(!Array.isArray(rowsArray)) return [];
+      const indexes=[];
+      rowsArray.forEach((row,idx)=>{
+        if(rowMatchesScope(row, keys)) indexes.push(idx);
+      });
+      return indexes;
+    }
+
+    function serializeCompRow(row){
+      const delim = compDelimiter || ',';
+      return [row.id ?? '', row.level ?? '', row.code ?? '', row.name ?? '', row.parent ?? ''].join(delim);
+    }
+
+    function updateCompRawLine(index){
+      if(index<0 || index>=compRawLines.length) return;
+      compRawLines[index] = serializeCompRow(rows[index] ?? {});
+    }
+
+    function recomputeActiveScope(){
+      if(!activeCompetitionId){
+        activeScopeIds = null;
+        return;
+      }
+      const target = normalizeId(activeCompetitionId);
+      if(!target){
+        activeScopeIds = null;
+        return;
+      }
+      const adjacency = new Map();
+      rows.forEach(row=>{
+        const parent = normalizeId(row.parent);
+        const child = normalizeId(row.id);
+        if(!adjacency.has(parent)) adjacency.set(parent, []);
+        adjacency.get(parent).push(child);
+      });
+      const scope = new Set([target]);
+      const stack=[target];
+      while(stack.length){
+        const current = stack.pop();
+        const children = adjacency.get(current) || [];
+        children.forEach(child=>{
+          if(child && !scope.has(child)){
+            scope.add(child);
+            stack.push(child);
+          }
+        });
+      }
+      activeScopeIds = scope;
+    }
+
+    function updateCompetitionSummary(){
+      if(!competitionSummary) return;
+      if(!activeCompetitionId){
+        competitionSummary.textContent = '';
+        return;
+      }
+      const scopeCount = activeScopeIds ? activeScopeIds.size : 0;
+      competitionSummary.textContent = scopeCount ? `Active scope contains ${scopeCount} linked IDs` : '';
+    }
+
+    function setActiveCompetition(id){
+      activeCompetitionId = normalizeId(id);
+      recomputeActiveScope();
+      updateCompetitionSummary();
+      renderTable();
+      renderAdvTable();
+      renderStandingsTable();
+      renderSettingsTable();
+      renderScheduleTable();
+      renderTaskTable();
+      renderWeatherTable();
+    }
+
+    if(competitionSelect){
+      competitionSelect.onchange = ()=>{
+        setActiveCompetition(competitionSelect.value);
+      };
+    }
+
+    function refreshCompetitionOptions(){
+      if(!competitionSelect) return;
+      const existingValue = activeCompetitionId || competitionSelect.value;
+      const options = rows
+        .filter(row=>normalizeId(row.level)==='3' && normalizeId(row.code).toUpperCase().startsWith('C') && normalizeId(row.id))
+        .map(row=>({
+          id: normalizeId(row.id),
+          label: `${normalizeId(row.code) || 'C?'} — ${row.name ? row.name.trim() : ''}`.trim().replace(/\s+/g,' ')
+        }));
+      options.sort((a,b)=>a.label.localeCompare(b.label, undefined, {numeric:true, sensitivity:'base'}));
+      competitionSelect.innerHTML = '<option value="">All competitions</option>';
+      const fragment = document.createDocumentFragment();
+      options.forEach(opt=>{
+        const optionEl = document.createElement('option');
+        optionEl.value = opt.id;
+        optionEl.textContent = opt.label || opt.id;
+        fragment.appendChild(optionEl);
+      });
+      competitionSelect.appendChild(fragment);
+      const restored = options.find(opt=>opt.id===existingValue) ? existingValue : '';
+      competitionSelect.value = restored;
+      setActiveCompetition(restored);
+    }
 
     function parseText(text, delimSel='auto') {
       rows = [];
+      compRawLines = [];
       const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
+      compDelimiter = delim;
       const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for (const line of lines) {
         const parts = line.split(delim).map(p=>p.trim());
         while (parts.length < 5) parts.push('');
         const [id, level, code, name, parent] = parts;
         rows.push({ id, level, code, name, parent });
+        compRawLines.push(line);
       }
       document.getElementById('meta').textContent = `${rows.length} lines parsed`;
-      renderTable();
+      refreshCompetitionOptions();
     }
 
     function renderTable(){
       tbody.innerHTML = '';
-      rows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(rows, ['id','parent']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r = rows[rowIndex];
         const tr = document.createElement('tr');
-        tr.className = i%2? 'bg-white':'bg-slate-50';
+        tr.className = pos%2? 'bg-white':'bg-slate-50';
         tr.innerHTML = `
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="id" data-i="${i}" class="w-24 p-1 border rounded" value="${r.id}"></td>
-          <td class="p-2"><input data-f="level" data-i="${i}" class="w-12 p-1 border rounded" value="${r.level}"></td>
-          <td class="p-2"><input data-f="code" data-i="${i}" class="w-32 p-1 border rounded" value="${r.code}"></td>
-          <td class="p-2"><input data-f="name" data-i="${i}" class="w-56 p-1 border rounded" value="${r.name}"></td>
-          <td class="p-2"><input data-f="parent" data-i="${i}" class="w-24 p-1 border rounded" value="${r.parent}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.id}"></td>
+          <td class="p-2"><input data-f="level" data-i="${rowIndex}" class="w-12 p-1 border rounded" value="${r.level}"></td>
+          <td class="p-2"><input data-f="code" data-i="${rowIndex}" class="w-32 p-1 border rounded" value="${r.code}"></td>
+          <td class="p-2"><input data-f="name" data-i="${rowIndex}" class="w-56 p-1 border rounded" value="${r.name}"></td>
+          <td class="p-2"><input data-f="parent" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.parent}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         tbody.appendChild(tr);
       });
       tbody.querySelectorAll('input').forEach(inp=>{
@@ -413,6 +550,7 @@
           const newValue = inp.value;
           const prevValue = inp.dataset.prev ?? '';
           rows[rowIndex][field] = newValue;
+          updateCompRawLine(rowIndex);
           if(field === 'id'){
             const normalizedPrev = String(prevValue).trim();
             const normalizedNew = String(newValue).trim();
@@ -420,13 +558,34 @@
               const mapping = {};
               mapping[normalizedPrev] = normalizedNew;
               applyGlobalIdMapping(mapping);
+            } else {
+              refreshCompetitionOptions();
             }
+          } else if(field === 'parent' || field === 'level' || field === 'code' || field === 'name'){
+            refreshCompetitionOptions();
           }
           inp.dataset.prev = newValue;
+          if(field !== 'id'){
+            if(activeCompetitionId){
+              recomputeActiveScope();
+              updateCompetitionSummary();
+              renderAdvTable();
+              renderStandingsTable();
+              renderSettingsTable();
+              renderScheduleTable();
+              renderTaskTable();
+              renderWeatherTable();
+            }
+          }
         };
       });
       tbody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick = ()=>{ rows.splice(+btn.dataset.del,1); renderTable(); };
+        btn.onclick = ()=>{
+          const idx = +btn.dataset.del;
+          rows.splice(idx,1);
+          compRawLines.splice(idx,1);
+          refreshCompetitionOptions();
+        };
       });
     }
 
@@ -444,11 +603,15 @@
     };
     document.getElementById('pasteArea').onblur = e=>parseText(e.target.value, document.getElementById('delimiter').value);
 
-    document.getElementById('addLineBtn').onclick = ()=>{ rows.push({id:'',level:'',code:'',name:'',parent:''}); renderTable(); };
+    document.getElementById('addLineBtn').onclick = ()=>{
+      const newRow = {id:'',level:'',code:'',name:'',parent:''};
+      rows.push(newRow);
+      compRawLines.push(serializeCompRow(newRow));
+      refreshCompetitionOptions();
+    };
 
     document.getElementById('exportBtn').onclick = ()=>{
-      const delim = document.getElementById('delimiter').value==='auto' ? ',' : document.getElementById('delimiter').value;
-      const blob = new Blob([rows.map(r=>[r.id,r.level,r.code,r.name,r.parent].join(delim)).join('\n')], {type:'text/plain'});
+      const blob = new Blob([compRawLines.join('\n')], {type:'text/plain'});
       const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='compobj_modified.txt'; a.click();
     };
 
@@ -472,71 +635,13 @@
       }
     };
 
-    function applyGlobalIdMapping(mapping){
-      if(!mapping || typeof mapping !== 'object') return;
-      const entries = Object.entries(mapping)
-        .map(([oldId,newId])=>[String(oldId ?? '').trim(), String(newId ?? '').trim()])
-        .filter(([oldId,newId])=>oldId && oldId !== newId);
-      if(!entries.length) return;
-      const idMap = new Map(entries);
-
-      rows.forEach(row=>{
-        const currentId = String(row.id ?? '').trim();
-        if(idMap.has(currentId)) row.id = idMap.get(currentId);
-        const parentId = String(row.parent ?? '').trim();
-        if(idMap.has(parentId)) row.parent = idMap.get(parentId);
-      });
-
-      let weatherIdsChanged = false;
-      weatherRows.forEach(row=>{
-        const federationId = String(row.fed ?? '').trim();
-        if(idMap.has(federationId)){
-          row.fed = idMap.get(federationId);
-          weatherIdsChanged = true;
-        }
-      });
-
-      advRows.forEach(row=>{
-        const fromId = String(row.fromId ?? '').trim();
-        if(idMap.has(fromId)) row.fromId = idMap.get(fromId);
-        const toId = String(row.toId ?? '').trim();
-        if(idMap.has(toId)) row.toId = idMap.get(toId);
-      });
-
-      taskRows.forEach(row=>{
-        ['trophyLine','arg1','arg2','arg3','arg4'].forEach(field=>{
-          const val = String(row[field] ?? '').trim();
-          if(idMap.has(val)) row[field] = idMap.get(val);
-        });
-      });
-
-      standingsRows.forEach(row=>{
-        const gid = String(row.groupId ?? '').trim();
-        if(idMap.has(gid)) row.groupId = idMap.get(gid);
-      });
-
-      settingRows.forEach(row=>{
-        const sid = String(row.id ?? '').trim();
-        if(idMap.has(sid)) row.id = idMap.get(sid);
-      });
-
-      renderTable();
-      renderAdvTable();
-      renderStandingsTable();
-      renderSettingsTable();
-      renderTaskTable();
-      renderWeatherTable();
-
-      document.getElementById('messages').textContent = 'IDs were changed — all cross-file references updated successfully.';
-      if(weatherIdsChanged){
-        const weatherMessages = document.getElementById('weatherMessages');
-        if(weatherMessages){
-          weatherMessages.textContent = 'Weather federation references updated.';
-        }
-      }
-    }
-
-    document.getElementById('sortByIdBtn').onclick = ()=>{ rows.sort((a,b)=>Number(a.id)-Number(b.id)); renderTable(); };
+    document.getElementById('sortByIdBtn').onclick = ()=>{
+      const combined = rows.map((row,idx)=>({row, raw: compRawLines[idx]}));
+      combined.sort((a,b)=>Number(a.row.id||0)-Number(b.row.id||0));
+      rows = combined.map(item=>item.row);
+      compRawLines = combined.map(item=>item.raw);
+      refreshCompetitionOptions();
+    };
 
     document.getElementById('validateBtn').onclick = ()=>{
       const ids=new Set(rows.map(r=>String(r.id)));
@@ -552,14 +657,26 @@
        Advancement Section
     ----------------------- */
     let advRows = [];
+    let advRawLines = [];
     const advBody = document.getElementById('advBody');
+
+    function serializeAdvRow(row){
+      return [row.fromId ?? '', row.qualifier ?? '', row.toId ?? '', row.slot ?? ''].join(',');
+    }
+
+    function updateAdvRawLine(index){
+      if(index<0 || index>=advRawLines.length) return;
+      advRawLines[index] = serializeAdvRow(advRows[index] ?? {});
+    }
 
     function parseAdv(text){
       advRows = [];
+      advRawLines = [];
       const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const [fromId, qualifier, toId, slot] = line.split(',').map(s=>s.trim());
         advRows.push({fromId,qualifier,toId,slot});
+        advRawLines.push(line);
       }
       document.getElementById('advMeta').textContent=`${advRows.length} advancement lines parsed`;
       renderAdvTable();
@@ -567,23 +684,34 @@
 
     function renderAdvTable(){
       advBody.innerHTML='';
-      advRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(advRows, ['fromId','toId']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r = advRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="fromId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.fromId}"></td>
-          <td class="p-2"><input data-f="qualifier" data-i="${i}" class="w-16 p-1 border rounded" value="${r.qualifier}"></td>
-          <td class="p-2"><input data-f="toId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.toId}"></td>
-          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-16 p-1 border rounded" value="${r.slot}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="fromId" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.fromId}"></td>
+          <td class="p-2"><input data-f="qualifier" data-i="${rowIndex}" class="w-16 p-1 border rounded" value="${r.qualifier}"></td>
+          <td class="p-2"><input data-f="toId" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.toId}"></td>
+          <td class="p-2"><input data-f="slot" data-i="${rowIndex}" class="w-16 p-1 border rounded" value="${r.slot}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         advBody.appendChild(tr);
       });
       advBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{advRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          advRows[idx][inp.dataset.f]=inp.value;
+          updateAdvRawLine(idx);
+        };
       });
       advBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{advRows.splice(+btn.dataset.del,1);renderAdvTable();};
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          advRows.splice(idx,1);
+          advRawLines.splice(idx,1);
+          renderAdvTable();
+        };
       });
     }
 
@@ -601,12 +729,22 @@
     };
     document.getElementById('advPasteArea').onblur=e=>parseAdv(e.target.value);
 
-    document.getElementById('advAddBtn').onclick=()=>{advRows.push({fromId:'',qualifier:'',toId:'',slot:''});renderAdvTable();};
+    document.getElementById('advAddBtn').onclick=()=>{
+      advRows.push({fromId:'',qualifier:'',toId:'',slot:''});
+      advRawLines.push(serializeAdvRow(advRows[advRows.length-1]));
+      renderAdvTable();
+    };
 
-    document.getElementById('advSortBtn').onclick=()=>{advRows.sort((a,b)=>Number(a.fromId)-Number(b.fromId));renderAdvTable();};
+    document.getElementById('advSortBtn').onclick=()=>{
+      const combined = advRows.map((row,idx)=>({row, raw: advRawLines[idx]}));
+      combined.sort((a,b)=>Number(a.row.fromId||0)-Number(b.row.fromId||0));
+      advRows = combined.map(item=>item.row);
+      advRawLines = combined.map(item=>item.raw);
+      renderAdvTable();
+    };
 
     document.getElementById('advExportBtn').onclick=()=>{
-      const blob=new Blob([advRows.map(r=>[r.fromId,r.qualifier,r.toId,r.slot].join(',')).join('\n')],{type:'text/plain'});
+      const blob=new Blob([advRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='advancement.txt';a.click();
     };
 
@@ -621,6 +759,8 @@
        Standings Section
     ----------------------- */
     let standingsRows=[];
+    let standingsRawLines=[];
+    let standingsDelimiter=',';
     const standingsBody=document.getElementById('standingsBody');
 
     function updateStandingsMeta(){
@@ -639,39 +779,63 @@
       document.getElementById('standingsMeta').textContent=meta;
     }
 
+    function serializeStandingsRow(row){
+      return [row.groupId ?? '', row.slot ?? ''].join(standingsDelimiter || ',');
+    }
+
+    function updateStandingsRawLine(index){
+      if(index<0 || index>=standingsRawLines.length) return;
+      standingsRawLines[index] = serializeStandingsRow(standingsRows[index] ?? {});
+    }
+
     function renderStandingsTable(){
       standingsBody.innerHTML='';
-      standingsRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(standingsRows, ['groupId']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r=standingsRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         const slotNum=r.slot===''?NaN:Number(r.slot);
         const teamLabel=Number.isFinite(slotNum)?`Team ${slotNum+1}`:'';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="groupId" data-i="${i}" class="w-28 p-1 border rounded" value="${r.groupId}"></td>
-          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-24 p-1 border rounded" value="${r.slot}"></td>
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="groupId" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.groupId}"></td>
+          <td class="p-2"><input data-f="slot" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.slot}"></td>
           <td class="p-2 text-slate-600">${teamLabel}</td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         standingsBody.appendChild(tr);
       });
       standingsBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{standingsRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateStandingsMeta();};
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          standingsRows[idx][inp.dataset.f]=inp.value;
+          updateStandingsRawLine(idx);
+          updateStandingsMeta();
+        };
       });
       standingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{standingsRows.splice(+btn.dataset.del,1);renderStandingsTable();};
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          standingsRows.splice(idx,1);
+          standingsRawLines.splice(idx,1);
+          renderStandingsTable();
+        };
       });
       updateStandingsMeta();
     }
 
     function parseStandings(text){
       standingsRows=[];
+      standingsRawLines=[];
       const delim=autoDetectDelimiter(text);
+      standingsDelimiter=delim;
       const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const parts=line.split(delim).map(s=>s.trim());
         if(!parts[0]) continue;
         const [groupId, slot=''] = parts;
         standingsRows.push({groupId, slot});
+        standingsRawLines.push(line);
       }
       renderStandingsTable();
     }
@@ -690,21 +854,30 @@
     };
     document.getElementById('standingsPasteArea').onblur=e=>parseStandings(e.target.value);
 
-    document.getElementById('standingsAddBtn').onclick=()=>{standingsRows.push({groupId:'',slot:''});renderStandingsTable();};
+    document.getElementById('standingsAddBtn').onclick=()=>{
+      standingsRows.push({groupId:'',slot:''});
+      standingsRawLines.push(serializeStandingsRow(standingsRows[standingsRows.length-1]));
+      renderStandingsTable();
+    };
 
     document.getElementById('standingsSortBtn').onclick=()=>{
-      standingsRows.sort((a,b)=>{
-        const gDiff=Number(a.groupId||0)-Number(b.groupId||0);
+      const combined = standingsRows.map((row,idx)=>({row, raw: standingsRawLines[idx]}));
+      combined.sort((a,b)=>{
+        const aRow=a.row;
+        const bRow=b.row;
+        const gDiff=Number(aRow.groupId||0)-Number(bRow.groupId||0);
         if(gDiff!==0) return gDiff;
-        const slotA=a.slot===''?Number.POSITIVE_INFINITY:Number(a.slot);
-        const slotB=b.slot===''?Number.POSITIVE_INFINITY:Number(b.slot);
+        const slotA=aRow.slot===''?Number.POSITIVE_INFINITY:Number(aRow.slot);
+        const slotB=bRow.slot===''?Number.POSITIVE_INFINITY:Number(bRow.slot);
         return slotA-slotB;
       });
+      standingsRows = combined.map(item=>item.row);
+      standingsRawLines = combined.map(item=>item.raw);
       renderStandingsTable();
     };
 
     document.getElementById('standingsExportBtn').onclick=()=>{
-      const blob=new Blob([standingsRows.map(r=>[r.groupId,r.slot].join(',')).join('\n')],{type:'text/plain'});
+      const blob=new Blob([standingsRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='standings.txt';a.click();
     };
 
@@ -735,6 +908,7 @@
        Settings Section
     ----------------------- */
     let settingRows = [];
+    let settingsRawLines = [];
     const settingsBody=document.getElementById('settingsBody');
 
     function updateSettingsMeta(){
@@ -743,33 +917,49 @@
 
     function renderSettingsTable(){
       settingsBody.innerHTML='';
-      settingRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(settingRows, ['id']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r=settingRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="id" data-i="${i}" class="w-28 p-1 border rounded" value="${r.id ?? ''}"></td>
-          <td class="p-2"><input data-f="key" data-i="${i}" class="w-40 p-1 border rounded" value="${r.key ?? ''}"></td>
-          <td class="p-2"><input data-f="value" data-i="${i}" class="w-48 p-1 border rounded" value="${r.value ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.id ?? ''}"></td>
+          <td class="p-2"><input data-f="key" data-i="${rowIndex}" class="w-40 p-1 border rounded" value="${r.key ?? ''}"></td>
+          <td class="p-2"><input data-f="value" data-i="${rowIndex}" class="w-48 p-1 border rounded" value="${r.value ?? ''}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         settingsBody.appendChild(tr);
       });
       settingsBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{settingRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateSettingsMeta();};
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          settingRows[idx][inp.dataset.f]=inp.value;
+          settingsRawLines[idx] = [settingRows[idx].id ?? '', settingRows[idx].key ?? '', settingRows[idx].value ?? ''].join(',');
+          updateSettingsMeta();
+        };
       });
       settingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{settingRows.splice(+btn.dataset.del,1);renderSettingsTable();};
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          settingRows.splice(idx,1);
+          settingsRawLines.splice(idx,1);
+          renderSettingsTable();
+        };
       });
       updateSettingsMeta();
     }
 
     function parseSettings(text){
       settingRows=[];
+      settingsRawLines=[];
       const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const parts=line.split(',').map(s=>s.trim());
         const [id='', key='', value=''] = parts;
-        if(id || key || value) settingRows.push({id, key, value});
+        if(id || key || value){
+          settingRows.push({id, key, value});
+          settingsRawLines.push(line);
+        }
       }
       renderSettingsTable();
     }
@@ -788,10 +978,14 @@
     };
     document.getElementById('settingsPasteArea').onblur=e=>parseSettings(e.target.value);
 
-    document.getElementById('settingsAddBtn').onclick=()=>{settingRows.push({id:'',key:'',value:''});renderSettingsTable();};
+    document.getElementById('settingsAddBtn').onclick=()=>{
+      settingRows.push({id:'',key:'',value:''});
+      settingsRawLines.push(',,');
+      renderSettingsTable();
+    };
 
     document.getElementById('settingsExportBtn').onclick=()=>{
-      const blob=new Blob([settingRows.map(r=>[r.id,r.key,r.value].join(',')).join('\n')],{type:'text/plain'});
+      const blob=new Blob([settingsRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='settings.txt';a.click();
     };
 
@@ -813,6 +1007,7 @@
        Schedule Section
     ----------------------- */
     let scheduleRows = [];
+    let scheduleRawLines = [];
     const scheduleBody = document.getElementById('scheduleBody');
     const scheduleMetaEl = document.getElementById('scheduleMeta');
     const scheduleMessagesEl = document.getElementById('scheduleMessages');
@@ -823,39 +1018,61 @@
       }
     }
 
+    function serializeScheduleRow(row){
+      return [row.stage ?? '',row.date ?? '',row.round ?? '',row.min ?? '',row.max ?? '',row.time ?? ''].join(',');
+    }
+
+    function updateScheduleRawLine(index){
+      if(index<0 || index>=scheduleRawLines.length) return;
+      scheduleRawLines[index] = serializeScheduleRow(scheduleRows[index] ?? {});
+    }
+
     function renderScheduleTable(){
       scheduleBody.innerHTML='';
-      scheduleRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(scheduleRows, ['stage']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r=scheduleRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="stage" data-i="${i}" class="w-24 p-1 border rounded" value="${r.stage ?? ''}"></td>
-          <td class="p-2"><input data-f="date" data-i="${i}" class="w-24 p-1 border rounded" value="${r.date ?? ''}"></td>
-          <td class="p-2"><input data-f="round" data-i="${i}" class="w-20 p-1 border rounded" value="${r.round ?? ''}"></td>
-          <td class="p-2"><input data-f="min" data-i="${i}" class="w-24 p-1 border rounded" value="${r.min ?? ''}"></td>
-          <td class="p-2"><input data-f="max" data-i="${i}" class="w-24 p-1 border rounded" value="${r.max ?? ''}"></td>
-          <td class="p-2"><input data-f="time" data-i="${i}" class="w-24 p-1 border rounded" value="${r.time ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="stage" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.stage ?? ''}"></td>
+          <td class="p-2"><input data-f="date" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.date ?? ''}"></td>
+          <td class="p-2"><input data-f="round" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.round ?? ''}"></td>
+          <td class="p-2"><input data-f="min" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.min ?? ''}"></td>
+          <td class="p-2"><input data-f="max" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.max ?? ''}"></td>
+          <td class="p-2"><input data-f="time" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.time ?? ''}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         scheduleBody.appendChild(tr);
       });
       scheduleBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{scheduleRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          scheduleRows[idx][inp.dataset.f]=inp.value;
+          updateScheduleRawLine(idx);
+        };
       });
       scheduleBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{scheduleRows.splice(+btn.dataset.del,1);renderScheduleTable();};
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          scheduleRows.splice(idx,1);
+          scheduleRawLines.splice(idx,1);
+          renderScheduleTable();
+        };
       });
       updateScheduleMeta();
     }
 
     function parseSchedule(text){
       scheduleRows=[];
+      scheduleRawLines=[];
       const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const parts=line.split(',').map(s=>s.trim());
         while(parts.length<6) parts.push('');
         const [stage='',date='',round='',min='',max='',time='']=parts;
         scheduleRows.push({stage,date,round,min,max,time});
+        scheduleRawLines.push(line);
       }
       renderScheduleTable();
       if(scheduleMessagesEl){
@@ -879,11 +1096,12 @@
 
     document.getElementById('scheduleAddBtn').onclick=()=>{
       scheduleRows.push({stage:'',date:'',round:'',min:'',max:'',time:''});
+      scheduleRawLines.push(serializeScheduleRow(scheduleRows[scheduleRows.length-1]));
       renderScheduleTable();
     };
 
     document.getElementById('scheduleExportBtn').onclick=()=>{
-      const blob=new Blob([scheduleRows.map(r=>[r.stage,r.date,r.round,r.min,r.max,r.time].join(',')).join('\n')],{type:'text/plain'});
+      const blob=new Blob([scheduleRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='schedule.txt';a.click();
     };
 
@@ -908,22 +1126,143 @@
       if(!mapping) return;
       const mappingLookup=new Map();
       if(mapping instanceof Map){
-        mapping.forEach((newId,oldId)=>{mappingLookup.set(String(oldId), newId);});
+        mapping.forEach((newId,oldId)=>{
+          const normOld=normalizeId(oldId);
+          const normNew=normalizeId(newId);
+          if(normOld && normNew && normOld!==normNew){
+            mappingLookup.set(normOld, normNew);
+          }
+        });
       } else {
-        Object.keys(mapping).forEach(oldId=>{mappingLookup.set(String(oldId), mapping[oldId]);});
+        Object.keys(mapping).forEach(oldId=>{
+          const normOld=normalizeId(oldId);
+          const normNew=normalizeId(mapping[oldId]);
+          if(normOld && normNew && normOld!==normNew){
+            mappingLookup.set(normOld, normNew);
+          }
+        });
       }
+      if(!mappingLookup.size) return;
+
+      let compChanged=false;
+      rows.forEach((row,idx)=>{
+        let changed=false;
+        const currentId=normalizeId(row.id);
+        if(mappingLookup.has(currentId)){
+          row.id=mappingLookup.get(currentId);
+          changed=true;
+        }
+        const parentId=normalizeId(row.parent);
+        if(mappingLookup.has(parentId)){
+          row.parent=mappingLookup.get(parentId);
+          changed=true;
+        }
+        if(changed){
+          updateCompRawLine(idx);
+          compChanged=true;
+        }
+      });
+
       let scheduleChanged=false;
-      scheduleRows.forEach(row=>{
-        const replacement=mappingLookup.get(String(row.stage));
+      scheduleRows.forEach((row,idx)=>{
+        const replacement=mappingLookup.get(normalizeId(row.stage));
         if(replacement!==undefined){
           row.stage=replacement;
+          updateScheduleRawLine(idx);
           scheduleChanged=true;
         }
       });
-      if(scheduleChanged){
+
+      let weatherIdsChanged=false;
+      weatherRows.forEach((row,idx)=>{
+        const federationId=normalizeId(row.fed);
+        if(mappingLookup.has(federationId)){
+          row.fed=mappingLookup.get(federationId);
+          updateWeatherRawLine(idx);
+          weatherIdsChanged=true;
+        }
+      });
+
+      advRows.forEach((row,idx)=>{
+        let changed=false;
+        const fromId=normalizeId(row.fromId);
+        if(mappingLookup.has(fromId)){
+          row.fromId=mappingLookup.get(fromId);
+          changed=true;
+        }
+        const toId=normalizeId(row.toId);
+        if(mappingLookup.has(toId)){
+          row.toId=mappingLookup.get(toId);
+          changed=true;
+        }
+        if(changed) updateAdvRawLine(idx);
+      });
+
+      taskRows.forEach((row,idx)=>{
+        let changed=false;
+        ['trophyLine','arg1','arg2','arg3','arg4'].forEach(field=>{
+          const val=normalizeId(row[field]);
+          if(mappingLookup.has(val)){
+            row[field]=mappingLookup.get(val);
+            changed=true;
+          }
+        });
+        if(changed) updateTaskRawLine(idx);
+      });
+
+      standingsRows.forEach((row,idx)=>{
+        const gid=normalizeId(row.groupId);
+        if(mappingLookup.has(gid)){
+          row.groupId=mappingLookup.get(gid);
+          updateStandingsRawLine(idx);
+        }
+      });
+
+      settingRows.forEach((row,idx)=>{
+        const sid=normalizeId(row.id);
+        if(mappingLookup.has(sid)){
+          row.id=mappingLookup.get(sid);
+          if(idx < settingsRawLines.length){
+            settingsRawLines[idx]=[row.id ?? '', row.key ?? '', row.value ?? ''].join(',');
+          }
+        }
+      });
+
+      if(activeCompetitionId){
+        const activeNorm=normalizeId(activeCompetitionId);
+        if(mappingLookup.has(activeNorm)){
+          activeCompetitionId=mappingLookup.get(activeNorm);
+        }
+      }
+
+      if(compChanged){
+        refreshCompetitionOptions();
+      } else {
+        renderTable();
+        renderAdvTable();
+        renderStandingsTable();
+        renderSettingsTable();
         renderScheduleTable();
-        if(scheduleMessagesEl){
-          scheduleMessagesEl.textContent='Schedule updated with new stage references.';
+        renderTaskTable();
+        renderWeatherTable();
+        if(activeCompetitionId){
+          recomputeActiveScope();
+          updateCompetitionSummary();
+        }
+      }
+
+      if(scheduleChanged && scheduleMessagesEl){
+        scheduleMessagesEl.textContent='Schedule updated with new stage references.';
+      }
+
+      const msgEl=document.getElementById('messages');
+      if(msgEl){
+        msgEl.textContent='IDs were changed — all cross-file references updated successfully.';
+      }
+      if(weatherIdsChanged){
+        const weatherMessages=document.getElementById('weatherMessages');
+        if(weatherMessages){
+          weatherMessages.textContent='Weather federation references updated.';
         }
       }
     }
@@ -935,17 +1274,31 @@
        Tasks Section
     ----------------------- */
     let taskRows = [];
+    let taskRawLines = [];
+    let taskDelimiterActual = ',';
     const taskBody = document.getElementById('taskBody');
+
+    function serializeTaskRow(row){
+      return [row.trophyLine ?? '', row.phase ?? '', row.taskType ?? '', row.arg1 ?? '', row.arg2 ?? '', row.arg3 ?? '', row.arg4 ?? ''].join(taskDelimiterActual || ',');
+    }
+
+    function updateTaskRawLine(index){
+      if(index<0 || index>=taskRawLines.length) return;
+      taskRawLines[index] = serializeTaskRow(taskRows[index] ?? {});
+    }
 
     function parseTasks(text, delimSel='auto'){
       taskRows = [];
+      taskRawLines = [];
       const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
+      taskDelimiterActual = delim;
       const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const parts = line.split(delim).map(s=>s.trim());
         while(parts.length<7) parts.push('');
         const [trophyLine, phase, taskType, arg1, arg2, arg3, arg4] = parts;
         taskRows.push({trophyLine, phase, taskType, arg1, arg2, arg3, arg4});
+        taskRawLines.push(line);
       }
       document.getElementById('taskMeta').textContent=`${taskRows.length} task lines parsed`;
       renderTaskTable();
@@ -953,26 +1306,37 @@
 
     function renderTaskTable(){
       taskBody.innerHTML='';
-      taskRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(taskRows, ['trophyLine','arg1','arg2','arg3','arg4']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r=taskRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="trophyLine" data-i="${i}" class="w-24 p-1 border rounded" value="${r.trophyLine}"></td>
-          <td class="p-2"><input data-f="phase" data-i="${i}" class="w-24 p-1 border rounded" value="${r.phase}"></td>
-          <td class="p-2"><input data-f="taskType" data-i="${i}" class="w-40 p-1 border rounded" value="${r.taskType}"></td>
-          <td class="p-2"><input data-f="arg1" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg1}"></td>
-          <td class="p-2"><input data-f="arg2" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg2}"></td>
-          <td class="p-2"><input data-f="arg3" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg3}"></td>
-          <td class="p-2"><input data-f="arg4" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg4}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="trophyLine" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.trophyLine}"></td>
+          <td class="p-2"><input data-f="phase" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.phase}"></td>
+          <td class="p-2"><input data-f="taskType" data-i="${rowIndex}" class="w-40 p-1 border rounded" value="${r.taskType}"></td>
+          <td class="p-2"><input data-f="arg1" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.arg1}"></td>
+          <td class="p-2"><input data-f="arg2" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.arg2}"></td>
+          <td class="p-2"><input data-f="arg3" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.arg3}"></td>
+          <td class="p-2"><input data-f="arg4" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.arg4}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         taskBody.appendChild(tr);
       });
       taskBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{taskRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          taskRows[idx][inp.dataset.f]=inp.value;
+          updateTaskRawLine(idx);
+        };
       });
       taskBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{taskRows.splice(+btn.dataset.del,1);renderTaskTable();};
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          taskRows.splice(idx,1);
+          taskRawLines.splice(idx,1);
+          renderTaskTable();
+        };
       });
     }
 
@@ -990,21 +1354,26 @@
     };
     document.getElementById('taskPasteArea').onblur=e=>parseTasks(e.target.value, document.getElementById('taskDelimiter').value);
 
-    document.getElementById('taskAddBtn').onclick=()=>{taskRows.push({trophyLine:'',phase:'',taskType:'',arg1:'',arg2:'',arg3:'',arg4:''});renderTaskTable();};
+    document.getElementById('taskAddBtn').onclick=()=>{
+      taskRows.push({trophyLine:'',phase:'',taskType:'',arg1:'',arg2:'',arg3:'',arg4:''});
+      taskRawLines.push(serializeTaskRow(taskRows[taskRows.length-1]));
+      renderTaskTable();
+    };
 
     document.getElementById('taskSortBtn').onclick=()=>{
-      taskRows.sort((a,b)=>{
-        const diff=Number(a.trophyLine||0)-Number(b.trophyLine||0);
+      const combined = taskRows.map((row,idx)=>({row, raw: taskRawLines[idx]}));
+      combined.sort((a,b)=>{
+        const diff=Number(a.row.trophyLine||0)-Number(b.row.trophyLine||0);
         if(diff!==0) return diff;
-        return a.phase.localeCompare(b.phase);
+        return (a.row.phase || '').localeCompare(b.row.phase || '');
       });
+      taskRows = combined.map(item=>item.row);
+      taskRawLines = combined.map(item=>item.raw);
       renderTaskTable();
     };
 
     document.getElementById('taskExportBtn').onclick=()=>{
-      const delimSel=document.getElementById('taskDelimiter').value;
-      const delim = delimSel==='auto' ? ',' : delimSel;
-      const blob=new Blob([taskRows.map(r=>[r.trophyLine,r.phase,r.taskType,r.arg1,r.arg2,r.arg3,r.arg4].join(delim)).join('\n')],{type:'text/plain'});
+      const blob=new Blob([taskRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.txt';a.click();
     };
 
@@ -1028,43 +1397,65 @@
       document.getElementById('weatherMeta').textContent = `${count} weather line${count===1?'':'s'} parsed`;
     }
 
+    function serializeWeatherRow(row){
+      return [row.fed ?? '', row.day ?? '', row.type ?? '', row.p1 ?? '', row.p2 ?? '', row.p3 ?? '', row.p4 ?? '', row.start ?? '', row.end ?? ''].join(',');
+    }
+
+    function updateWeatherRawLine(index){
+      if(index<0 || index>=weatherRawLines.length) return;
+      weatherRawLines[index] = serializeWeatherRow(weatherRows[index] ?? {});
+    }
+
     function renderWeatherTable(){
       if(!weatherBody) return;
       weatherBody.innerHTML='';
-      weatherRows.forEach((r,i)=>{
+      const indexes = getVisibleIndexes(weatherRows, ['fed']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r=weatherRows[rowIndex];
         const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="fed" data-i="${i}" class="w-28 p-1 border rounded" value="${r.fed ?? ''}"></td>
-          <td class="p-2"><input data-f="day" data-i="${i}" class="w-20 p-1 border rounded" value="${r.day ?? ''}"></td>
-          <td class="p-2"><input data-f="type" data-i="${i}" class="w-24 p-1 border rounded" value="${r.type ?? ''}"></td>
-          <td class="p-2"><input data-f="p1" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p1 ?? ''}"></td>
-          <td class="p-2"><input data-f="p2" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p2 ?? ''}"></td>
-          <td class="p-2"><input data-f="p3" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p3 ?? ''}"></td>
-          <td class="p-2"><input data-f="p4" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p4 ?? ''}"></td>
-          <td class="p-2"><input data-f="start" data-i="${i}" class="w-24 p-1 border rounded" value="${r.start ?? ''}"></td>
-          <td class="p-2"><input data-f="end" data-i="${i}" class="w-24 p-1 border rounded" value="${r.end ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2"><input data-f="fed" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.fed ?? ''}"></td>
+          <td class="p-2"><input data-f="day" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.day ?? ''}"></td>
+          <td class="p-2"><input data-f="type" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.type ?? ''}"></td>
+          <td class="p-2"><input data-f="p1" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.p1 ?? ''}"></td>
+          <td class="p-2"><input data-f="p2" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.p2 ?? ''}"></td>
+          <td class="p-2"><input data-f="p3" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.p3 ?? ''}"></td>
+          <td class="p-2"><input data-f="p4" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.p4 ?? ''}"></td>
+          <td class="p-2"><input data-f="start" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.start ?? ''}"></td>
+          <td class="p-2"><input data-f="end" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.end ?? ''}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         weatherBody.appendChild(tr);
       });
       weatherBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{ weatherRows[+inp.dataset.i][inp.dataset.f]=inp.value; };
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          weatherRows[idx][inp.dataset.f]=inp.value;
+          updateWeatherRawLine(idx);
+        };
       });
       weatherBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{ weatherRows.splice(+btn.dataset.del,1); renderWeatherTable(); };
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          weatherRows.splice(idx,1);
+          weatherRawLines.splice(idx,1);
+          renderWeatherTable();
+        };
       });
       updateWeatherMeta();
     }
 
     function parseWeather(text){
       weatherRows=[];
+      weatherRawLines=[];
       const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for(const line of lines){
         const parts=line.split(',').map(s=>s.trim());
         while(parts.length<9) parts.push('');
         const [fed='', day='', type='', p1='', p2='', p3='', p4='', start='', end=''] = parts;
         weatherRows.push({fed, day, type, p1, p2, p3, p4, start, end});
+        weatherRawLines.push(line);
       }
       renderWeatherTable();
     }
@@ -1085,11 +1476,12 @@
 
     document.getElementById('weatherAddBtn').onclick=()=>{
       weatherRows.push({fed:'',day:'',type:'',p1:'',p2:'',p3:'',p4:'',start:'',end:''});
+      weatherRawLines.push(serializeWeatherRow(weatherRows[weatherRows.length-1]));
       renderWeatherTable();
     };
 
     document.getElementById('weatherExportBtn').onclick=()=>{
-      const blob=new Blob([weatherRows.map(r=>[r.fed,r.day,r.type,r.p1,r.p2,r.p3,r.p4,r.start,r.end].join(',')).join('\n')],{type:'text/plain'});
+      const blob=new Blob([weatherRawLines.join('\n')],{type:'text/plain'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='weather.txt';a.click();
     };
 
