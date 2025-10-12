@@ -306,6 +306,51 @@
       <div id="taskMessages" class="mt-3 text-sm"></div>
     </section>
 
+    <!-- ===================== -->
+    <!-- Weather Editor -->
+    <!-- ===================== -->
+    <section id="weatherEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Weather Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage weather configuration lines formatted as
+        <code>FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime</code>.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="weatherFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="weatherPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="weatherAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
+        <button id="weatherExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <button id="weatherValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <textarea id="weatherPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste weather lines here... (FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime)"></textarea>
+      <div id="weatherMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Federation ID</th>
+              <th class="p-2">Day ID</th>
+              <th class="p-2">Weather Type</th>
+              <th class="p-2">Param1</th>
+              <th class="p-2">Param2</th>
+              <th class="p-2">Param3</th>
+              <th class="p-2">Param4</th>
+              <th class="p-2">Start Time</th>
+              <th class="p-2">End Time</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="weatherBody"></tbody>
+        </table>
+      </div>
+
+      <div id="weatherMessages" class="mt-3 text-sm"></div>
+    </section>
+
   </div>
 
   <!-- ===================== -->
@@ -328,6 +373,7 @@
     }
 
     let rows = [];
+    let weatherRows = [];
     const tbody = document.getElementById('tbody');
 
     function parseText(text, delimSel='auto') {
@@ -441,6 +487,15 @@
         if(idMap.has(parentId)) row.parent = idMap.get(parentId);
       });
 
+      let weatherIdsChanged = false;
+      weatherRows.forEach(row=>{
+        const federationId = String(row.fed ?? '').trim();
+        if(idMap.has(federationId)){
+          row.fed = idMap.get(federationId);
+          weatherIdsChanged = true;
+        }
+      });
+
       advRows.forEach(row=>{
         const fromId = String(row.fromId ?? '').trim();
         if(idMap.has(fromId)) row.fromId = idMap.get(fromId);
@@ -470,8 +525,15 @@
       renderStandingsTable();
       renderSettingsTable();
       renderTaskTable();
+      renderWeatherTable();
 
       document.getElementById('messages').textContent = 'IDs were changed — all cross-file references updated successfully.';
+      if(weatherIdsChanged){
+        const weatherMessages = document.getElementById('weatherMessages');
+        if(weatherMessages){
+          weatherMessages.textContent = 'Weather federation references updated.';
+        }
+      }
     }
 
     document.getElementById('sortByIdBtn').onclick = ()=>{ rows.sort((a,b)=>Number(a.id)-Number(b.id)); renderTable(); };
@@ -955,6 +1017,97 @@
       });
       document.getElementById('taskMessages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
     };
+
+    /* -----------------------
+       Weather Section
+    ----------------------- */
+    const weatherBody = document.getElementById('weatherBody');
+
+    function updateWeatherMeta(){
+      const count = weatherRows.length;
+      document.getElementById('weatherMeta').textContent = `${count} weather line${count===1?'':'s'} parsed`;
+    }
+
+    function renderWeatherTable(){
+      if(!weatherBody) return;
+      weatherBody.innerHTML='';
+      weatherRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="fed" data-i="${i}" class="w-28 p-1 border rounded" value="${r.fed ?? ''}"></td>
+          <td class="p-2"><input data-f="day" data-i="${i}" class="w-20 p-1 border rounded" value="${r.day ?? ''}"></td>
+          <td class="p-2"><input data-f="type" data-i="${i}" class="w-24 p-1 border rounded" value="${r.type ?? ''}"></td>
+          <td class="p-2"><input data-f="p1" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p1 ?? ''}"></td>
+          <td class="p-2"><input data-f="p2" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p2 ?? ''}"></td>
+          <td class="p-2"><input data-f="p3" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p3 ?? ''}"></td>
+          <td class="p-2"><input data-f="p4" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p4 ?? ''}"></td>
+          <td class="p-2"><input data-f="start" data-i="${i}" class="w-24 p-1 border rounded" value="${r.start ?? ''}"></td>
+          <td class="p-2"><input data-f="end" data-i="${i}" class="w-24 p-1 border rounded" value="${r.end ?? ''}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        weatherBody.appendChild(tr);
+      });
+      weatherBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{ weatherRows[+inp.dataset.i][inp.dataset.f]=inp.value; };
+      });
+      weatherBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{ weatherRows.splice(+btn.dataset.del,1); renderWeatherTable(); };
+      });
+      updateWeatherMeta();
+    }
+
+    function parseWeather(text){
+      weatherRows=[];
+      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts=line.split(',').map(s=>s.trim());
+        while(parts.length<9) parts.push('');
+        const [fed='', day='', type='', p1='', p2='', p3='', p4='', start='', end=''] = parts;
+        weatherRows.push({fed, day, type, p1, p2, p3, p4, start, end});
+      }
+      renderWeatherTable();
+    }
+
+    document.getElementById('weatherFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseWeather(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById('weatherPasteBtn').onclick=()=>{
+      const pa=document.getElementById('weatherPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('weatherPasteArea').onblur=e=>parseWeather(e.target.value);
+
+    document.getElementById('weatherAddBtn').onclick=()=>{
+      weatherRows.push({fed:'',day:'',type:'',p1:'',p2:'',p3:'',p4:'',start:'',end:''});
+      renderWeatherTable();
+    };
+
+    document.getElementById('weatherExportBtn').onclick=()=>{
+      const blob=new Blob([weatherRows.map(r=>[r.fed,r.day,r.type,r.p1,r.p2,r.p3,r.p4,r.start,r.end].join(',')).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='weather.txt';a.click();
+    };
+
+    document.getElementById('weatherValidateBtn').onclick=()=>{
+      const messages=[];
+      const ids=new Set(rows.map(r=>String(r.id)));
+      const numericFields=[['day','Day ID'],['type','Weather Type'],['p1','Param1'],['p2','Param2'],['p3','Param3'],['p4','Param4'],['start','Start Time'],['end','End Time']];
+      weatherRows.forEach((r,i)=>{
+        if(r.fed && !ids.has(String(r.fed))) messages.push(`Row ${i+1}: Federation ID ${r.fed} not found in CompObj table`);
+        numericFields.forEach(([field,label])=>{
+          const value=r[field];
+          if(value!=='' && Number.isNaN(Number(value))) messages.push(`Row ${i+1}: ${label} must be numeric`);
+        });
+      });
+      document.getElementById('weatherMessages').innerHTML = messages.length ? messages.join('<br>') : 'No validation issues.';
+    };
+
+    updateWeatherMeta();
 
     /* Theme */
     document.getElementById('themeSelect').onchange=()=>{
