@@ -1209,16 +1209,85 @@
         return issues;
       }
 
+      function ensureDefaultWeatherTemplates() {
+        const result = { addedRows: 0, federationCount: 0 };
+        if (!compRows.length) return result;
+        const federationIds = Array.from(
+          new Set(
+            compRows
+              .filter((row) => Number(row.level) === 1 && row.id)
+              .map((row) => row.id)
+          )
+        );
+        if (!federationIds.length) return result;
+        const coveredFederations = new Set(
+          weatherRows
+            .filter((row) => row.fedId)
+            .map((row) => row.fedId)
+        );
+        const generatedRows = [];
+        federationIds.forEach((fedId) => {
+          if (coveredFederations.has(fedId)) return;
+          result.federationCount += 1;
+          for (let month = 1; month <= 12; month += 1) {
+            const newRow = {
+              fedId,
+              dayId: String(month),
+              weatherType: '80',
+              param1: '0',
+              param2: '0',
+              param3: '0',
+              param4: '20',
+              start: '1600',
+              end: '1900'
+            };
+            newRow.raw = formatWeatherRow(newRow);
+            generatedRows.push(newRow);
+          }
+        });
+        if (!generatedRows.length) return result;
+        const startIndex = weatherRows.length;
+        generatedRows.forEach((row, offset) => {
+          weatherRows.push({ ...row, index: startIndex + offset });
+        });
+        weatherRows.forEach((row, index) => {
+          row.index = index;
+          if (!row.raw) row.raw = formatWeatherRow(row);
+        });
+        result.addedRows = generatedRows.length;
+        updateLastBuildFromArrays();
+        fileStatus.set('weather', {
+          lines: weatherRows.length,
+          message: `Auto-generated default weather for ${result.federationCount} federation${
+            result.federationCount === 1 ? '' : 's'
+          }.`
+        });
+        renderFileStatus();
+        renderExportResults();
+        return result;
+      }
+
       function handleValidateAll() {
-        const issues = validateFiles();
+        let issues = validateFiles();
+        const weatherUpdate = ensureDefaultWeatherTemplates();
+        if (weatherUpdate.addedRows) {
+          issues = validateFiles();
+        }
         const output = $('validationOutput');
         if (!output) return;
         output.classList.remove('hidden');
+        const autoWeatherNotice = weatherUpdate.addedRows
+          ? `<div class="text-xs text-slate-600 mt-2">Added default neutral weather for ${weatherUpdate.federationCount} federation${
+              weatherUpdate.federationCount === 1 ? '' : 's'
+            }.</div>`
+          : '';
         if (!issues.length) {
-          output.innerHTML = `<div class="text-emerald-600 font-semibold">All references look good.</div><div class="text-sm text-slate-600">Every linked ID resolves correctly.</div>`;
+          output.innerHTML = `<div class="text-emerald-600 font-semibold">All references look good.</div><div class="text-sm text-slate-600">Every linked ID resolves correctly.</div>${autoWeatherNotice}`;
           showMessage('Validation complete — all references resolved.', 'success');
         } else {
-          output.innerHTML = `<div class="text-red-600 font-semibold">${issues.length} issue${issues.length === 1 ? '' : 's'} detected:</div><ul>${issues.map((issue) => `<li>${issue}</li>`).join('')}</ul>`;
+          output.innerHTML = `<div class="text-red-600 font-semibold">${issues.length} issue${issues.length === 1 ? '' : 's'} detected:</div><ul>${issues
+            .map((issue) => `<li>${issue}</li>`)
+            .join('')}</ul>${autoWeatherNotice}`;
           showMessage('Validation finished with warnings.', 'error');
         }
       }
