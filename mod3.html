@@ -398,7 +398,15 @@
       const stepLabels = ['Overview', 'Structure', 'Stages', 'Review'];
 
       function createWorldRoot() {
-        return { uuid: 'world-root', name: 'World', federations: [] };
+        return {
+          uuid: 'world-root',
+          name: 'World',
+          code: 'WORLD',
+          level: '0',
+          parent: '-1',
+          id: null,
+          federations: []
+        };
       }
 
       const state = {
@@ -795,11 +803,26 @@
           return;
         }
 
-        const worldRow = compRows.find((row) => Number(row.level) <= 1 && (row.code || '').trim().toUpperCase() === 'WORLD');
-        if (worldRow) {
-          state.world = { uuid: 'world-root', name: worldRow.name || 'World', federations: [] };
-          setIdForKey('world:root', worldRow.id);
+        const worldMatch = compRows.find((row) => {
+          const level = Number(row.level);
+          const code = (row.code || '').trim().toUpperCase();
+          const parent = String(row.parent ?? '').trim();
+          return level <= 0 || code === 'WORLD' || parent === '-1';
+        });
+
+        if (worldMatch) {
+          const world = createWorldRoot();
+          world.name = worldMatch.name || world.name;
+          world.code = worldMatch.code || world.code;
+          world.level = String(worldMatch.level ?? world.level ?? '0');
+          world.parent = String(worldMatch.parent ?? world.parent ?? '-1');
+          world.id = String(worldMatch.id ?? '');
+          state.world = world;
+          setIdForKey('world:root', worldMatch.id);
+        } else {
+          state.world = createWorldRoot();
         }
+
         state.world.federations = [];
         state.federations = state.world.federations;
         state.dataLoaded = true;
@@ -2448,9 +2471,18 @@
           weatherByFed.get(row.fedId).push(row);
         });
 
+        const worldId = getIdForKey('world:root');
+        context.compRows.push({
+          id: worldId,
+          level: String(state.world.level ?? '0'),
+          code: state.world.code || 'WORLD',
+          name: state.world.name || 'World',
+          parent: String(state.world.parent ?? '-1')
+        });
+
         state.federations.forEach((fed) => {
           const fedId = getIdForKey(`fed:${fed.uuid}`);
-          context.compRows.push({ id: fedId, level: '1', code: fed.code || '', name: fed.name || 'Federation', parent: '0' });
+          context.compRows.push({ id: fedId, level: '1', code: fed.code || '', name: fed.name || 'Federation', parent: worldId });
           if (!weatherByFed.has(fedId) || !weatherByFed.get(fedId).length) {
             for (let month = 1; month <= 12; month += 1) {
               const weatherRow = {
