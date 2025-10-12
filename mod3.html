@@ -129,6 +129,101 @@
       <div id="advMessages" class="mt-3 text-sm"></div>
     </section>
 
+    <!-- ===================== -->
+    <!-- Tasks Editor -->
+    <!-- ===================== -->
+    <section id="taskEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Tasks Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage competition task lines such as <code>FillFromLeague</code>, <code>FillWithTeam</code>, and <code>UpdateTable</code>.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="taskFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="taskPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="taskExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <label class="text-sm">Delimiter:</label>
+        <select id="taskDelimiter" class="p-2 rounded border bg-white">
+          <option value=",">Comma</option>
+          <option value="\t">Tab</option>
+          <option value=";">Semicolon</option>
+          <option value="|">Pipe</option>
+          <option value="auto" selected>Auto-detect</option>
+        </select>
+      </div>
+
+      <textarea id="taskPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste tasks lines here... (TrophyLine,Phase,TaskType,Arg1,Arg2,Arg3,Arg4)"></textarea>
+      <div id="taskMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Trophy Line</th>
+              <th class="p-2">Phase</th>
+              <th class="p-2">Task Type</th>
+              <th class="p-2">Arg 1</th>
+              <th class="p-2">Arg 2</th>
+              <th class="p-2">Arg 3</th>
+              <th class="p-2">Arg 4</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="taskBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex gap-2">
+        <button id="taskAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Task</button>
+        <button id="taskSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by Trophy</button>
+        <button id="taskValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <div id="taskMessages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
+    <!-- Standings Editor -->
+    <!-- ===================== -->
+    <section id="standEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Standings Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Edit standings group counts where each line is <code>GroupID,TeamCount</code> (0 still counts as one team).
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="standFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="standPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="standExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+      </div>
+
+      <textarea id="standPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste standings lines here... (GroupID,TeamCount)"></textarea>
+      <div id="standMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Group ID</th>
+              <th class="p-2">Team Count</th>
+              <th class="p-2">Interpreted Count (0 = 1)</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="standBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex gap-2">
+        <button id="standAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
+        <button id="standValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <div id="standMessages" class="mt-3 text-sm"></div>
+    </section>
+
   </div>
 
   <!-- ===================== -->
@@ -138,12 +233,24 @@
     /* -----------------------
        CompObj Section
     ----------------------- */
+    function autoDetectDelimiter(text){
+      const sample = text.split(/\r?\n/).map(l=>l.trim()).find(Boolean) || '';
+      const candidates=[',','\t',';','|'];
+      let best=',';
+      let bestCount=0;
+      candidates.forEach(del=>{
+        const count=sample ? sample.split(del).length : 0;
+        if(count>bestCount){ bestCount=count; best=del; }
+      });
+      return best;
+    }
+
     let rows = [];
     const tbody = document.getElementById('tbody');
 
     function parseText(text, delimSel='auto') {
       rows = [];
-      const delim = (delimSel==='auto') ? ',' : delimSel;
+      const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
       const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
       for (const line of lines) {
         const parts = line.split(delim).map(p=>p.trim());
@@ -279,6 +386,177 @@
       const missing=advRows.filter(r=>!ids.has(String(r.fromId))||!ids.has(String(r.toId)));
       const msg=missing.length?`${missing.length} advancement lines reference missing group IDs`:'All advancement links valid.';
       document.getElementById('advMessages').textContent=msg;
+    };
+
+    /* -----------------------
+       Tasks Section
+    ----------------------- */
+    let taskRows = [];
+    const taskBody = document.getElementById('taskBody');
+
+    function parseTasks(text, delimSel='auto'){
+      taskRows = [];
+      const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts = line.split(delim).map(s=>s.trim());
+        while(parts.length<7) parts.push('');
+        const [trophyLine, phase, taskType, arg1, arg2, arg3, arg4] = parts;
+        taskRows.push({trophyLine, phase, taskType, arg1, arg2, arg3, arg4});
+      }
+      document.getElementById('taskMeta').textContent=`${taskRows.length} task lines parsed`;
+      renderTaskTable();
+    }
+
+    function renderTaskTable(){
+      taskBody.innerHTML='';
+      taskRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="trophyLine" data-i="${i}" class="w-24 p-1 border rounded" value="${r.trophyLine}"></td>
+          <td class="p-2"><input data-f="phase" data-i="${i}" class="w-24 p-1 border rounded" value="${r.phase}"></td>
+          <td class="p-2"><input data-f="taskType" data-i="${i}" class="w-40 p-1 border rounded" value="${r.taskType}"></td>
+          <td class="p-2"><input data-f="arg1" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg1}"></td>
+          <td class="p-2"><input data-f="arg2" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg2}"></td>
+          <td class="p-2"><input data-f="arg3" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg3}"></td>
+          <td class="p-2"><input data-f="arg4" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg4}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        taskBody.appendChild(tr);
+      });
+      taskBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{taskRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+      });
+      taskBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{taskRows.splice(+btn.dataset.del,1);renderTaskTable();};
+      });
+    }
+
+    document.getElementById('taskFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseTasks(r.result, document.getElementById('taskDelimiter').value);
+      r.readAsText(f);
+    };
+
+    document.getElementById('taskPasteBtn').onclick=()=>{
+      const pa=document.getElementById('taskPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('taskPasteArea').onblur=e=>parseTasks(e.target.value, document.getElementById('taskDelimiter').value);
+
+    document.getElementById('taskAddBtn').onclick=()=>{taskRows.push({trophyLine:'',phase:'',taskType:'',arg1:'',arg2:'',arg3:'',arg4:''});renderTaskTable();};
+
+    document.getElementById('taskSortBtn').onclick=()=>{
+      taskRows.sort((a,b)=>{
+        const diff=Number(a.trophyLine||0)-Number(b.trophyLine||0);
+        if(diff!==0) return diff;
+        return a.phase.localeCompare(b.phase);
+      });
+      renderTaskTable();
+    };
+
+    document.getElementById('taskExportBtn').onclick=()=>{
+      const delimSel=document.getElementById('taskDelimiter').value;
+      const delim = delimSel==='auto' ? ',' : delimSel;
+      const blob=new Blob([taskRows.map(r=>[r.trophyLine,r.phase,r.taskType,r.arg1,r.arg2,r.arg3,r.arg4].join(delim)).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.txt';a.click();
+    };
+
+    document.getElementById('taskValidateBtn').onclick=()=>{
+      const probs=[];
+      taskRows.forEach((r,i)=>{
+        if(!r.trophyLine) probs.push(`Line ${i+1}: Missing trophy line`);
+        if(!r.phase) probs.push(`Line ${i+1}: Missing phase (start/end)`);
+        if(!r.taskType) probs.push(`Line ${i+1}: Missing task type`);
+      });
+      document.getElementById('taskMessages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
+    };
+
+    /* -----------------------
+       Standings Section
+    ----------------------- */
+    let standRows = [];
+    const standBody = document.getElementById('standBody');
+
+    function parseStandings(text){
+      standRows = [];
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts = line.split(',');
+        const group = (parts[0] || '').trim();
+        const count = (parts[1] || '').trim();
+        standRows.push({group, count});
+      }
+      document.getElementById('standMeta').textContent = `${standRows.length} standings lines parsed`;
+      renderStandTable();
+    }
+
+    function renderStandTable(){
+      standBody.innerHTML='';
+      standRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        const countNum = Number(r.count);
+        let interpreted = '';
+        if(r.count !== ''){
+          interpreted = Number.isFinite(countNum) ? (countNum === 0 ? 1 : countNum + 1) : '';
+        }
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="group" data-i="${i}" class="w-24 p-1 border rounded" value="${r.group}"></td>
+          <td class="p-2"><input data-f="count" data-i="${i}" class="w-24 p-1 border rounded" value="${r.count}"></td>
+          <td class="p-2">${interpreted}</td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        standBody.appendChild(tr);
+      });
+      standBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{
+          standRows[+inp.dataset.i][inp.dataset.f]=inp.value;
+          renderStandTable();
+        };
+      });
+      standBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{standRows.splice(+btn.dataset.del,1);renderStandTable();};
+      });
+      document.getElementById('standMeta').textContent = `${standRows.length} standings lines`;
+    }
+
+    document.getElementById('standFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseStandings(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById('standPasteBtn').onclick=()=>{
+      const pa=document.getElementById('standPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('standPasteArea').onblur=e=>parseStandings(e.target.value);
+
+    document.getElementById('standAddBtn').onclick=()=>{standRows.push({group:'',count:''});renderStandTable();};
+
+    document.getElementById('standExportBtn').onclick=()=>{
+      const blob=new Blob([standRows.map(r=>`${r.group},${r.count}`).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='standings.txt';a.click();
+    };
+
+    document.getElementById('standValidateBtn').onclick=()=>{
+      const probs=[];
+      const ids=new Set(rows.map(r=>String(r.id)));
+      const canCheckGroups = ids.size>0;
+      standRows.forEach((r,i)=>{
+        if(!r.group) probs.push(`Line ${i+1}: Missing group ID`);
+        if(r.group && canCheckGroups && !ids.has(String(r.group))) probs.push(`Line ${i+1}: Group ${r.group} not found in CompObj`);
+        if(r.count === '') probs.push(`Line ${i+1}: Missing team count`);
+        else if(Number.isNaN(Number(r.count))) probs.push(`Line ${i+1}: Team count '${r.count}' is not numeric`);
+      });
+      if(!canCheckGroups) probs.push('Load CompObj data to validate group IDs.');
+      document.getElementById('standMessages').innerHTML = probs.length ? probs.join('<br>') : 'All standings valid.';
     };
 
     /* Theme */
