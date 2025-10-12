@@ -130,6 +130,49 @@
     </section>
 
     <!-- ===================== -->
+    <!-- Standings Editor -->
+    <!-- ===================== -->
+    <section id="standingsEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Standings Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage standings slot definitions such as <code>GroupId,ZeroBasedSlot</code>.
+        Remember that slot <code>0</code> represents the first team in a table.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="standingsFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="standingsPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="standingsExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+      </div>
+
+      <textarea id="standingsPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste standings lines here... (GroupId,ZeroBasedSlot)"></textarea>
+      <div id="standingsMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Group ID</th>
+              <th class="p-2">Slot (0-index)</th>
+              <th class="p-2">Team #</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="standingsBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex gap-2">
+        <button id="standingsAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
+        <button id="standingsSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by Group</button>
+        <button id="standingsValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <div id="standingsMessages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
     <!-- Tasks Editor -->
     <!-- ===================== -->
     <section id="taskEditor" class="mt-10">
@@ -345,6 +388,120 @@
       const missing=advRows.filter(r=>!ids.has(String(r.fromId))||!ids.has(String(r.toId)));
       const msg=missing.length?`${missing.length} advancement lines reference missing group IDs`:'All advancement links valid.';
       document.getElementById('advMessages').textContent=msg;
+    };
+
+    /* -----------------------
+       Standings Section
+    ----------------------- */
+    let standingsRows=[];
+    const standingsBody=document.getElementById('standingsBody');
+
+    function updateStandingsMeta(){
+      const groupCounts=new Map();
+      standingsRows.forEach(r=>{
+        if(!r.groupId) return;
+        const slotNum=r.slot===''?NaN:Number(r.slot);
+        if(!groupCounts.has(r.groupId)) groupCounts.set(r.groupId, Number.isFinite(slotNum)?slotNum+1:1);
+        else if(Number.isFinite(slotNum)) groupCounts.set(r.groupId, Math.max(groupCounts.get(r.groupId), slotNum+1));
+        else groupCounts.set(r.groupId, groupCounts.get(r.groupId)+1);
+      });
+      const groupCount=groupCounts.size;
+      let maxTeams=0;
+      groupCounts.forEach(v=>{if(v>maxTeams) maxTeams=v;});
+      const meta=`${standingsRows.length} rows parsed${groupCount?` across ${groupCount} groups`:''}${maxTeams?`. Largest table size: ${maxTeams} teams.`:''}`;
+      document.getElementById('standingsMeta').textContent=meta;
+    }
+
+    function renderStandingsTable(){
+      standingsBody.innerHTML='';
+      standingsRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        const slotNum=r.slot===''?NaN:Number(r.slot);
+        const teamLabel=Number.isFinite(slotNum)?`Team ${slotNum+1}`:'';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="groupId" data-i="${i}" class="w-28 p-1 border rounded" value="${r.groupId}"></td>
+          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-24 p-1 border rounded" value="${r.slot}"></td>
+          <td class="p-2 text-slate-600">${teamLabel}</td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        standingsBody.appendChild(tr);
+      });
+      standingsBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{standingsRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateStandingsMeta();};
+      });
+      standingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{standingsRows.splice(+btn.dataset.del,1);renderStandingsTable();};
+      });
+      updateStandingsMeta();
+    }
+
+    function parseStandings(text){
+      standingsRows=[];
+      const delim=autoDetectDelimiter(text);
+      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts=line.split(delim).map(s=>s.trim());
+        if(!parts[0]) continue;
+        const [groupId, slot=''] = parts;
+        standingsRows.push({groupId, slot});
+      }
+      renderStandingsTable();
+    }
+
+    document.getElementById('standingsFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseStandings(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById('standingsPasteBtn').onclick=()=>{
+      const pa=document.getElementById('standingsPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('standingsPasteArea').onblur=e=>parseStandings(e.target.value);
+
+    document.getElementById('standingsAddBtn').onclick=()=>{standingsRows.push({groupId:'',slot:''});renderStandingsTable();};
+
+    document.getElementById('standingsSortBtn').onclick=()=>{
+      standingsRows.sort((a,b)=>{
+        const gDiff=Number(a.groupId||0)-Number(b.groupId||0);
+        if(gDiff!==0) return gDiff;
+        const slotA=a.slot===''?Number.POSITIVE_INFINITY:Number(a.slot);
+        const slotB=b.slot===''?Number.POSITIVE_INFINITY:Number(b.slot);
+        return slotA-slotB;
+      });
+      renderStandingsTable();
+    };
+
+    document.getElementById('standingsExportBtn').onclick=()=>{
+      const blob=new Blob([standingsRows.map(r=>[r.groupId,r.slot].join(',')).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='standings.txt';a.click();
+    };
+
+    document.getElementById('standingsValidateBtn').onclick=()=>{
+      const msgs=[];
+      const seen=new Set();
+      const groupSlots=new Map();
+      standingsRows.forEach((r,i)=>{
+        if(!r.groupId) msgs.push(`Row ${i+1}: Missing group ID`);
+        if(r.slot==='') msgs.push(`Row ${i+1}: Missing slot value`);
+        const slotNum=Number(r.slot);
+        if(r.slot!=='' && Number.isNaN(slotNum)) msgs.push(`Row ${i+1}: Slot is not a number`);
+        const key=`${r.groupId}|${r.slot}`;
+        if(seen.has(key)) msgs.push(`Row ${i+1}: Duplicate group/slot combination (${r.groupId}, ${r.slot})`);
+        seen.add(key);
+        if(r.groupId){
+          if(!groupSlots.has(r.groupId)) groupSlots.set(r.groupId,new Set());
+          if(!Number.isNaN(slotNum)) groupSlots.get(r.groupId).add(slotNum);
+        }
+      });
+      groupSlots.forEach((slots,gid)=>{
+        if(!slots.has(0)) msgs.push(`Group ${gid} is missing slot 0`);
+      });
+      document.getElementById('standingsMessages').innerHTML = msgs.length ? msgs.join('<br>') : 'No validation issues.';
     };
 
     /* -----------------------
