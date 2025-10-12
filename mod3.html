@@ -234,6 +234,17 @@
     .callout { border-radius: 0.9rem; padding: 0.9rem 1rem; background: #fef3c7; color: #92400e; font-size: 0.85rem; }
     .callout-error { background: #fee2e2; color: #b91c1c; }
 
+    .file-button-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .file-status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+    .file-status-card { padding: 0.75rem; border-radius: 0.85rem; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 0.25rem; }
+    body.dark .file-status-card { background: #1f2937; border-color: #334155; }
+    .file-status-card .title { font-weight: 600; font-size: 0.85rem; }
+    .file-status-card .meta { font-size: 0.75rem; color: #64748b; }
+    body.dark .file-status-card .meta { color: #cbd5f5; }
+    .validation-log { border-radius: 0.85rem; border: 1px solid #e2e8f0; padding: 0.9rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .validation-log ul { margin: 0; padding-left: 1.25rem; }
+    body.dark .validation-log { border-color: #334155; }
+
     @media (max-width: 960px) {
       .page { padding: 1.75rem 1.25rem 3rem; }
       .layout { display: flex; flex-direction: column; gap: 1.5rem; }
@@ -256,6 +267,51 @@
     </header>
 
     <div id="globalMessage" class="hidden"></div>
+
+    <section class="card" id="fileManager">
+      <div class="card-header">
+        <div>
+          <h2 class="text-xl font-semibold">Data Files</h2>
+          <p class="text-xs text-slate-600 mt-1">Import, validate, and export synchronized text packs before diving into editing.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="validateAllBtn" class="btn btn-outline">Validate All</button>
+          <button id="importZipBtn" class="btn btn-ghost">Load ZIP</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="flex flex-col gap-4">
+          <div class="file-button-grid" id="fileButtonGrid">
+            <button type="button" class="btn" data-file="compobj">Import compobj.txt</button>
+            <button type="button" class="btn" data-file="settings">Import settings.txt</button>
+            <button type="button" class="btn" data-file="tasks">Import tasks.txt</button>
+            <button type="button" class="btn" data-file="advancement">Import advancement.txt</button>
+            <button type="button" class="btn" data-file="standings">Import standings.txt</button>
+            <button type="button" class="btn" data-file="schedule">Import schedule.txt</button>
+            <button type="button" class="btn" data-file="weather">Import weather.txt</button>
+            <button type="button" class="btn" data-file="objectives">Import objectives.txt</button>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-slate-600 mb-2">Loaded Files</h3>
+            <div id="fileStatusList" class="file-status-grid"></div>
+          </div>
+          <div>
+            <h3 class="text-sm font-semibold text-slate-600 mb-2">Export</h3>
+            <div class="file-button-grid" id="fileExportButtons"></div>
+          </div>
+          <div id="validationOutput" class="validation-log hidden"></div>
+        </div>
+        <input id="fileInput-compobj" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-settings" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-tasks" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-advancement" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-standings" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-schedule" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-weather" type="file" accept=".txt" class="hidden" />
+        <input id="fileInput-objectives" type="file" accept=".txt" class="hidden" />
+        <input id="zipInput" type="file" accept=".zip" class="hidden" />
+      </div>
+    </section>
 
     <section class="layout" style="display:grid; grid-template-columns: 320px 320px 1fr; gap:1.5rem; align-items:start;">
       <article class="card" id="federationPanel">
@@ -334,6 +390,57 @@
         lastBuild: null
       };
 
+      let compRows = [];
+      let setRows = [];
+      let taskRows = [];
+      let advRows = [];
+      let standRows = [];
+      let schedRows = [];
+      let weatherRows = [];
+      let objectiveRows = [];
+
+      const fileStatus = new Map();
+      const textDecoder = new TextDecoder();
+
+      const fileDefinitions = [
+        { key: 'compobj', fileName: 'compobj.txt', arrayKey: 'compRows', parser: parseCompobj, formatter: formatCompRow, label: 'Competition Objects' },
+        { key: 'settings', fileName: 'settings.txt', arrayKey: 'setRows', parser: parseSettings, formatter: formatSettingRow, label: 'Settings' },
+        { key: 'tasks', fileName: 'tasks.txt', arrayKey: 'taskRows', parser: parseTasks, formatter: formatTaskRow, label: 'Tasks' },
+        { key: 'advancement', fileName: 'advancement.txt', arrayKey: 'advRows', parser: parseAdvancement, formatter: formatAdvRow, label: 'Advancement' },
+        { key: 'standings', fileName: 'standings.txt', arrayKey: 'standRows', parser: parseStandings, formatter: formatStandRow, label: 'Standings' },
+        { key: 'schedule', fileName: 'schedule.txt', arrayKey: 'schedRows', parser: parseSchedule, formatter: formatSchedRow, label: 'Schedule' },
+        { key: 'weather', fileName: 'weather.txt', arrayKey: 'weatherRows', parser: parseWeather, formatter: formatWeatherRow, label: 'Weather' },
+        { key: 'objectives', fileName: 'objectives.txt', arrayKey: 'objectiveRows', parser: parseObjectives, formatter: formatObjectiveRow, label: 'Objectives' }
+      ];
+
+      function getRowsForArray(arrayKey) {
+        switch (arrayKey) {
+          case 'compRows': return compRows;
+          case 'setRows': return setRows;
+          case 'taskRows': return taskRows;
+          case 'advRows': return advRows;
+          case 'standRows': return standRows;
+          case 'schedRows': return schedRows;
+          case 'weatherRows': return weatherRows;
+          case 'objectiveRows': return objectiveRows;
+          default: return [];
+        }
+      }
+
+      function setRowsForArray(arrayKey, rows) {
+        switch (arrayKey) {
+          case 'compRows': compRows = rows; break;
+          case 'setRows': setRows = rows; break;
+          case 'taskRows': taskRows = rows; break;
+          case 'advRows': advRows = rows; break;
+          case 'standRows': standRows = rows; break;
+          case 'schedRows': schedRows = rows; break;
+          case 'weatherRows': weatherRows = rows; break;
+          case 'objectiveRows': objectiveRows = rows; break;
+          default: break;
+        }
+      }
+
       const editorConfigs = new Map();
       const idRegistry = new Map();
       let uidCounter = 1;
@@ -352,6 +459,149 @@
         qualifying: '🎯',
         final: '🥇'
       };
+
+      function parseLines(content, buildRow) {
+        const rows = [];
+        if (!content) return rows;
+        const lines = content.split(/\r?\n/);
+        lines.forEach((line, index) => {
+          if (!line.trim()) return;
+          const parts = line.split(',');
+          rows.push(buildRow(parts, line, index));
+        });
+        return rows;
+      }
+
+      function parseCompobj(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          id: (parts[0] || '').trim(),
+          level: (parts[1] || '').trim(),
+          code: (parts[2] || '').trim(),
+          name: (parts[3] || '').trim(),
+          parent: (parts[4] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseSettings(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          id: (parts[0] || '').trim(),
+          settingKey: (parts[1] || '').trim(),
+          value: (parts[2] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseTasks(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          trophyId: (parts[0] || '').trim(),
+          phase: (parts[1] || '').trim(),
+          command: (parts[2] || '').trim(),
+          target: (parts[3] || '').trim(),
+          ref1: (parts[4] || '').trim(),
+          ref2: (parts[5] || '').trim(),
+          ref3: (parts[6] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseAdvancement(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          fromId: (parts[0] || '').trim(),
+          placement: (parts[1] || '').trim(),
+          toId: (parts[2] || '').trim(),
+          slot: (parts[3] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseStandings(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          groupId: (parts[0] || '').trim(),
+          teamCount: (parts[1] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseSchedule(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          stageId: (parts[0] || '').trim(),
+          dateId: (parts[1] || '').trim(),
+          matchDay: (parts[2] || '').trim(),
+          minGames: (parts[3] || '').trim(),
+          maxGames: (parts[4] || '').trim(),
+          time: (parts[5] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseWeather(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          fedId: (parts[0] || '').trim(),
+          dayId: (parts[1] || '').trim(),
+          weatherType: (parts[2] || '').trim(),
+          param1: (parts[3] || '').trim(),
+          param2: (parts[4] || '').trim(),
+          param3: (parts[5] || '').trim(),
+          param4: (parts[6] || '').trim(),
+          start: (parts[7] || '').trim(),
+          end: (parts[8] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function parseObjectives(content) {
+        return parseLines(content, (parts, raw, index) => ({
+          groupId: (parts[0] || '').trim(),
+          objective: (parts[1] || '').trim(),
+          value: (parts[2] || '').trim(),
+          raw,
+          index
+        }));
+      }
+
+      function formatCompRow(row) {
+        return [row.id, row.level, row.code, row.name, row.parent].join(',');
+      }
+
+      function formatSettingRow(row) {
+        return [row.id, row.settingKey, row.value].join(',');
+      }
+
+      function formatTaskRow(row) {
+        return [row.trophyId, row.phase, row.command, row.target, row.ref1, row.ref2, row.ref3].join(',');
+      }
+
+      function formatAdvRow(row) {
+        return [row.fromId, row.placement, row.toId, row.slot].join(',');
+      }
+
+      function formatStandRow(row) {
+        return [row.groupId, row.teamCount].join(',');
+      }
+
+      function formatSchedRow(row) {
+        return [row.stageId, row.dateId, row.matchDay, row.minGames, row.maxGames, row.time].join(',');
+      }
+
+      function formatWeatherRow(row) {
+        return [row.fedId, row.dayId, row.weatherType, row.param1, row.param2, row.param3, row.param4, row.start, row.end].join(',');
+      }
+
+      function formatObjectiveRow(row) {
+        return [row.groupId, row.objective, row.value].join(',');
+      }
+
+      function rowsToText(rows, formatter) {
+        return rows.map((row) => row.raw || formatter(row)).join('\n');
+      }
 
       function createUuid(prefix = 'id') {
         return `${prefix}-${uidCounter++}`;
@@ -404,6 +654,416 @@
           matchTime: '20:00'
         };
       }
+
+      function resetRegistries() {
+        idRegistry.clear();
+        uidCounter = 1;
+        idSeed = 1200;
+      }
+
+      function convertContextRows(rows, formatter) {
+        return rows.map((row, index) => ({ ...row, raw: formatter(row), index }));
+      }
+
+      function updateLastBuildFromArrays() {
+        state.lastBuild = {
+          files: fileDefinitions.map((def) => ({
+            name: def.fileName,
+            content: rowsToText(getRowsForArray(def.arrayKey), def.formatter)
+          })),
+          context: {
+            compRows,
+            setRows,
+            taskRows,
+            advRows,
+            standRows,
+            schedRows,
+            weatherRows,
+            objectiveRows
+          }
+        };
+      }
+
+      function renderFileStatus() {
+        const container = $('fileStatusList');
+        if (!container) return;
+        container.innerHTML = '';
+        fileDefinitions.forEach((def) => {
+          const status = fileStatus.get(def.key);
+          const card = document.createElement('div');
+          card.className = 'file-status-card';
+          const title = document.createElement('div');
+          title.className = 'title';
+          title.textContent = def.fileName;
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          if (status && typeof status.lines === 'number') {
+            meta.textContent = `✅ ${status.lines} lines loaded`;
+          } else {
+            meta.textContent = 'Not loaded yet';
+          }
+          card.appendChild(title);
+          card.appendChild(meta);
+          if (status?.message) {
+            const note = document.createElement('div');
+            note.className = 'meta';
+            note.textContent = status.message;
+            card.appendChild(note);
+          }
+          container.appendChild(card);
+        });
+        renderExportButtons();
+      }
+
+      function renderExportButtons() {
+        const container = $('fileExportButtons');
+        if (!container) return;
+        container.innerHTML = '';
+        fileDefinitions.forEach((def) => {
+          const rows = getRowsForArray(def.arrayKey);
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'btn btn-ghost';
+          button.textContent = `Download ${def.fileName}`;
+          button.dataset.export = def.key;
+          if (!rows.length) {
+            button.disabled = true;
+            button.classList.add('text-slate-500');
+          }
+          container.appendChild(button);
+        });
+        const anyData = fileDefinitions.some((def) => getRowsForArray(def.arrayKey).length);
+        const zipButton = document.createElement('button');
+        zipButton.type = 'button';
+        zipButton.dataset.export = 'zip-all';
+        if (anyData) {
+          zipButton.className = 'btn btn-primary';
+        } else {
+          zipButton.className = 'btn btn-ghost text-slate-500';
+          zipButton.disabled = true;
+        }
+        zipButton.textContent = 'Download All (ZIP)';
+        container.appendChild(zipButton);
+      }
+
+      function hydrateStateFromFiles() {
+        if (!compRows.length) {
+          return;
+        }
+        resetRegistries();
+        editorConfigs.clear();
+        state.federations = [];
+        const children = new Map();
+        compRows.forEach((row) => {
+          if (!children.has(row.parent)) children.set(row.parent, []);
+          children.get(row.parent).push(row);
+        });
+        children.forEach((list) => list.sort((a, b) => (a.index || 0) - (b.index || 0)));
+        const settingsMap = new Map();
+        setRows.forEach((row) => {
+          if (!settingsMap.has(row.id)) settingsMap.set(row.id, new Map());
+          settingsMap.get(row.id).set(row.settingKey, row.value);
+        });
+        const standingsMap = new Map();
+        standRows.forEach((row) => standingsMap.set(row.groupId, Number(row.teamCount) || 0));
+        const scheduleMap = new Map();
+        schedRows.forEach((row) => {
+          if (!scheduleMap.has(row.stageId)) scheduleMap.set(row.stageId, row);
+        });
+
+        const federationRows = compRows.filter((row) => row.level === '0').sort((a, b) => (a.index || 0) - (b.index || 0));
+        federationRows.forEach((fedRow) => {
+          const federation = {
+            uuid: createUuid('fed'),
+            name: fedRow.name,
+            code: fedRow.code,
+            region: '',
+            leagues: []
+          };
+          setIdForKey(`fed:${federation.uuid}`, fedRow.id);
+          const leagueRows = (children.get(fedRow.id) || []).filter((row) => row.level === '1');
+          leagueRows.forEach((leagueRow) => {
+            const league = {
+              uuid: createUuid('league'),
+              name: leagueRow.name,
+              code: leagueRow.code,
+              season: '',
+              notes: ''
+            };
+            setIdForKey(`league:${league.uuid}`, leagueRow.id);
+            const config = deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap);
+            editorConfigs.set(league.uuid, config);
+            federation.leagues.push(league);
+          });
+          state.federations.push(federation);
+        });
+        state.selectedFederation = state.federations[0]?.uuid || null;
+        state.selectedLeague = state.federations[0]?.leagues[0]?.uuid || null;
+        state.stepIndex = 0;
+        renderAll();
+      }
+
+      function deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap) {
+        const config = createDefaultConfig();
+        const stageRows = (children.get(leagueRow.id) || []).filter((row) => row.level === '2').sort((a, b) => (a.index || 0) - (b.index || 0));
+        const isPlayoffStage = (row) => (row.code || '').toUpperCase() === 'PO' || /(playoff|knockout)/i.test(row.name || '');
+        const playoffStage = stageRows.find((row) => isPlayoffStage(row)) || null;
+        const mainStage = stageRows.find((row) => !isPlayoffStage(row)) || (playoffStage ? null : stageRows[0] || null);
+
+        const groupsForStage = (stage) => (stage ? (children.get(stage.id) || []).filter((row) => row.level === '3').sort((a, b) => (a.index || 0) - (b.index || 0)) : []);
+        const mainGroups = groupsForStage(mainStage);
+        const playoffGroups = groupsForStage(playoffStage);
+
+        if (mainStage) {
+          const stageKey = `league:${league.uuid}:stage:main`;
+          setIdForKey(stageKey, mainStage.id);
+          let teamCount = 0;
+          mainGroups.forEach((group, index) => {
+            setIdForKey(`${stageKey}:group:${index + 1}`, group.id);
+            teamCount += standingsMap.get(group.id) || Number(group.teamCount) || 0;
+          });
+          if (teamCount) config.teamCount = teamCount;
+          const groupCount = mainGroups.length || 1;
+          config.groupCount = groupCount;
+          config.structureType = groupCount > 1 ? 'groups' : 'league';
+          const stageSettings = settingsMap.get(mainStage.id);
+          if (stageSettings) {
+            const rounds = Number(stageSettings.get('rounds'));
+            if (rounds) config.rounds = rounds;
+            const gamesPerMatch = Number(stageSettings.get('games_per_matchup'));
+            if (gamesPerMatch) config.homeAndAway = gamesPerMatch >= 2;
+          }
+          const scheduleRow = scheduleMap.get(mainStage.id);
+          if (scheduleRow?.time) config.matchTime = scheduleRow.time;
+        } else if (playoffGroups.length) {
+          const firstGroup = playoffGroups.find((group) => (group.code || '').toUpperCase() !== '3P');
+          const teams = firstGroup ? (standingsMap.get(firstGroup.id) || Number(firstGroup.teamCount) || 0) : 0;
+          if (teams) config.teamCount = teams;
+          config.structureType = 'playoffs';
+        }
+
+        if (playoffStage) {
+          const stageKey = `league:${league.uuid}:stage:playoff`;
+          setIdForKey(stageKey, playoffStage.id);
+          let entrants = 0;
+          let roundIndex = 1;
+          playoffGroups.forEach((group) => {
+            const code = (group.code || '').toUpperCase();
+            if (code === '3P') {
+              config.includeThirdPlace = true;
+              setIdForKey(`${stageKey}:third`, group.id);
+            } else {
+              setIdForKey(`${stageKey}:round:${roundIndex}`, group.id);
+              roundIndex += 1;
+              entrants = Math.max(entrants, standingsMap.get(group.id) || Number(group.teamCount) || 0);
+            }
+          });
+          if (entrants) config.playoffTeams = entrants;
+          const stageSettings = settingsMap.get(playoffStage.id);
+          if (stageSettings) {
+            const gamesPerMatch = Number(stageSettings.get('games_per_matchup'));
+            if (gamesPerMatch) config.gamesPerMatchup = gamesPerMatch;
+          }
+          const scheduleRow = scheduleMap.get(playoffStage.id);
+          if (!mainStage && scheduleRow?.time) config.matchTime = scheduleRow.time;
+          if (mainStage) config.includePlayoffs = true;
+        } else {
+          config.includePlayoffs = false;
+        }
+
+        return config;
+      }
+
+      function syncDataFromState() {
+        const build = buildProjectFiles();
+        compRows = convertContextRows(build.context.compRows, formatCompRow);
+        setRows = convertContextRows(build.context.setRows, formatSettingRow);
+        taskRows = convertContextRows(build.context.taskRows, formatTaskRow);
+        advRows = convertContextRows(build.context.advRows, formatAdvRow);
+        standRows = convertContextRows(build.context.standRows, formatStandRow);
+        schedRows = convertContextRows(build.context.schedRows, formatSchedRow);
+        objectiveRows = convertContextRows(build.context.objectiveRows, formatObjectiveRow);
+        weatherRows = convertContextRows(build.context.weatherRows, formatWeatherRow);
+        state.lastBuild = build;
+        fileDefinitions.forEach((def) => {
+          const rows = getRowsForArray(def.arrayKey);
+          fileStatus.set(def.key, { lines: rows.length, message: 'Synced from editor' });
+        });
+        const validationOutput = $('validationOutput');
+        if (validationOutput) validationOutput.classList.add('hidden');
+        renderFileStatus();
+        renderExportResults();
+      }
+
+      async function handleFileSelection(definition, file) {
+        const text = await file.text();
+        const rows = definition.parser(text).map((row, index) => ({ ...row, index }));
+        rows.forEach((row) => { if (!row.raw) row.raw = definition.formatter(row); });
+        setRowsForArray(definition.arrayKey, rows);
+        fileStatus.set(definition.key, { lines: rows.length, message: `Loaded from ${file.name}` });
+        updateLastBuildFromArrays();
+        const validationOutput = $('validationOutput');
+        if (validationOutput) validationOutput.classList.add('hidden');
+        renderFileStatus();
+        renderExportResults();
+        if (compRows.length) {
+          hydrateStateFromFiles();
+        } else {
+          renderAll();
+        }
+        showMessage(`✅ Loaded ${rows.length} lines from ${definition.fileName}`, 'success');
+      }
+
+      async function handleZipSelection(file) {
+        const buffer = await file.arrayBuffer();
+        const entries = extractZipEntries(buffer);
+        const loaded = [];
+        fileDefinitions.forEach((def) => {
+          const match = entries[def.fileName.toLowerCase()];
+          if (match) {
+            const text = textDecoder.decode(match);
+            const rows = def.parser(text).map((row, index) => ({ ...row, index }));
+            rows.forEach((row) => { if (!row.raw) row.raw = def.formatter(row); });
+            setRowsForArray(def.arrayKey, rows);
+            fileStatus.set(def.key, { lines: rows.length, message: `Loaded from ${file.name}` });
+            loaded.push(`${def.fileName} (${rows.length} lines)`);
+          }
+        });
+        if (!loaded.length) {
+          showMessage('ZIP did not contain recognizable data files.', 'error');
+          return;
+        }
+        updateLastBuildFromArrays();
+        const validationOutput = $('validationOutput');
+        if (validationOutput) validationOutput.classList.add('hidden');
+        renderFileStatus();
+        renderExportResults();
+        hydrateStateFromFiles();
+        showMessage(`✅ Loaded ${loaded.length} files from ZIP`, 'success');
+      }
+
+      function extractZipEntries(buffer) {
+        const view = new DataView(buffer);
+        let offset = buffer.byteLength - 22;
+        let endFound = false;
+        while (offset >= 0) {
+          if (view.getUint32(offset, true) === 0x06054b50) {
+            endFound = true;
+            break;
+          }
+          offset -= 1;
+        }
+        if (!endFound) return {};
+        const total = view.getUint16(offset + 10, true);
+        const centralOffset = view.getUint32(offset + 16, true);
+        const entries = {};
+        let ptr = centralOffset;
+        for (let i = 0; i < total; i += 1) {
+          if (view.getUint32(ptr, true) !== 0x02014b50) break;
+          const nameLength = view.getUint16(ptr + 28, true);
+          const extraLength = view.getUint16(ptr + 30, true);
+          const commentLength = view.getUint16(ptr + 32, true);
+          const compression = view.getUint16(ptr + 10, true);
+          const localHeaderOffset = view.getUint32(ptr + 42, true);
+          const nameBytes = new Uint8Array(buffer, ptr + 46, nameLength);
+          const rawName = textDecoder.decode(nameBytes);
+          const normalized = rawName.split('/').pop() || rawName;
+          const fileName = normalized.toLowerCase();
+          ptr += 46 + nameLength + extraLength + commentLength;
+          if (compression !== 0) continue; // Only support stored entries
+          if (view.getUint32(localHeaderOffset, true) !== 0x04034b50) continue;
+          const localNameLength = view.getUint16(localHeaderOffset + 26, true);
+          const localExtraLength = view.getUint16(localHeaderOffset + 28, true);
+          const size = view.getUint32(localHeaderOffset + 18, true);
+          const dataStart = localHeaderOffset + 30 + localNameLength + localExtraLength;
+          entries[fileName] = new Uint8Array(buffer, dataStart, size);
+        }
+        return entries;
+      }
+
+      function downloadText(name, text) {
+        const blob = new Blob([text], { type: 'text/plain' });
+        downloadBlob(name, blob);
+      }
+
+      function validateFiles() {
+        const issues = [];
+        const compIdSet = new Set(compRows.map((row) => row.id));
+        const stageIdSet = new Set(compRows.filter((row) => row.level === '2').map((row) => row.id));
+        const groupIdSet = new Set(compRows.filter((row) => row.level === '3').map((row) => row.id));
+        const leagueIdSet = new Set(compRows.filter((row) => row.level === '1').map((row) => row.id));
+        const federationIdSet = new Set(compRows.filter((row) => row.level === '0').map((row) => row.id));
+        compRows.forEach((row) => {
+          if (row.level !== '0' && row.parent && !compIdSet.has(row.parent)) {
+            issues.push(`Competition entry ${row.id} references missing parent ${row.parent}.`);
+          }
+        });
+        setRows.forEach((row) => {
+          if (row.id && !compIdSet.has(row.id)) {
+            issues.push(`Setting ${row.settingKey} references unknown node ${row.id}.`);
+          }
+        });
+        standRows.forEach((row) => {
+          if (row.groupId && !groupIdSet.has(row.groupId)) {
+            issues.push(`Standings entry references missing group ${row.groupId}.`);
+          }
+        });
+        objectiveRows.forEach((row) => {
+          if (row.groupId && !groupIdSet.has(row.groupId)) {
+            issues.push(`Objective ${row.objective} references missing group ${row.groupId}.`);
+          }
+        });
+        schedRows.forEach((row) => {
+          if (row.stageId && !stageIdSet.has(row.stageId)) {
+            issues.push(`Schedule ${row.dateId} references missing stage ${row.stageId}.`);
+          }
+        });
+        advRows.forEach((row) => {
+          if (row.fromId && !groupIdSet.has(row.fromId)) {
+            issues.push(`Advancement ${row.fromId} references missing group ${row.fromId}.`);
+          }
+          if (row.toId && !groupIdSet.has(row.toId)) {
+            issues.push(`Advancement ${row.fromId} references missing group ${row.toId}.`);
+          }
+        });
+        taskRows.forEach((row) => {
+          if (row.trophyId && !leagueIdSet.has(row.trophyId)) {
+            issues.push(`Task trophy ${row.trophyId} does not match a competition.`);
+          }
+          if (row.target && !compIdSet.has(row.target)) {
+            issues.push(`Task target ${row.target} is missing from compobj.`);
+          }
+        });
+        weatherRows.forEach((row) => {
+          if (row.fedId && !federationIdSet.has(row.fedId)) {
+            issues.push(`Weather pattern references missing federation ${row.fedId}.`);
+          }
+        });
+        return issues;
+      }
+
+      function handleValidateAll() {
+        const issues = validateFiles();
+        const output = $('validationOutput');
+        if (!output) return;
+        output.classList.remove('hidden');
+        if (!issues.length) {
+          output.innerHTML = `<div class="text-emerald-600 font-semibold">All references look good.</div><div class="text-sm text-slate-600">Every linked ID resolves correctly.</div>`;
+          showMessage('Validation complete — all references resolved.', 'success');
+        } else {
+          output.innerHTML = `<div class="text-red-600 font-semibold">${issues.length} issue${issues.length === 1 ? '' : 's'} detected:</div><ul>${issues.map((issue) => `<li>${issue}</li>`).join('')}</ul>`;
+          showMessage('Validation finished with warnings.', 'error');
+        }
+      }
+
+      function describeCompetitionType(config) {
+        if (!config) return 'Unknown';
+        if (config.structureType === 'playoffs' && !config.includePlayoffs) return 'Cup';
+        if (config.structureType === 'playoffs') return 'Hybrid';
+        if (config.includePlayoffs) return 'Hybrid';
+        return 'League';
+      }
+
 
       function createFederation(name, code, region) {
         const federation = {
@@ -557,6 +1217,7 @@
           state.federations.push(federation);
           state.selectedFederation = federation.uuid;
           state.selectedLeague = null;
+          syncDataFromState();
           renderAll();
           showMessage('Federation added.', 'success');
         };
@@ -589,12 +1250,13 @@
           btn.dataset.leagueId = league.uuid;
           btn.className = 'selector-card' + (state.selectedLeague === league.uuid ? ' selector-card-active' : '');
           const stageIcon = structureTypes.find((s) => s.key === config.structureType)?.icon || '⚙️';
-          const groupsLabel = config.structureType === 'league' ? 'Single table' : `${config.groupCount} group${config.groupCount === 1 ? '' : 's'}`;
+          const typeLabel = describeCompetitionType(config);
+          const teamLabel = `${config.teamCount} team${config.teamCount === 1 ? '' : 's'}`;
           const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`league:${league.uuid}`)}</div>` : '';
           btn.innerHTML = `
             <div class="selector-icon">${stageIcon}</div>
             <div class="selector-title">${league.name || 'Untitled Competition'}</div>
-            <div class="selector-sub">${league.code || 'No code'} • ${config.teamCount} teams • ${groupsLabel}</div>
+            <div class="selector-sub">${league.code || 'No code'} • ${typeLabel} • ${teamLabel}</div>
             ${league.season ? `<div class="selector-sub">Season ${league.season}</div>` : ''}
             ${idInfo}
           `;
@@ -719,6 +1381,7 @@
                   input.value = getIdForKey(`league:${league.uuid}`);
                 } else {
                   showMessage('Competition ID updated.', 'success');
+                  syncDataFromState();
                 }
               });
             }
@@ -744,7 +1407,10 @@
           input.type = type;
         }
         input.value = value || '';
-        input.addEventListener('input', (event) => onChange(event.target.value));
+        input.addEventListener('input', (event) => {
+          onChange(event.target.value);
+          syncDataFromState();
+        });
         wrapper.appendChild(input);
         if (helper) {
           const helperEl = document.createElement('small');
@@ -768,6 +1434,7 @@
           button.onclick = () => {
             config.structureType = type.key;
             if (type.key === 'league') config.groupCount = 1;
+            syncDataFromState();
             renderEditor();
           };
           button.title = type.description;
@@ -827,6 +1494,7 @@
         input.addEventListener('change', (event) => {
           const newValue = Number(event.target.value);
           onChange(newValue);
+          syncDataFromState();
         });
         wrapper.appendChild(input);
         if (helper) {
@@ -856,7 +1524,10 @@
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = value;
-        input.addEventListener('change', (event) => onChange(event.target.checked));
+        input.addEventListener('change', (event) => {
+          onChange(event.target.checked);
+          syncDataFromState();
+        });
         const slider = document.createElement('span');
         slider.className = 'slider';
         toggle.appendChild(input);
@@ -1401,10 +2072,8 @@
           }
           return;
         }
-        const build = buildProjectFiles();
-        state.lastBuild = build;
-        renderExportResults();
-        const zip = createZip(build.files);
+        syncDataFromState();
+        const zip = createZip(state.lastBuild.files);
         downloadBlob('competition_export.zip', zip);
         showMessage('Build succeeded — ZIP download started.', 'success');
       }
@@ -1414,6 +2083,7 @@
           showMessage('Nothing to download yet — run Build & Export first.', 'info');
           return;
         }
+        syncDataFromState();
         const zip = createZip(state.lastBuild.files);
         downloadBlob('competition_export.zip', zip);
       }
@@ -1423,6 +2093,7 @@
           showMessage('Nothing to copy yet — run Build & Export first.', 'info');
           return;
         }
+        syncDataFromState();
         const combined = state.lastBuild.files.map((file) => `# ${file.name}\n${file.content}`).join('\n\n');
         try {
           await navigator.clipboard.writeText(combined);
@@ -1433,6 +2104,7 @@
       }
 
       function renderAll() {
+        renderFileStatus();
         renderFederations();
         renderLeagues();
         renderEditor();
@@ -1440,6 +2112,61 @@
       }
 
       function setupEventHandlers() {
+        const fileButtons = $('fileButtonGrid');
+        if (fileButtons) {
+          fileButtons.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-file]');
+            if (!button) return;
+            const key = button.dataset.file;
+            const input = $(`fileInput-${key}`);
+            if (input) input.click();
+          });
+        }
+
+        fileDefinitions.forEach((def) => {
+          const input = $(`fileInput-${def.key}`);
+          if (!input) return;
+          input.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (file) await handleFileSelection(def, file);
+            event.target.value = '';
+          });
+        });
+
+        const zipButton = $('importZipBtn');
+        const zipInput = $('zipInput');
+        if (zipButton && zipInput) {
+          zipButton.addEventListener('click', () => zipInput.click());
+          zipInput.addEventListener('change', async (event) => {
+            const file = event.target.files?.[0];
+            if (file) await handleZipSelection(file);
+            event.target.value = '';
+          });
+        }
+
+        const exportButtons = $('fileExportButtons');
+        if (exportButtons) {
+          exportButtons.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-export]');
+            if (!button) return;
+            const key = button.dataset.export;
+            if (key === 'zip-all') {
+              handleDownloadZip();
+              return;
+            }
+            const def = fileDefinitions.find((item) => item.key === key);
+            if (!def) return;
+            const rows = getRowsForArray(def.arrayKey);
+            if (!rows.length) return;
+            downloadText(def.fileName, rowsToText(rows, def.formatter));
+          });
+        }
+
+        const validateAllBtn = $('validateAllBtn');
+        if (validateAllBtn) {
+          validateAllBtn.addEventListener('click', handleValidateAll);
+        }
+
         const federationList = $('federationList');
         if (federationList) {
           federationList.addEventListener('click', (event) => {
@@ -1486,6 +2213,7 @@
             const league = createLeague(name, (code || name.slice(0, 4)).toUpperCase(), season || '');
             federation.leagues.push(league);
             state.selectedLeague = league.uuid;
+            syncDataFromState();
             renderAll();
             showMessage('Competition created.', 'success');
           });
@@ -1536,6 +2264,7 @@
         state.selectedFederation = state.federations[0]?.uuid || null;
         state.selectedLeague = state.federations[0]?.leagues[0]?.uuid || null;
         setupEventHandlers();
+        syncDataFromState();
         renderAll();
         showMessage('Designer ready — tweak a league and export when finished.', 'info');
       }
