@@ -319,7 +319,24 @@
         tbody.appendChild(tr);
       });
       tbody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange = ()=>{ rows[+inp.dataset.i][inp.dataset.f]=inp.value; };
+        inp.onfocus = ()=>{ inp.dataset.prev = inp.value; };
+        inp.onchange = ()=>{
+          const rowIndex = +inp.dataset.i;
+          const field = inp.dataset.f;
+          const newValue = inp.value;
+          const prevValue = inp.dataset.prev ?? '';
+          rows[rowIndex][field] = newValue;
+          if(field === 'id'){
+            const normalizedPrev = String(prevValue).trim();
+            const normalizedNew = String(newValue).trim();
+            if(normalizedPrev && normalizedPrev !== normalizedNew){
+              const mapping = {};
+              mapping[normalizedPrev] = normalizedNew;
+              applyGlobalIdMapping(mapping);
+            }
+          }
+          inp.dataset.prev = newValue;
+        };
       });
       tbody.querySelectorAll('button[data-del]').forEach(btn=>{
         btn.onclick = ()=>{ rows.splice(+btn.dataset.del,1); renderTable(); };
@@ -345,8 +362,76 @@
     document.getElementById('exportBtn').onclick = ()=>{
       const delim = document.getElementById('delimiter').value==='auto' ? ',' : document.getElementById('delimiter').value;
       const blob = new Blob([rows.map(r=>[r.id,r.level,r.code,r.name,r.parent].join(delim)).join('\n')], {type:'text/plain'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='compobj.txt'; a.click();
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='compobj_modified.txt'; a.click();
     };
+
+    document.getElementById('rebaseBtn').onclick = ()=>{
+      let start = Number(document.getElementById('rebaseStart').value);
+      if(!Number.isFinite(start)) start = 1;
+      const mapping = {};
+      let nextId = start;
+      rows.forEach(row=>{
+        const oldId = String(row.id ?? '').trim();
+        if(!oldId) return;
+        const newId = String(nextId++);
+        if(oldId !== newId){
+          mapping[oldId] = newId;
+        }
+      });
+      if(Object.keys(mapping).length){
+        applyGlobalIdMapping(mapping);
+      } else {
+        document.getElementById('messages').textContent = 'Rebase skipped — IDs already aligned with the requested range.';
+      }
+    };
+
+    function applyGlobalIdMapping(mapping){
+      if(!mapping || typeof mapping !== 'object') return;
+      const entries = Object.entries(mapping)
+        .map(([oldId,newId])=>[String(oldId ?? '').trim(), String(newId ?? '').trim()])
+        .filter(([oldId,newId])=>oldId && oldId !== newId);
+      if(!entries.length) return;
+      const idMap = new Map(entries);
+
+      rows.forEach(row=>{
+        const currentId = String(row.id ?? '').trim();
+        if(idMap.has(currentId)) row.id = idMap.get(currentId);
+        const parentId = String(row.parent ?? '').trim();
+        if(idMap.has(parentId)) row.parent = idMap.get(parentId);
+      });
+
+      advRows.forEach(row=>{
+        const fromId = String(row.fromId ?? '').trim();
+        if(idMap.has(fromId)) row.fromId = idMap.get(fromId);
+        const toId = String(row.toId ?? '').trim();
+        if(idMap.has(toId)) row.toId = idMap.get(toId);
+      });
+
+      taskRows.forEach(row=>{
+        ['trophyLine','arg1','arg2','arg3','arg4'].forEach(field=>{
+          const val = String(row[field] ?? '').trim();
+          if(idMap.has(val)) row[field] = idMap.get(val);
+        });
+      });
+
+      standingsRows.forEach(row=>{
+        const gid = String(row.groupId ?? '').trim();
+        if(idMap.has(gid)) row.groupId = idMap.get(gid);
+      });
+
+      settingRows.forEach(row=>{
+        const sid = String(row.id ?? '').trim();
+        if(idMap.has(sid)) row.id = idMap.get(sid);
+      });
+
+      renderTable();
+      renderAdvTable();
+      renderStandingsTable();
+      renderSettingsTable();
+      renderTaskTable();
+
+      document.getElementById('messages').textContent = 'IDs were changed — all cross-file references updated successfully.';
+    }
 
     document.getElementById('sortByIdBtn').onclick = ()=>{ rows.sort((a,b)=>Number(a.id)-Number(b.id)); renderTable(); };
 
