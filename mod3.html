@@ -158,6 +158,12 @@
       transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px -18px rgba(15, 23, 42, 0.35); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
     .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; }
     .btn-accent { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
     .btn-ghost { background: transparent; border: 1px solid #cbd5f5; color: inherit; }
@@ -389,6 +395,7 @@
   <script>
     (() => {
       const $ = (id) => document.getElementById(id);
+      const stepLabels = ['Overview', 'Structure', 'Stages', 'Review'];
 
       function createWorldRoot() {
         return { uuid: 'world-root', name: 'World', federations: [] };
@@ -400,6 +407,7 @@
         selectedFederation: null,
         selectedNation: null,
         selectedCompetition: null,
+        dataLoaded: false,
         developerMode: false,
         stepIndex: 0,
         leagueSearch: '',
@@ -669,8 +677,15 @@
           playoffTeams: 8,
           gamesPerMatchup: 2,
           includeThirdPlace: false,
-          matchTime: '20:00'
+          matchTime: '20:00',
+          planOverrides: null
         };
+      }
+
+      function invalidatePlanOverrides(config) {
+        if (config && config.planOverrides) {
+          config.planOverrides = null;
+        }
       }
 
       function resetRegistries() {
@@ -765,20 +780,29 @@
       }
 
       function hydrateStateFromFiles() {
-        if (!compRows.length) {
-          return;
-        }
         resetRegistries();
         editorConfigs.clear();
+        state.world = createWorldRoot();
+        state.world.federations = [];
+        state.federations = state.world.federations;
+        state.selectedFederation = null;
+        state.selectedNation = null;
+        state.selectedCompetition = null;
+
+        if (!compRows.length) {
+          state.dataLoaded = false;
+          renderAll();
+          return;
+        }
+
         const worldRow = compRows.find((row) => Number(row.level) <= 1 && (row.code || '').trim().toUpperCase() === 'WORLD');
         if (worldRow) {
           state.world = { uuid: 'world-root', name: worldRow.name || 'World', federations: [] };
           setIdForKey('world:root', worldRow.id);
-        } else {
-          state.world = createWorldRoot();
         }
         state.world.federations = [];
         state.federations = state.world.federations;
+        state.dataLoaded = true;
 
         const rowById = new Map();
         const children = new Map();
@@ -797,9 +821,20 @@
         });
         const standingsMap = new Map();
         standRows.forEach((row) => standingsMap.set(row.groupId, Number(row.teamCount) || 0));
-        const scheduleMap = new Map();
+        const scheduleByStage = new Map();
         schedRows.forEach((row) => {
-          if (!scheduleMap.has(row.stageId)) scheduleMap.set(row.stageId, row);
+          if (!scheduleByStage.has(row.stageId)) scheduleByStage.set(row.stageId, []);
+          scheduleByStage.get(row.stageId).push(row);
+        });
+        const objectiveMap = new Map();
+        objectiveRows.forEach((row) => {
+          if (!objectiveMap.has(row.groupId)) objectiveMap.set(row.groupId, []);
+          objectiveMap.get(row.groupId).push(row);
+        });
+        const tasksByLeague = new Map();
+        taskRows.forEach((row) => {
+          if (!tasksByLeague.has(row.trophyId)) tasksByLeague.set(row.trophyId, []);
+          tasksByLeague.get(row.trophyId).push(row);
         });
 
         const federationNameOverrides = new Map([
@@ -905,8 +940,23 @@
             notes: '',
             order: row.index || 0
           };
+          const leagueSettings = settingsMap.get(row.id);
+          if (leagueSettings) {
+            if (leagueSettings.has('season')) league.season = leagueSettings.get('season');
+            if (leagueSettings.has('notes')) league.notes = leagueSettings.get('notes');
+          }
           setIdForKey(`league:${league.uuid}`, row.id);
-          const config = deriveConfigFromData(league, row, children, settingsMap, standingsMap, scheduleMap);
+          const config = deriveConfigFromData(
+            league,
+            row,
+            children,
+            settingsMap,
+            standingsMap,
+            scheduleByStage,
+            objectiveMap,
+            advRows,
+            tasksByLeague
+          );
           editorConfigs.set(league.uuid, config);
           nation.competitions.push(league);
         });
@@ -934,7 +984,67 @@
         renderAll();
       }
 
-      function deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap) {
+      function summarizeScheduleRows(rows) {
+        if (!rows || !rows.length) return null;
+        return rows.reduce((summary, row, index) => {
+          const next = summary;
+          next.minGames += Number(row.minGames || 0);
+          next.maxGames += Number(row.maxGames || 0);
+          if (index === 0 && row.time) next.time = row.time;
+          return next;
+        }, { minGames: 0, maxGames: 0, time: rows[0]?.time || '' });
+      }
+
+      function mapSettingsEntries(settingsMap) {
+        const entries = [];
+        if (!settingsMap) return entries;
+        settingsMap.forEach((value, key) => {
+          entries.push({ key, value });
+        });
+        return entries;
+      }
+
+      function cloneScheduleRows(rows) {
+        return (rows || []).map((row) => ({
+          stageId: row.stageId,
+          dateId: row.dateId,
+          matchDay: row.matchDay,
+          minGames: row.minGames,
+          maxGames: row.maxGames,
+          time: row.time
+        }));
+      }
+
+      function cloneObjectiveRows(rows) {
+        return (rows || []).map((row) => ({
+          objective: row.objective || '',
+          value: row.value || ''
+        }));
+      }
+
+      function cloneTaskRows(rows) {
+        return (rows || []).map((row) => ({
+          trophyId: row.trophyId,
+          phase: row.phase,
+          command: row.command,
+          target: row.target,
+          ref1: row.ref1,
+          ref2: row.ref2,
+          ref3: row.ref3
+        }));
+      }
+
+      function deriveConfigFromData(
+        league,
+        leagueRow,
+        children,
+        settingsMap,
+        standingsMap,
+        scheduleByStage,
+        objectiveMap,
+        advRows,
+        tasksByLeague
+      ) {
         const config = createDefaultConfig();
         const stageRows = (children.get(leagueRow.id) || [])
           .filter((row) => Number(row.level) === 4 && /^s/i.test(row.code || ''))
@@ -953,13 +1063,27 @@
         const mainGroups = groupsForStage(mainStage);
         const playoffGroups = groupsForStage(playoffStage);
 
+        const overrides = { stages: {}, advancements: [], finalTargetId: null, tasks: [], leagueSettings: mapSettingsEntries(settingsMap.get(leagueRow.id)) };
+
         if (mainStage) {
           const stageKey = `league:${league.uuid}:stage:main`;
           setIdForKey(stageKey, mainStage.id);
           let teamCount = 0;
+          const groupOverrides = [];
           mainGroups.forEach((group, index) => {
             setIdForKey(`${stageKey}:group:${index + 1}`, group.id);
-            teamCount += standingsMap.get(group.id) || Number(group.teamCount) || 0;
+            const teams = standingsMap.get(group.id) || Number(group.teamCount) || 0;
+            teamCount += teams;
+            const objectives = cloneObjectiveRows(objectiveMap.get(group.id) || []);
+            groupOverrides.push({
+              id: group.id,
+              code: group.code,
+              name: group.name,
+              teamCount: teams,
+              objective: objectives[0]?.objective || '',
+              objectiveValue: objectives[0]?.value || '',
+              objectives
+            });
           });
           if (teamCount) config.teamCount = teamCount;
           const groupCount = mainGroups.length || 1;
@@ -972,8 +1096,22 @@
             const gamesPerMatch = Number(stageSettings.get('games_per_matchup'));
             if (gamesPerMatch) config.homeAndAway = gamesPerMatch >= 2;
           }
-          const scheduleRow = scheduleMap.get(mainStage.id);
-          if (scheduleRow?.time) config.matchTime = scheduleRow.time;
+          const scheduleRows = scheduleByStage.get(mainStage.id) || [];
+          const scheduleSummary = summarizeScheduleRows(scheduleRows);
+          if (scheduleSummary?.time) config.matchTime = scheduleSummary.time;
+          overrides.stages.main = {
+            id: mainStage.id,
+            code: mainStage.code,
+            name: mainStage.name,
+            settings: mapSettingsEntries(stageSettings),
+            scheduleRows: cloneScheduleRows(scheduleRows),
+            groups: groupOverrides,
+            entryTargetId: groupOverrides[0]?.id || mainStage.id,
+            finalGroupId: groupOverrides[groupOverrides.length - 1]?.id || mainStage.id,
+            estimatedMinGames: scheduleSummary?.minGames,
+            estimatedMaxGames: scheduleSummary?.maxGames,
+            includeThird: false
+          };
         } else if (playoffGroups.length) {
           const firstGroup = playoffGroups.find((group) => (group.code || '').toUpperCase() !== '3P');
           const teams = firstGroup ? (standingsMap.get(firstGroup.id) || Number(firstGroup.teamCount) || 0) : 0;
@@ -986,6 +1124,7 @@
           setIdForKey(stageKey, playoffStage.id);
           let entrants = 0;
           let roundIndex = 1;
+          const groupOverrides = [];
           playoffGroups.forEach((group) => {
             const code = (group.code || '').toUpperCase();
             if (code === '3P') {
@@ -994,8 +1133,19 @@
             } else {
               setIdForKey(`${stageKey}:round:${roundIndex}`, group.id);
               roundIndex += 1;
-              entrants = Math.max(entrants, standingsMap.get(group.id) || Number(group.teamCount) || 0);
             }
+            const teams = standingsMap.get(group.id) || Number(group.teamCount) || 0;
+            entrants = Math.max(entrants, teams);
+            const objectives = cloneObjectiveRows(objectiveMap.get(group.id) || []);
+            groupOverrides.push({
+              id: group.id,
+              code: group.code,
+              name: group.name,
+              teamCount: teams,
+              objective: objectives[0]?.objective || '',
+              objectiveValue: objectives[0]?.value || '',
+              objectives
+            });
           });
           if (entrants) config.playoffTeams = entrants;
           const stageSettings = settingsMap.get(playoffStage.id);
@@ -1003,13 +1153,47 @@
             const gamesPerMatch = Number(stageSettings.get('games_per_matchup'));
             if (gamesPerMatch) config.gamesPerMatchup = gamesPerMatch;
           }
-          const scheduleRow = scheduleMap.get(playoffStage.id);
-          if (!mainStage && scheduleRow?.time) config.matchTime = scheduleRow.time;
+          const scheduleRows = scheduleByStage.get(playoffStage.id) || [];
+          const scheduleSummary = summarizeScheduleRows(scheduleRows);
+          if (!mainStage && scheduleSummary?.time) config.matchTime = scheduleSummary.time;
+          overrides.stages.playoff = {
+            id: playoffStage.id,
+            code: playoffStage.code,
+            name: playoffStage.name,
+            settings: mapSettingsEntries(stageSettings),
+            scheduleRows: cloneScheduleRows(scheduleRows),
+            groups: groupOverrides,
+            entryTargetId: groupOverrides.find((g) => (g.code || '').toUpperCase() !== '3P')?.id || groupOverrides[0]?.id || playoffStage.id,
+            finalGroupId: groupOverrides.find((g) => (g.code || '').toUpperCase() === 'GFIN' || (g.code || '').toUpperCase() === 'GPO1')?.id
+              || groupOverrides[groupOverrides.length - 1]?.id
+              || playoffStage.id,
+            estimatedMinGames: scheduleSummary?.minGames,
+            estimatedMaxGames: scheduleSummary?.maxGames,
+            includeThird: config.includeThirdPlace || false
+          };
           if (mainStage) config.includePlayoffs = true;
         } else {
           config.includePlayoffs = false;
         }
 
+        const relevantIds = new Set([
+          ...(mainGroups.map((group) => group.id)),
+          ...(playoffGroups.map((group) => group.id)),
+          ...(playoffStage ? [playoffStage.id] : []),
+          ...(mainStage ? [mainStage.id] : [])
+        ]);
+        overrides.advancements = advRows
+          .filter((row) => relevantIds.has(row.fromId) || relevantIds.has(row.toId))
+          .map((row) => ({ fromId: row.fromId, placement: row.placement, toId: row.toId, slot: row.slot }));
+
+        const taskList = cloneTaskRows(tasksByLeague.get(leagueRow.id) || []);
+        overrides.tasks = taskList;
+        const awardTask = taskList.find((row) => (row.command || '').toUpperCase() === 'AWARD_TROPHY');
+        if (awardTask?.target) {
+          overrides.finalTargetId = awardTask.target;
+        }
+
+        config.planOverrides = overrides;
         return config;
       }
 
@@ -1337,82 +1521,6 @@
         return league;
       }
 
-      function createInitialProject() {
-        const uefa = createFederation('UEFA', 'UEFA', 'Europe');
-        const concacaf = createFederation('CONCACAF', 'CONCACAF', 'North & Central America');
-        const afc = createFederation('AFC', 'AFC', 'Asia');
-
-        const europe = createNation('Europe', 'Nation_Europe');
-        const northAmerica = createNation('North America', 'Nation_NA');
-        const asia = createNation('Asia', 'Nation_AS');
-
-        uefa.nations.push(europe);
-        concacaf.nations.push(northAmerica);
-        afc.nations.push(asia);
-
-        const ucl = createCompetition('UEFA Champions League', 'UCL', '2024/25');
-        editorConfigs.set(ucl.uuid, {
-          structureType: 'groups',
-          teamCount: 32,
-          groupCount: 8,
-          rounds: 2,
-          homeAndAway: true,
-          includePlayoffs: true,
-          playoffTeams: 16,
-          gamesPerMatchup: 2,
-          includeThirdPlace: false,
-          matchTime: '21:00'
-        });
-
-        const europa = createCompetition('UEFA Europa League', 'UEL', '2024/25');
-        editorConfigs.set(europa.uuid, {
-          structureType: 'groups',
-          teamCount: 48,
-          groupCount: 12,
-          rounds: 2,
-          homeAndAway: true,
-          includePlayoffs: true,
-          playoffTeams: 32,
-          gamesPerMatchup: 2,
-          includeThirdPlace: false,
-          matchTime: '21:00'
-        });
-
-        const mls = createCompetition('Major League Soccer', 'MLS', '2024');
-        editorConfigs.set(mls.uuid, {
-          structureType: 'league',
-          teamCount: 29,
-          groupCount: 1,
-          rounds: 1,
-          homeAndAway: false,
-          includePlayoffs: true,
-          playoffTeams: 16,
-          gamesPerMatchup: 2,
-          includeThirdPlace: false,
-          matchTime: '19:30'
-        });
-
-        const acl = createCompetition('AFC Champions League', 'ACL', '2024/25');
-        editorConfigs.set(acl.uuid, {
-          structureType: 'groups',
-          teamCount: 40,
-          groupCount: 10,
-          rounds: 2,
-          homeAndAway: true,
-          includePlayoffs: true,
-          playoffTeams: 16,
-          gamesPerMatchup: 2,
-          includeThirdPlace: true,
-          matchTime: '20:00'
-        });
-
-        europe.competitions.push(ucl, europa);
-        northAmerica.competitions.push(mls);
-        asia.competitions.push(acl);
-
-        return [uefa, concacaf, afc];
-      }
-
       function getSelectedFederation() {
         return state.federations.find((f) => f.uuid === state.selectedFederation) || null;
       }
@@ -1457,6 +1565,13 @@
           <div class="selector-sub">${worldCount} federation${worldCount === 1 ? '' : 's'}</div>
         `;
         container.appendChild(worldCard);
+        if (!state.dataLoaded) {
+          const notice = document.createElement('div');
+          notice.className = 'callout';
+          notice.textContent = 'Import competition data to populate federations.';
+          container.appendChild(notice);
+          return;
+        }
         state.federations.forEach((fed) => {
           const btn = document.createElement('button');
           btn.type = 'button';
@@ -1507,6 +1622,25 @@
         if (!nationContainer || !competitionContainer || !summary) return;
         nationContainer.innerHTML = '';
         competitionContainer.innerHTML = '';
+        const searchInput = $('leagueSearch');
+        if (searchInput) {
+          searchInput.disabled = !state.dataLoaded;
+          searchInput.classList.toggle('text-slate-500', !state.dataLoaded);
+        }
+        const addLeagueButton = $('addLeagueBtn');
+        if (addLeagueButton) {
+          addLeagueButton.disabled = !state.dataLoaded;
+          addLeagueButton.classList.toggle('text-slate-500', !state.dataLoaded);
+        }
+        if (!state.dataLoaded) {
+          summary.textContent = 'Import competition data to browse nations and competitions.';
+          const notice = document.createElement('div');
+          notice.className = 'callout';
+          notice.textContent = 'No data loaded. Use the Import tools to load compobj, settings, and related files.';
+          nationContainer.appendChild(notice.cloneNode(true));
+          competitionContainer.appendChild(notice);
+          return;
+        }
         const federation = getSelectedFederation();
         if (!federation) {
           summary.textContent = 'Select a federation to browse its nations and competitions.';
@@ -1593,11 +1727,35 @@
         }
       }
 
+      function updateStepControls(hasData, hasCompetition) {
+        const prevStepBtn = $('prevStepBtn');
+        const nextStepBtn = $('nextStepBtn');
+        const maxIndex = stepLabels.length - 1;
+        const enabled = hasData && hasCompetition;
+        if (state.stepIndex > maxIndex) state.stepIndex = maxIndex;
+        if (state.stepIndex < 0) state.stepIndex = 0;
+        if (prevStepBtn) {
+          prevStepBtn.disabled = !enabled || state.stepIndex <= 0;
+        }
+        if (nextStepBtn) {
+          nextStepBtn.disabled = !enabled || state.stepIndex >= maxIndex;
+        }
+      }
+
       function renderEditor() {
         const editor = $('editorContent');
         const summary = $('editorSummary');
         if (!editor || !summary) return;
         editor.innerHTML = '';
+        if (!state.dataLoaded) {
+          summary.textContent = 'Import competition data to unlock the guided editor.';
+          const placeholder = document.createElement('div');
+          placeholder.className = 'callout';
+          placeholder.textContent = 'Upload competition files to begin editing stages and structures.';
+          editor.appendChild(placeholder);
+          updateStepControls(false, false);
+          return;
+        }
         const federation = getSelectedFederation();
         const nation = getSelectedNation();
         const league = getSelectedCompetition();
@@ -1607,10 +1765,12 @@
           placeholder.className = 'callout';
           placeholder.textContent = 'Select a competition card from the League Browser to begin editing its structure.';
           editor.appendChild(placeholder);
+          updateStepControls(true, false);
           return;
         }
         const config = ensureConfig(league);
         summary.textContent = `${federation.name} • ${nation.name} • ${league.name}`;
+        updateStepControls(true, true);
         renderStepper(editor);
         renderStepContent(editor, league, config, federation, nation);
       }
@@ -1618,8 +1778,7 @@
       function renderStepper(editor) {
         const stepper = document.createElement('div');
         stepper.className = 'stepper';
-        const steps = ['Overview', 'Structure', 'Stages', 'Review'];
-        steps.forEach((label, index) => {
+        stepLabels.forEach((label, index) => {
           const pill = document.createElement('button');
           pill.type = 'button';
           pill.className = 'step-pill' + (state.stepIndex === index ? ' step-pill-active' : '');
@@ -1756,6 +1915,7 @@
           button.className = 'pill-button' + (config.structureType === type.key ? ' pill-button-active' : '');
           button.innerHTML = `${type.icon} ${type.label}`;
           button.onclick = () => {
+            invalidatePlanOverrides(config);
             config.structureType = type.key;
             if (type.key === 'league') config.groupCount = 1;
             syncDataFromState();
@@ -1769,16 +1929,19 @@
         const sliders = document.createElement('div');
         sliders.className = 'flex flex-col gap-4';
         sliders.appendChild(createRange('Teams', 2, 64, config.teamCount, 1, (value) => {
+          invalidatePlanOverrides(config);
           config.teamCount = value;
           renderCompetitions();
         }));
 
         const groupDisabled = config.structureType === 'league' || config.structureType === 'playoffs';
         sliders.appendChild(createRange('Groups', 1, 16, config.groupCount, 1, (value) => {
+          invalidatePlanOverrides(config);
           config.groupCount = value;
         }, groupDisabled, groupDisabled ? 'Group count is fixed for this structure.' : 'Distribute teams evenly across groups.'));
 
         sliders.appendChild(createRange('Rounds', 1, 6, config.rounds, 1, (value) => {
+          invalidatePlanOverrides(config);
           config.rounds = value;
         }, false, 'Number of round-robin cycles.'));
 
@@ -1787,9 +1950,11 @@
         const toggles = document.createElement('div');
         toggles.className = 'flex flex-col gap-3';
         toggles.appendChild(createToggle('Home & Away fixtures', config.homeAndAway, (checked) => {
+          invalidatePlanOverrides(config);
           config.homeAndAway = checked;
         }));
         toggles.appendChild(createToggle('Include playoff stage', config.includePlayoffs, (checked) => {
+          invalidatePlanOverrides(config);
           config.includePlayoffs = checked;
           renderEditor();
         }, 'Generates a knockout bracket after the main stage.'));
@@ -1867,15 +2032,18 @@
 
         if (config.includePlayoffs || config.structureType === 'playoffs') {
           container.appendChild(createRange('Playoff entrants', 2, Math.max(2, config.teamCount), config.playoffTeams, 2, (value) => {
+            invalidatePlanOverrides(config);
             config.playoffTeams = value;
             renderEditor();
           }, false, 'Number of teams advancing to the knockout bracket.'));
 
           container.appendChild(createRange('Games per matchup', 1, 3, config.gamesPerMatchup, 1, (value) => {
+            invalidatePlanOverrides(config);
             config.gamesPerMatchup = value;
           }, false, 'Best-of series length for playoff rounds.'));
 
           container.appendChild(createToggle('Third-place match', config.includeThirdPlace, (checked) => {
+            invalidatePlanOverrides(config);
             config.includeThirdPlace = checked;
             renderEditor();
           }));
@@ -1991,6 +2159,75 @@
         return container;
       }
 
+      function applyStageOverrides(stage, override) {
+        if (!override) return;
+        if (override.name) stage.name = override.name;
+        if (override.code) stage.code = override.code;
+        if (override.entryTargetId) stage.entryTargetId = override.entryTargetId;
+        if (override.finalGroupId) stage.finalGroupId = override.finalGroupId;
+        if (override.includeThird !== undefined && override.includeThird !== null) {
+          stage.includeThird = Boolean(override.includeThird);
+        }
+        if (override.estimatedMinGames !== undefined && override.estimatedMinGames !== null) {
+          stage.estimatedMinGames = Number(override.estimatedMinGames);
+        }
+        if (override.estimatedMaxGames !== undefined && override.estimatedMaxGames !== null) {
+          stage.estimatedMaxGames = Number(override.estimatedMaxGames);
+        }
+        if (override.scheduleRows?.length) {
+          stage.scheduleRows = override.scheduleRows.map((row) => ({
+            stageId: row.stageId,
+            dateId: row.dateId,
+            matchDay: row.matchDay,
+            minGames: row.minGames,
+            maxGames: row.maxGames,
+            time: row.time
+          }));
+        }
+        const groupsById = new Map(stage.groups.map((group) => [group.id, group]));
+        override.groups?.forEach((groupOverride, index) => {
+          const group = groupsById.get(groupOverride.id) || stage.groups[index];
+          if (!group) return;
+          if (groupOverride.name) group.name = groupOverride.name;
+          if (groupOverride.code) group.code = groupOverride.code;
+          if (groupOverride.teamCount !== undefined && groupOverride.teamCount !== null && groupOverride.teamCount !== '') {
+            group.teamCount = Number(groupOverride.teamCount);
+          }
+          if (groupOverride.objective) group.objective = groupOverride.objective;
+          if (groupOverride.objectiveValue) group.objectiveValue = groupOverride.objectiveValue;
+          if (groupOverride.objectives?.length) {
+            group.objectives = groupOverride.objectives.map((obj) => ({
+              objective: obj.objective || '',
+              value: obj.value || ''
+            }));
+            const primary = group.objectives[0];
+            if (primary) {
+              group.objective = primary.objective || group.objective;
+              group.objectiveValue = primary.value || group.objectiveValue;
+            }
+          }
+        });
+      }
+
+      function applyPlanOverrides(plan, overrides) {
+        if (!overrides) return plan;
+        plan.stages.forEach((stage) => {
+          applyStageOverrides(stage, overrides.stages?.[stage.key]);
+        });
+        if (overrides.advancements?.length) {
+          plan.advancements = overrides.advancements.map((adv) => ({
+            fromId: adv.fromId,
+            placement: adv.placement,
+            toId: adv.toId,
+            slot: adv.slot
+          }));
+        }
+        if (overrides.finalTargetId) {
+          plan.finalTargetId = overrides.finalTargetId;
+        }
+        return plan;
+      }
+
       function createCompetitionPlan(league, config) {
         const plan = { stages: [], advancements: [], finalTargetId: null };
         const structure = config.structureType;
@@ -2000,7 +2237,7 @@
           const playoffStage = buildPlayoffStage('playoff', league, config, teamCount);
           plan.stages.push(playoffStage);
           plan.finalTargetId = playoffStage.finalGroupId;
-          return plan;
+          return applyPlanOverrides(plan, config.planOverrides);
         }
 
         const groupStage = buildGroupStage('main', league, config, teamCount);
@@ -2016,7 +2253,7 @@
           plan.finalTargetId = groupStage.finalGroupId;
         }
 
-        return plan;
+        return applyPlanOverrides(plan, config.planOverrides);
       }
 
       function buildGroupStage(key, league, config, teamCount) {
@@ -2033,13 +2270,16 @@
           const groupKey = `${stageKey}:group:${i + 1}`;
           const groupId = getIdForKey(groupKey);
           const groupCode = groupCount === 1 ? 'G1' : `G${i + 1}`;
+          const defaultObjective = config.includePlayoffs ? 'ReachPlayoffs' : 'WinGroup';
+          const defaultValue = config.includePlayoffs ? String(Math.max(1, Math.floor((config.playoffTeams || 1) / groupCount))) : '1';
           groups.push({
             id: groupId,
             name: groupCount === 1 ? `${league.name} Table` : `Group ${String.fromCharCode(65 + i)}`,
             code: groupCode,
             teamCount: teamsInGroup,
-            objective: config.includePlayoffs ? 'ReachPlayoffs' : 'WinGroup',
-            objectiveValue: config.includePlayoffs ? String(Math.max(1, Math.floor((config.playoffTeams || 1) / groupCount))) : '1'
+            objective: defaultObjective,
+            objectiveValue: defaultValue,
+            objectives: [{ objective: defaultObjective, value: defaultValue }]
           });
         }
         const matchesPerGroup = groups.reduce((sum, group) => sum + ((group.teamCount * (group.teamCount - 1)) / 2) * homeAwayMultiplier, 0);
@@ -2088,7 +2328,8 @@
             code: roundCode,
             teamCount: teamsInRound,
             objective: r === rounds - 1 ? 'WinFinal' : 'Advance',
-            objectiveValue: '1'
+            objectiveValue: '1',
+            objectives: [{ objective: r === rounds - 1 ? 'WinFinal' : 'Advance', value: '1' }]
           });
         }
         if (config.includeThirdPlace) {
@@ -2100,7 +2341,8 @@
             code: 'G3P',
             teamCount: 2,
             objective: 'WinMatch',
-            objectiveValue: '1'
+            objectiveValue: '1',
+            objectives: [{ objective: 'WinMatch', value: '1' }]
           });
           totalMatches += config.gamesPerMatchup || 1;
         }
@@ -2187,23 +2429,46 @@
           standRows: [],
           schedRows: [],
           objectiveRows: [],
-          weatherRows: []
+          weatherRows: weatherRows.map((row) => ({
+            fedId: row.fedId,
+            dayId: row.dayId,
+            weatherType: row.weatherType,
+            param1: row.param1,
+            param2: row.param2,
+            param3: row.param3,
+            param4: row.param4,
+            start: row.start,
+            end: row.end
+          }))
         };
+
+        const weatherByFed = new Map();
+        context.weatherRows.forEach((row) => {
+          if (!weatherByFed.has(row.fedId)) weatherByFed.set(row.fedId, []);
+          weatherByFed.get(row.fedId).push(row);
+        });
 
         state.federations.forEach((fed) => {
           const fedId = getIdForKey(`fed:${fed.uuid}`);
           context.compRows.push({ id: fedId, level: '1', code: fed.code || '', name: fed.name || 'Federation', parent: '0' });
-          context.weatherRows.push({
-            fedId,
-            dayId: '1',
-            weatherType: 'Clear',
-            param1: '20',
-            param2: '50',
-            param3: '',
-            param4: '',
-            start: '1',
-            end: '365'
-          });
+          if (!weatherByFed.has(fedId) || !weatherByFed.get(fedId).length) {
+            for (let month = 1; month <= 12; month += 1) {
+              const weatherRow = {
+                fedId,
+                dayId: String(month),
+                weatherType: '80',
+                param1: '0',
+                param2: '0',
+                param3: '0',
+                param4: '20',
+                start: '1600',
+                end: '1900'
+              };
+              context.weatherRows.push(weatherRow);
+              if (!weatherByFed.has(fedId)) weatherByFed.set(fedId, []);
+              weatherByFed.get(fedId).push(weatherRow);
+            }
+          }
 
           fed.nations.forEach((nation) => {
             const nationId = getIdForKey(`nation:${nation.uuid}`);
@@ -2213,28 +2478,74 @@
               const leagueId = getIdForKey(`league:${league.uuid}`);
               const config = ensureConfig(league);
               context.compRows.push({ id: leagueId, level: '3', code: league.code || '', name: league.name || 'Competition', parent: nationId });
-              context.setRows.push({ id: leagueId, settingKey: 'season', value: league.season || '' });
-              context.setRows.push({ id: leagueId, settingKey: 'structure_type', value: config.structureType });
-              context.setRows.push({ id: leagueId, settingKey: 'team_count', value: String(config.teamCount) });
+
+              const leagueSettings = new Map();
+              (config.planOverrides?.leagueSettings || []).forEach((entry) => {
+                leagueSettings.set(entry.key, entry.value);
+              });
+              leagueSettings.set('season', league.season || '');
+              leagueSettings.set('structure_type', config.structureType);
+              leagueSettings.set('team_count', String(config.teamCount));
+              if (config.structureType !== 'league') {
+                leagueSettings.set('group_count', String(config.groupCount));
+              }
+              leagueSettings.set('include_playoffs', config.includePlayoffs ? 'true' : 'false');
+              leagueSettings.forEach((value, key) => {
+                context.setRows.push({ id: leagueId, settingKey: key, value: String(value ?? '') });
+              });
 
               const plan = createCompetitionPlan(league, config);
               let stageIndex = 1;
               plan.stages.forEach((stage) => {
                 context.compRows.push({ id: stage.id, level: '4', code: stage.code, name: stage.name, parent: leagueId });
-                context.setRows.push({ id: stage.id, settingKey: 'rounds', value: String(stage.rounds) });
-                context.setRows.push({ id: stage.id, settingKey: 'games_per_matchup', value: String(stage.gamesPerMatchup) });
-                context.schedRows.push({
-                  stageId: stage.id,
-                  dateId: `AUTO-${stageIndex}`,
-                  matchDay: '1',
-                  minGames: String(stage.estimatedMinGames),
-                  maxGames: String(stage.estimatedMaxGames),
-                  time: config.matchTime || '20:00'
+                const stageSettings = new Map();
+                (config.planOverrides?.stages?.[stage.key]?.settings || []).forEach((entry) => {
+                  stageSettings.set(entry.key, entry.value);
                 });
-                stage.groups.forEach((group, groupIndex) => {
+                if (stage.key === 'main') {
+                  stageSettings.set('rounds', String(config.rounds));
+                  stageSettings.set('games_per_matchup', String(config.homeAndAway ? 2 : 1));
+                } else {
+                  stageSettings.set('games_per_matchup', String(config.gamesPerMatchup || 1));
+                }
+                stageSettings.forEach((value, key) => {
+                  context.setRows.push({ id: stage.id, settingKey: key, value: String(value ?? '') });
+                });
+
+                const scheduleRows = stage.scheduleRows && stage.scheduleRows.length
+                  ? stage.scheduleRows
+                  : [{
+                      stageId: stage.id,
+                      dateId: `AUTO-${stageIndex}`,
+                      matchDay: '1',
+                      minGames: String(stage.estimatedMinGames),
+                      maxGames: String(stage.estimatedMaxGames),
+                      time: config.matchTime || '20:00'
+                    }];
+                scheduleRows.forEach((row, idx) => {
+                  context.schedRows.push({
+                    stageId: stage.id,
+                    dateId: row.dateId || `AUTO-${stageIndex}${idx ? `-${idx}` : ''}`,
+                    matchDay: row.matchDay || '1',
+                    minGames: String(row.minGames ?? stage.estimatedMinGames ?? ''),
+                    maxGames: String(row.maxGames ?? stage.estimatedMaxGames ?? ''),
+                    time: row.time || config.matchTime || '20:00'
+                  });
+                });
+
+                stage.groups.forEach((group) => {
                   context.compRows.push({ id: group.id, level: '5', code: group.code, name: group.name, parent: stage.id });
                   context.standRows.push({ groupId: group.id, teamCount: String(group.teamCount) });
-                  context.objectiveRows.push({ groupId: group.id, objective: group.objective, value: group.objectiveValue });
+                  const objectives = group.objectives && group.objectives.length
+                    ? group.objectives
+                    : [{ objective: group.objective, value: group.objectiveValue }];
+                  objectives.forEach((objective) => {
+                    context.objectiveRows.push({
+                      groupId: group.id,
+                      objective: objective.objective || '',
+                      value: objective.value || ''
+                    });
+                  });
                 });
                 stageIndex += 1;
               });
@@ -2242,7 +2553,45 @@
               plan.advancements.forEach((adv) => {
                 context.advRows.push({ fromId: adv.fromId, placement: adv.placement, toId: adv.toId, slot: adv.slot });
               });
-              context.taskRows.push({ trophyId: leagueId, phase: 'FINALE', command: 'AWARD_TROPHY', target: plan.finalTargetId, ref1: '', ref2: '', ref3: '' });
+
+              const tasks = (config.planOverrides?.tasks || []).map((row) => ({
+                trophyId: row.trophyId,
+                phase: row.phase,
+                command: row.command,
+                target: row.target,
+                ref1: row.ref1,
+                ref2: row.ref2,
+                ref3: row.ref3
+              }));
+              const trophyIndex = tasks.findIndex((row) => (row.command || '').toUpperCase() === 'AWARD_TROPHY');
+              if (trophyIndex >= 0) {
+                tasks[trophyIndex] = {
+                  ...tasks[trophyIndex],
+                  trophyId: leagueId,
+                  target: plan.finalTargetId || leagueId
+                };
+              } else {
+                tasks.push({
+                  trophyId: leagueId,
+                  phase: 'FINALE',
+                  command: 'AWARD_TROPHY',
+                  target: plan.finalTargetId || leagueId,
+                  ref1: '',
+                  ref2: '',
+                  ref3: ''
+                });
+              }
+              tasks.forEach((row) => {
+                context.taskRows.push({
+                  trophyId: String(row.trophyId || leagueId),
+                  phase: String(row.phase || ''),
+                  command: String(row.command || ''),
+                  target: String(row.target || ''),
+                  ref1: String(row.ref1 || ''),
+                  ref2: String(row.ref2 || ''),
+                  ref3: String(row.ref3 || '')
+                });
+              });
             });
           });
         });
@@ -2561,6 +2910,10 @@
         const addLeagueBtn = $('addLeagueBtn');
         if (addLeagueBtn) {
           addLeagueBtn.addEventListener('click', () => {
+            if (!state.dataLoaded) {
+              showMessage('Import competition data before adding new competitions.', 'info');
+              return;
+            }
             const federation = getSelectedFederation();
             const nation = getSelectedNation();
             if (!federation) {
@@ -2618,7 +2971,8 @@
         }
         if (nextStepBtn) {
           nextStepBtn.addEventListener('click', () => {
-            state.stepIndex = Math.min(3, state.stepIndex + 1);
+            const maxIndex = stepLabels.length - 1;
+            state.stepIndex = Math.min(maxIndex, state.stepIndex + 1);
             renderEditor();
           });
         }
@@ -2627,16 +2981,13 @@
       function init() {
         state.world = createWorldRoot();
         state.federations = state.world.federations;
-        const seedFederations = createInitialProject();
-        seedFederations.forEach((fed) => state.federations.push(fed));
-        state.selectedFederation = state.federations[0]?.uuid || null;
-        const firstNation = state.federations[0]?.nations[0] || null;
-        state.selectedNation = firstNation?.uuid || null;
-        state.selectedCompetition = firstNation?.competitions[0]?.uuid || null;
+        state.selectedFederation = null;
+        state.selectedNation = null;
+        state.selectedCompetition = null;
+        state.dataLoaded = false;
         setupEventHandlers();
-        syncDataFromState();
         renderAll();
-        showMessage('Designer ready — tweak a league and export when finished.', 'info');
+        showMessage('Import competition data to begin.', 'info');
       }
 
       init();
