@@ -341,7 +341,14 @@
             <label for="leagueSearch" class="text-sm font-semibold">Search</label>
             <input id="leagueSearch" type="search" placeholder="Search competitions by name or code" />
           </div>
-          <div id="leagueList" class="selector-grid"></div>
+          <div class="field">
+            <h3 class="text-sm font-semibold text-slate-600 mb-2">Nations</h3>
+            <div id="nationList" class="selector-grid"></div>
+          </div>
+          <div class="field">
+            <h3 class="text-sm font-semibold text-slate-600 mb-2">Competitions</h3>
+            <div id="leagueList" class="selector-grid"></div>
+          </div>
         </div>
       </article>
 
@@ -391,6 +398,7 @@
         world: createWorldRoot(),
         federations: [],
         selectedFederation: null,
+        selectedNation: null,
         selectedCompetition: null,
         developerMode: false,
         stepIndex: 0,
@@ -762,13 +770,14 @@
         }
         resetRegistries();
         editorConfigs.clear();
-        const worldRow = compRows.find((row) => Number(row.level) === 1 && (row.code || '').trim().toUpperCase() === 'WORLD');
+        const worldRow = compRows.find((row) => Number(row.level) <= 1 && (row.code || '').trim().toUpperCase() === 'WORLD');
         if (worldRow) {
           state.world = { uuid: 'world-root', name: worldRow.name || 'World', federations: [] };
           setIdForKey('world:root', worldRow.id);
         } else {
           state.world = createWorldRoot();
         }
+        state.world.federations = [];
         state.federations = state.world.federations;
 
         const rowById = new Map();
@@ -801,50 +810,44 @@
           ['CNBL', 'CONMEBOL']
         ]);
 
-        const isFederationRow = (row) => {
-          if (!row) return false;
-          const level = Number(row.level);
-          if (level === 2) {
-            const text = `${row.code || ''} ${row.name || ''}`;
-            return /nationname_|continentname_/i.test(text);
-          }
-          return false;
-        };
-
-        const isDisplayFederationRow = (row) => {
-          if (!row) return false;
-          const level = Number(row.level);
-          if (level <= 1) {
-            const code = (row.code || '').trim().toUpperCase();
-            return code !== 'WORLD';
-          }
-          return isFederationRow(row);
-        };
+        const topLevelParents = new Set(['', '0', '-1']);
+        if (worldRow) topLevelParents.add(String(worldRow.id));
 
         const getFederationDisplayName = (row) => {
           if (!row) return 'Federation';
           const code = (row.code || '').trim();
           if (federationNameOverrides.has(code)) return federationNameOverrides.get(code);
           const name = (row.name || '').trim();
-          if (!name || /^(nationname_|continentname_)/i.test(name)) {
-            return code || `Federation ${row.id}`;
-          }
-          return name;
+          return name || code || `Federation ${row.id}`;
+        };
+
+        const getNationDisplayName = (row) => {
+          if (!row) return 'Nation';
+          const name = (row.name || '').trim();
+          if (name) return name;
+          const code = (row.code || '').trim();
+          return code || `Nation ${row.id}`;
         };
 
         const federationMap = new Map();
+        const nationMap = new Map();
+
         const ensureFederation = (row) => {
-          if (!isDisplayFederationRow(row)) return null;
+          if (!row) return null;
           if (federationMap.has(row.id)) return federationMap.get(row.id);
+          const level = Number(row.level);
+          const parent = String(row.parent ?? '').trim();
+          const code = (row.code || '').trim().toUpperCase();
+          if (level !== 1 || code === 'WORLD' || !topLevelParents.has(parent)) return null;
           const federation = {
             uuid: createUuid('fed'),
             id: row.id,
             name: getFederationDisplayName(row),
             code: row.code,
             region: '',
-            level: Number(row.level) || 0,
+            level,
             order: row.index || 0,
-            competitions: []
+            nations: []
           };
           setIdForKey(`fed:${federation.uuid}`, row.id);
           federationMap.set(row.id, federation);
@@ -852,20 +855,47 @@
           return federation;
         };
 
-        const candidateFederations = compRows
-          .filter((row) => isDisplayFederationRow(row))
-          .sort((a, b) => (a.index || 0) - (b.index || 0));
-        candidateFederations.forEach((row) => ensureFederation(row));
+        const ensureNation = (row) => {
+          if (!row) return null;
+          if (nationMap.has(row.id)) return nationMap.get(row.id);
+          const level = Number(row.level);
+          if (level !== 2) return null;
+          const parentRow = rowById.get(row.parent);
+          const federation = ensureFederation(parentRow);
+          if (!federation) return null;
+          const nation = {
+            uuid: createUuid('nation'),
+            id: row.id,
+            name: getNationDisplayName(row),
+            code: row.code,
+            order: row.index || 0,
+            competitions: []
+          };
+          setIdForKey(`nation:${nation.uuid}`, row.id);
+          nationMap.set(row.id, nation);
+          federation.nations.push(nation);
+          return nation;
+        };
 
-        const isCompetitionRow = (row) => Number(row.level) === 3 && /^c/i.test(row.code || '');
+        const federationRows = compRows
+          .filter((row) => ensureFederation(row))
+          .sort((a, b) => (a.index || 0) - (b.index || 0));
+        // ensureFederation already added them; this loop is to guarantee ordering
+        federationRows.forEach((row) => ensureFederation(row));
+
+        const nationRows = compRows
+          .filter((row) => Number(row.level) === 2)
+          .sort((a, b) => (a.index || 0) - (b.index || 0));
+        nationRows.forEach((row) => ensureNation(row));
+
         const competitionRows = compRows
-          .filter((row) => isCompetitionRow(row))
+          .filter((row) => Number(row.level) === 3 && /^c/i.test(row.code || ''))
           .sort((a, b) => (a.index || 0) - (b.index || 0));
 
         competitionRows.forEach((row) => {
           const parentRow = rowById.get(row.parent);
-          const federation = ensureFederation(parentRow);
-          if (!federation) return;
+          const nation = ensureNation(parentRow);
+          if (!nation) return;
           const league = {
             uuid: createUuid('league'),
             id: row.id,
@@ -878,20 +908,28 @@
           setIdForKey(`league:${league.uuid}`, row.id);
           const config = deriveConfigFromData(league, row, children, settingsMap, standingsMap, scheduleMap);
           editorConfigs.set(league.uuid, config);
-          federation.competitions.push(league);
+          nation.competitions.push(league);
         });
 
-        state.federations = state.federations.filter((fed) => fed.competitions.length);
-        state.world.federations = state.federations;
+        state.world.federations.forEach((fed) => {
+          fed.nations.forEach((nation) => {
+            nation.competitions.sort((a, b) => (a.order || 0) - (b.order || 0));
+          });
+          fed.nations.sort((a, b) => (a.order || 0) - (b.order || 0));
+        });
+
+        state.world.federations.sort((a, b) => (a.order || 0) - (b.order || 0));
         state.federations = state.world.federations;
 
-        state.federations.forEach((fed) => {
-          fed.competitions.sort((a, b) => (a.order || 0) - (b.order || 0));
-        });
-        state.federations.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-        state.selectedFederation = state.federations[0]?.uuid || null;
-        state.selectedCompetition = state.federations[0]?.competitions[0]?.uuid || null;
+        const firstFederation = state.federations.find((fed) => fed.nations.some((nation) => nation.competitions.length))
+          || state.federations[0]
+          || null;
+        const firstNation = firstFederation
+          ? firstFederation.nations.find((nation) => nation.competitions.length) || firstFederation.nations[0] || null
+          : null;
+        state.selectedFederation = firstFederation?.uuid || null;
+        state.selectedNation = firstNation?.uuid || null;
+        state.selectedCompetition = firstNation?.competitions[0]?.uuid || null;
         state.stepIndex = 0;
         renderAll();
       }
@@ -899,22 +937,16 @@
       function deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap) {
         const config = createDefaultConfig();
         const stageRows = (children.get(leagueRow.id) || [])
-          .filter((row) => {
-            const level = Number(row.level);
-            return level === 4 || level === 2;
-          })
+          .filter((row) => Number(row.level) === 4 && /^s/i.test(row.code || ''))
           .sort((a, b) => (a.index || 0) - (b.index || 0));
-        const isPlayoffStage = (row) => (row.code || '').toUpperCase() === 'PO' || /(playoff|knockout)/i.test(row.name || '');
+        const isPlayoffStage = (row) => /^s.*po/i.test(row.code || '') || /(playoff|knockout)/i.test(row.name || '');
         const playoffStage = stageRows.find((row) => isPlayoffStage(row)) || null;
         const mainStage = stageRows.find((row) => !isPlayoffStage(row)) || (playoffStage ? null : stageRows[0] || null);
 
         const groupsForStage = (stage) => (
           stage
             ? (children.get(stage.id) || [])
-                .filter((row) => {
-                  const level = Number(row.level);
-                  return level === 5 || level === 3;
-                })
+                .filter((row) => Number(row.level) === 5 && /^g/i.test(row.code || ''))
                 .sort((a, b) => (a.index || 0) - (b.index || 0))
             : []
         );
@@ -1206,10 +1238,21 @@
           name,
           code,
           region,
-          competitions: []
+          nations: []
         };
         getIdForKey(`fed:${federation.uuid}`);
         return federation;
+      }
+
+      function createNation(name, code) {
+        const nation = {
+          uuid: createUuid('nation'),
+          name,
+          code,
+          competitions: []
+        };
+        getIdForKey(`nation:${nation.uuid}`);
+        return nation;
       }
 
       function createCompetition(name, code, season) {
@@ -1229,6 +1272,14 @@
         const uefa = createFederation('UEFA', 'UEFA', 'Europe');
         const concacaf = createFederation('CONCACAF', 'CONCACAF', 'North & Central America');
         const afc = createFederation('AFC', 'AFC', 'Asia');
+
+        const europe = createNation('Europe', 'Nation_Europe');
+        const northAmerica = createNation('North America', 'Nation_NA');
+        const asia = createNation('Asia', 'Nation_AS');
+
+        uefa.nations.push(europe);
+        concacaf.nations.push(northAmerica);
+        afc.nations.push(asia);
 
         const ucl = createCompetition('UEFA Champions League', 'UCL', '2024/25');
         editorConfigs.set(ucl.uuid, {
@@ -1286,9 +1337,9 @@
           matchTime: '20:00'
         });
 
-        uefa.competitions.push(ucl, europa);
-        concacaf.competitions.push(mls);
-        afc.competitions.push(acl);
+        europe.competitions.push(ucl, europa);
+        northAmerica.competitions.push(mls);
+        asia.competitions.push(acl);
 
         return [uefa, concacaf, afc];
       }
@@ -1297,10 +1348,16 @@
         return state.federations.find((f) => f.uuid === state.selectedFederation) || null;
       }
 
-      function getSelectedCompetition() {
+      function getSelectedNation() {
         const federation = getSelectedFederation();
         if (!federation) return null;
-        return federation.competitions.find((l) => l.uuid === state.selectedCompetition) || null;
+        return federation.nations.find((nation) => nation.uuid === state.selectedNation) || null;
+      }
+
+      function getSelectedCompetition() {
+        const nation = getSelectedNation();
+        if (!nation) return null;
+        return nation.competitions.find((league) => league.uuid === state.selectedCompetition) || null;
       }
 
       function showMessage(text, tone = 'info') {
@@ -1336,12 +1393,13 @@
           btn.type = 'button';
           btn.dataset.fedId = fed.uuid;
           btn.className = 'selector-card' + (state.selectedFederation === fed.uuid ? ' selector-card-active' : '');
-          const leagueCount = fed.competitions.length;
+          const nationCount = fed.nations.length;
+          const leagueCount = fed.nations.reduce((sum, nation) => sum + nation.competitions.length, 0);
           const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`fed:${fed.uuid}`)}</div>` : '';
           btn.innerHTML = `
             <div class="selector-icon">🌍</div>
             <div class="selector-title">${fed.name || 'Untitled Federation'}</div>
-            <div class="selector-sub">${fed.code || 'No code'} • ${leagueCount} competition${leagueCount === 1 ? '' : 's'}</div>
+            <div class="selector-sub">${fed.code || 'No code'} • ${nationCount} nation${nationCount === 1 ? '' : 's'} • ${leagueCount} competition${leagueCount === 1 ? '' : 's'}</div>
             ${fed.region ? `<div class="selector-sub">${fed.region}</div>` : ''}
             ${idInfo}
           `;
@@ -1358,8 +1416,13 @@
           const code = prompt('Federation code', name.slice(0, 4).toUpperCase());
           const region = prompt('Region or description', '');
           const federation = createFederation(name, code || name.slice(0, 4).toUpperCase(), region || '');
+          const nationName = `${name} Nation`;
+          const nationCode = `${(code || name.slice(0, 4)).toUpperCase()}_N`;
+          const defaultNation = createNation(nationName, nationCode);
+          federation.nations.push(defaultNation);
           state.federations.push(federation);
           state.selectedFederation = federation.uuid;
+          state.selectedNation = defaultNation.uuid;
           state.selectedCompetition = null;
           syncDataFromState();
           renderAll();
@@ -1369,16 +1432,60 @@
       }
 
       function renderCompetitions() {
-        const container = $('leagueList');
+        const nationContainer = $('nationList');
+        const competitionContainer = $('leagueList');
         const summary = $('leaguePanelSummary');
-        if (!container || !summary) return;
-        container.innerHTML = '';
+        if (!nationContainer || !competitionContainer || !summary) return;
+        nationContainer.innerHTML = '';
+        competitionContainer.innerHTML = '';
         const federation = getSelectedFederation();
         if (!federation) {
-          summary.textContent = 'Select a federation to browse its competitions.';
+          summary.textContent = 'Select a federation to browse its nations and competitions.';
           return;
         }
-        const filtered = federation.competitions.filter((league) => {
+
+        if (!federation.nations.length) {
+          summary.textContent = `${federation.name} has no nations defined yet.`;
+          const empty = document.createElement('div');
+          empty.className = 'callout';
+          empty.textContent = 'No nations available. Import data or add nations to continue.';
+          nationContainer.appendChild(empty);
+          return;
+        }
+
+        let nation = getSelectedNation();
+        if (!nation && federation.nations.length) {
+          nation = federation.nations[0];
+          state.selectedNation = nation.uuid;
+        }
+        const activeNationId = nation?.uuid || state.selectedNation;
+
+        federation.nations.forEach((nationItem) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.dataset.nationId = nationItem.uuid;
+          btn.className = 'selector-card' + (activeNationId === nationItem.uuid ? ' selector-card-active' : '');
+          const leagueCount = nationItem.competitions.length;
+          const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`nation:${nationItem.uuid}`)}</div>` : '';
+          btn.innerHTML = `
+            <div class="selector-icon">🏳️</div>
+            <div class="selector-title">${nationItem.name || 'Untitled Nation'}</div>
+            <div class="selector-sub">${nationItem.code || 'No code'} • ${leagueCount} competition${leagueCount === 1 ? '' : 's'}</div>
+            ${idInfo}
+          `;
+          nationContainer.appendChild(btn);
+        });
+
+        if (!nation) {
+          summary.textContent = `Select a nation within ${federation.name} to view competitions.`;
+          return;
+        }
+
+        if (!nation.competitions.some((league) => league.uuid === state.selectedCompetition)) {
+          state.selectedCompetition = nation.competitions[0]?.uuid || null;
+        }
+
+        const filtered = nation.competitions.filter((league) => {
           if (!state.leagueSearch) return true;
           const q = state.leagueSearch.toLowerCase();
           return (
@@ -1386,7 +1493,9 @@
             (league.code || '').toLowerCase().includes(q)
           );
         });
-        summary.textContent = `${filtered.length} competition${filtered.length === 1 ? '' : 's'} in ${federation.name}`;
+
+        summary.textContent = `${filtered.length} competition${filtered.length === 1 ? '' : 's'} in ${nation.name} • ${federation.name}`;
+
         filtered.forEach((league) => {
           const config = ensureConfig(league);
           const btn = document.createElement('button');
@@ -1404,13 +1513,14 @@
             ${league.season ? `<div class="selector-sub">Season ${league.season}</div>` : ''}
             ${idInfo}
           `;
-          container.appendChild(btn);
+          competitionContainer.appendChild(btn);
         });
+
         if (!filtered.length) {
           const empty = document.createElement('div');
           empty.className = 'callout';
           empty.textContent = 'No competitions yet. Create one to begin designing.';
-          container.appendChild(empty);
+          competitionContainer.appendChild(empty);
         }
       }
 
@@ -1420,8 +1530,9 @@
         if (!editor || !summary) return;
         editor.innerHTML = '';
         const federation = getSelectedFederation();
+        const nation = getSelectedNation();
         const league = getSelectedCompetition();
-        if (!federation || !league) {
+        if (!federation || !nation || !league) {
           summary.textContent = 'Choose a competition to unlock the guided editor.';
           const placeholder = document.createElement('div');
           placeholder.className = 'callout';
@@ -1430,9 +1541,9 @@
           return;
         }
         const config = ensureConfig(league);
-        summary.textContent = `${federation.name} • ${league.name}`;
+        summary.textContent = `${federation.name} • ${nation.name} • ${league.name}`;
         renderStepper(editor);
-        renderStepContent(editor, league, config, federation);
+        renderStepContent(editor, league, config, federation, nation);
       }
 
       function renderStepper(editor) {
@@ -1453,29 +1564,29 @@
         editor.appendChild(stepper);
       }
 
-      function renderStepContent(editor, league, config, federation) {
+      function renderStepContent(editor, league, config, federation, nation) {
         const content = document.createElement('div');
         content.className = 'flex flex-col gap-6';
         const step = state.stepIndex;
         if (step === 0) {
-          content.appendChild(renderOverviewStep(league, config, federation));
+          content.appendChild(renderOverviewStep(league, config, federation, nation));
         } else if (step === 1) {
           content.appendChild(renderStructureStep(league, config));
         } else if (step === 2) {
           content.appendChild(renderStagesStep(league, config));
         } else {
-          content.appendChild(renderReviewStep(league, config, federation));
+          content.appendChild(renderReviewStep(league, config, federation, nation));
         }
         editor.appendChild(content);
       }
 
-      function renderOverviewStep(league, config, federation) {
+      function renderOverviewStep(league, config, federation, nation) {
         const container = document.createElement('div');
         container.className = 'flex flex-col gap-6';
 
         const breadcrumb = document.createElement('div');
         breadcrumb.className = 'badge';
-        breadcrumb.textContent = `${federation.name} • ${league.name}`;
+        breadcrumb.textContent = `${federation.name} • ${nation.name} • ${league.name}`;
         container.appendChild(breadcrumb);
 
         const grid = document.createElement('div');
@@ -1760,7 +1871,7 @@
         return container;
       }
 
-      function renderReviewStep(league, config, federation) {
+      function renderReviewStep(league, config, federation, nation) {
         const container = document.createElement('div');
         container.className = 'flex flex-col gap-5';
 
@@ -1778,22 +1889,24 @@
         const tree = document.createElement('div');
         tree.className = 'flex flex-col gap-2';
         const fedId = getIdForKey(`fed:${federation.uuid}`);
+        const nationId = getIdForKey(`nation:${nation.uuid}`);
         const leagueId = getIdForKey(`league:${league.uuid}`);
         tree.innerHTML = `
           <div class="badge">${federation.name}${state.developerMode ? ` • ${fedId}` : ''}</div>
-          <div class="badge" style="margin-left:1.5rem;">${league.name}${state.developerMode ? ` • ${leagueId}` : ''}</div>
+          <div class="badge" style="margin-left:1.5rem;">${nation.name}${state.developerMode ? ` • ${nationId}` : ''}</div>
+          <div class="badge" style="margin-left:3rem;">${league.name}${state.developerMode ? ` • ${leagueId}` : ''}</div>
         `;
         plan.stages.forEach((stage) => {
           const stageEl = document.createElement('div');
           stageEl.className = 'badge';
-          stageEl.style.marginLeft = '3rem';
+          stageEl.style.marginLeft = '4.5rem';
           const idBadge = state.developerMode ? ` • ${stage.id}` : '';
           stageEl.textContent = `${stage.name}${idBadge}`;
           tree.appendChild(stageEl);
           stage.groups.forEach((group) => {
             const groupEl = document.createElement('div');
             groupEl.className = 'badge';
-            groupEl.style.marginLeft = '4.5rem';
+            groupEl.style.marginLeft = '6rem';
             const idInfo = state.developerMode ? ` • ${group.id}` : '';
             groupEl.textContent = `${group.name}${idInfo}`;
             tree.appendChild(groupEl);
@@ -1850,10 +1963,11 @@
           const teamsInGroup = baseTeams + (i < remainder ? 1 : 0);
           const groupKey = `${stageKey}:group:${i + 1}`;
           const groupId = getIdForKey(groupKey);
+          const groupCode = groupCount === 1 ? 'G1' : `G${i + 1}`;
           groups.push({
             id: groupId,
             name: groupCount === 1 ? `${league.name} Table` : `Group ${String.fromCharCode(65 + i)}`,
-            code: groupCount === 1 ? 'TABLE' : `G${i + 1}`,
+            code: groupCode,
             teamCount: teamsInGroup,
             objective: config.includePlayoffs ? 'ReachPlayoffs' : 'WinGroup',
             objectiveValue: config.includePlayoffs ? String(Math.max(1, Math.floor((config.playoffTeams || 1) / groupCount))) : '1'
@@ -1861,13 +1975,16 @@
         }
         const matchesPerGroup = groups.reduce((sum, group) => sum + ((group.teamCount * (group.teamCount - 1)) / 2) * homeAwayMultiplier, 0);
         const estimatedGames = matchesPerGroup * rounds;
+        const stageCode = key === 'main'
+          ? (config.structureType === 'groups' ? 'SGROUP' : 'SMAIN')
+          : `S${key.toUpperCase()}`;
         return {
           key,
           stageKey,
           id,
           icon: stageIcons[config.structureType] || stageIcons.league,
           name: config.structureType === 'groups' ? 'Group Stage' : 'League Stage',
-          code: config.structureType === 'groups' ? 'GRP' : 'REG',
+          code: stageCode,
           rounds,
           gamesPerMatchup: homeAwayMultiplier,
           groups,
@@ -1895,10 +2012,11 @@
           totalMatches += matches * (config.gamesPerMatchup || 1);
           const groupKey = `${stageKey}:round:${r + 1}`;
           const groupId = getIdForKey(groupKey);
+          const roundCode = `GPO${rounds - r}`;
           groups.push({
             id: groupId,
             name: names[startIndex + r] || `Round ${r + 1}`,
-            code: `R${rounds - r}`,
+            code: roundCode,
             teamCount: teamsInRound,
             objective: r === rounds - 1 ? 'WinFinal' : 'Advance',
             objectiveValue: '1'
@@ -1910,7 +2028,7 @@
           groups.push({
             id: thirdId,
             name: 'Third Place Playoff',
-            code: '3P',
+            code: 'G3P',
             teamCount: 2,
             objective: 'WinMatch',
             objectiveValue: '1'
@@ -1924,7 +2042,7 @@
           id,
           icon: stageIcons.playoff,
           name: key === 'playoff' ? 'Playoffs' : 'Knockout Stage',
-          code: 'PO',
+          code: key === 'playoff' ? 'SPLAYOFF' : `S${key.toUpperCase()}`,
           rounds,
           gamesPerMatchup: config.gamesPerMatchup || 1,
           groups,
@@ -1970,17 +2088,22 @@
         state.federations.forEach((fed) => {
           if (!fed.name) issues.push('Federation missing a name.');
           if (!fed.code) issues.push(`Federation ${fed.name || fed.uuid} missing a code.`);
-          if (!fed.competitions.length) issues.push(`${fed.name} has no competitions.`);
-          fed.competitions.forEach((league) => {
-            if (!league.name) issues.push('A competition is missing a name.');
-            if (!league.code) issues.push(`${league.name || 'Competition'} is missing a short code.`);
-            const config = ensureConfig(league);
-            if (config.teamCount < 2) issues.push(`${league.name}: team count must be at least 2.`);
-            if (config.structureType !== 'league' && config.groupCount > config.teamCount) issues.push(`${league.name}: group count exceeds teams.`);
-            if (config.includePlayoffs) {
-              if (!Number.isInteger(config.playoffTeams) || config.playoffTeams < 2) issues.push(`${league.name}: playoff entrants must be at least 2.`);
-              if (config.playoffTeams > config.teamCount) issues.push(`${league.name}: playoff entrants cannot exceed team count.`);
-            }
+          if (!fed.nations.length) issues.push(`${fed.name} has no nations.`);
+          fed.nations.forEach((nation) => {
+            if (!nation.name) issues.push(`Nation under ${fed.name} is missing a name.`);
+            if (!nation.code) issues.push(`${nation.name || 'Nation'} in ${fed.name} is missing a code.`);
+            if (!nation.competitions.length) issues.push(`${nation.name || 'Nation'} in ${fed.name} has no competitions.`);
+            nation.competitions.forEach((league) => {
+              if (!league.name) issues.push('A competition is missing a name.');
+              if (!league.code) issues.push(`${league.name || 'Competition'} is missing a short code.`);
+              const config = ensureConfig(league);
+              if (config.teamCount < 2) issues.push(`${league.name}: team count must be at least 2.`);
+              if (config.structureType !== 'league' && config.groupCount > config.teamCount) issues.push(`${league.name}: group count exceeds teams.`);
+              if (config.includePlayoffs) {
+                if (!Number.isInteger(config.playoffTeams) || config.playoffTeams < 2) issues.push(`${league.name}: playoff entrants must be at least 2.`);
+                if (config.playoffTeams > config.teamCount) issues.push(`${league.name}: playoff entrants cannot exceed team count.`);
+              }
+            });
           });
         });
         return issues;
@@ -1998,12 +2121,9 @@
           weatherRows: []
         };
 
-        const worldId = getIdForKey('world:root');
-        context.compRows.push({ id: worldId, level: '1', code: 'WORLD', name: state.world.name || 'World', parent: '' });
-
         state.federations.forEach((fed) => {
           const fedId = getIdForKey(`fed:${fed.uuid}`);
-          context.compRows.push({ id: fedId, level: '2', code: fed.code || '', name: fed.name || 'Federation', parent: worldId });
+          context.compRows.push({ id: fedId, level: '1', code: fed.code || '', name: fed.name || 'Federation', parent: '0' });
           context.weatherRows.push({
             fedId,
             dayId: '1',
@@ -2016,40 +2136,45 @@
             end: '365'
           });
 
-          fed.competitions.forEach((league) => {
-            const leagueId = getIdForKey(`league:${league.uuid}`);
-            const config = ensureConfig(league);
-            context.compRows.push({ id: leagueId, level: '3', code: league.code || '', name: league.name || 'Competition', parent: fedId });
-            context.setRows.push({ id: leagueId, settingKey: 'season', value: league.season || '' });
-            context.setRows.push({ id: leagueId, settingKey: 'structure_type', value: config.structureType });
-            context.setRows.push({ id: leagueId, settingKey: 'team_count', value: String(config.teamCount) });
+          fed.nations.forEach((nation) => {
+            const nationId = getIdForKey(`nation:${nation.uuid}`);
+            context.compRows.push({ id: nationId, level: '2', code: nation.code || '', name: nation.name || 'Nation', parent: fedId });
 
-            const plan = createCompetitionPlan(league, config);
-            let stageIndex = 1;
-            plan.stages.forEach((stage) => {
-              context.compRows.push({ id: stage.id, level: '4', code: stage.code, name: stage.name, parent: leagueId });
-              context.setRows.push({ id: stage.id, settingKey: 'rounds', value: String(stage.rounds) });
-              context.setRows.push({ id: stage.id, settingKey: 'games_per_matchup', value: String(stage.gamesPerMatchup) });
-              context.schedRows.push({
-                stageId: stage.id,
-                dateId: `AUTO-${stageIndex}`,
-                matchDay: '1',
-                minGames: String(stage.estimatedMinGames),
-                maxGames: String(stage.estimatedMaxGames),
-                time: config.matchTime || '20:00'
-              });
-              stage.groups.forEach((group, groupIndex) => {
-                context.compRows.push({ id: group.id, level: '5', code: group.code, name: group.name, parent: stage.id });
-                context.standRows.push({ groupId: group.id, teamCount: String(group.teamCount) });
-                context.objectiveRows.push({ groupId: group.id, objective: group.objective, value: group.objectiveValue });
-              });
-              stageIndex += 1;
-            });
+            nation.competitions.forEach((league) => {
+              const leagueId = getIdForKey(`league:${league.uuid}`);
+              const config = ensureConfig(league);
+              context.compRows.push({ id: leagueId, level: '3', code: league.code || '', name: league.name || 'Competition', parent: nationId });
+              context.setRows.push({ id: leagueId, settingKey: 'season', value: league.season || '' });
+              context.setRows.push({ id: leagueId, settingKey: 'structure_type', value: config.structureType });
+              context.setRows.push({ id: leagueId, settingKey: 'team_count', value: String(config.teamCount) });
 
-            plan.advancements.forEach((adv) => {
-              context.advRows.push({ fromId: adv.fromId, placement: adv.placement, toId: adv.toId, slot: adv.slot });
+              const plan = createCompetitionPlan(league, config);
+              let stageIndex = 1;
+              plan.stages.forEach((stage) => {
+                context.compRows.push({ id: stage.id, level: '4', code: stage.code, name: stage.name, parent: leagueId });
+                context.setRows.push({ id: stage.id, settingKey: 'rounds', value: String(stage.rounds) });
+                context.setRows.push({ id: stage.id, settingKey: 'games_per_matchup', value: String(stage.gamesPerMatchup) });
+                context.schedRows.push({
+                  stageId: stage.id,
+                  dateId: `AUTO-${stageIndex}`,
+                  matchDay: '1',
+                  minGames: String(stage.estimatedMinGames),
+                  maxGames: String(stage.estimatedMaxGames),
+                  time: config.matchTime || '20:00'
+                });
+                stage.groups.forEach((group, groupIndex) => {
+                  context.compRows.push({ id: group.id, level: '5', code: group.code, name: group.name, parent: stage.id });
+                  context.standRows.push({ groupId: group.id, teamCount: String(group.teamCount) });
+                  context.objectiveRows.push({ groupId: group.id, objective: group.objective, value: group.objectiveValue });
+                });
+                stageIndex += 1;
+              });
+
+              plan.advancements.forEach((adv) => {
+                context.advRows.push({ fromId: adv.fromId, placement: adv.placement, toId: adv.toId, slot: adv.slot });
+              });
+              context.taskRows.push({ trophyId: leagueId, phase: 'FINALE', command: 'AWARD_TROPHY', target: plan.finalTargetId, ref1: '', ref2: '', ref3: '' });
             });
-            context.taskRows.push({ trophyId: leagueId, phase: 'FINALE', command: 'AWARD_TROPHY', target: plan.finalTargetId, ref1: '', ref2: '', ref3: '' });
           });
         });
 
@@ -2323,8 +2448,25 @@
             if (!button) return;
             state.selectedFederation = button.dataset.fedId;
             const federation = getSelectedFederation();
-            state.selectedCompetition = federation?.competitions[0]?.uuid || null;
+            const firstNation = federation
+              ? federation.nations.find((nation) => nation.competitions.length) || federation.nations[0] || null
+              : null;
+            state.selectedNation = firstNation?.uuid || null;
+            state.selectedCompetition = firstNation?.competitions[0]?.uuid || null;
             renderAll();
+          });
+        }
+
+        const nationList = $('nationList');
+        if (nationList) {
+          nationList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-nation-id]');
+            if (!button) return;
+            state.selectedNation = button.dataset.nationId;
+            const nation = getSelectedNation();
+            state.selectedCompetition = nation?.competitions[0]?.uuid || null;
+            renderCompetitions();
+            renderEditor();
           });
         }
 
@@ -2351,8 +2493,13 @@
         if (addLeagueBtn) {
           addLeagueBtn.addEventListener('click', () => {
             const federation = getSelectedFederation();
+            const nation = getSelectedNation();
             if (!federation) {
               showMessage('Select a federation first.', 'info');
+              return;
+            }
+            if (!nation) {
+              showMessage('Select a nation first.', 'info');
               return;
             }
             const name = prompt('Competition name', 'New Competition');
@@ -2360,7 +2507,7 @@
             const code = prompt('Short code', name.slice(0, 4).toUpperCase());
             const season = prompt('Season label', new Date().getFullYear());
             const league = createCompetition(name, (code || name.slice(0, 4)).toUpperCase(), season || '');
-            federation.competitions.push(league);
+            nation.competitions.push(league);
             state.selectedCompetition = league.uuid;
             syncDataFromState();
             renderAll();
@@ -2414,7 +2561,9 @@
         const seedFederations = createInitialProject();
         seedFederations.forEach((fed) => state.federations.push(fed));
         state.selectedFederation = state.federations[0]?.uuid || null;
-        state.selectedCompetition = state.federations[0]?.competitions[0]?.uuid || null;
+        const firstNation = state.federations[0]?.nations[0] || null;
+        state.selectedNation = firstNation?.uuid || null;
+        state.selectedCompetition = firstNation?.competitions[0]?.uuid || null;
         setupEventHandlers();
         syncDataFromState();
         renderAll();
