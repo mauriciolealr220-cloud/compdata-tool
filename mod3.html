@@ -3,67 +3,85 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Competition Editor Dashboard</title>
+  <title>Competition Architect</title>
   <style>
     :root {
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color-scheme: light dark;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; background-color: #f1f5f9; color: #0f172a; }
-    body.dark { background-color: #0f172a; color: #e2e8f0; }
-    body.dark .bg-white { background-color: #1e293b; color: #e2e8f0; }
-    body.dark .bg-slate-50 { background-color: #1f2937; }
-    body.dark .bg-slate-100 { background-color: #111827; }
-    body.dark .border { border-color: #334155; }
-    body.dark input, body.dark select, body.dark textarea { background-color: #0f172a; color: #e2e8f0; border-color: #475569; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    body.dark {
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    body.dark .card { background: #1e293b; border-color: #334155; box-shadow: none; }
+    body.dark .bg-slate-50 { background: #1f2937; }
+    body.dark .bg-slate-100 { background: #16213b; }
+    body.dark .border-slate-200 { border-color: #334155; }
     body.dark .text-slate-600 { color: #cbd5f5; }
-    body.dark .hover\:bg-slate-200:hover { background-color: #334155; }
-    body.dark .hover\:bg-slate-700:hover { background-color: #0f172a; }
-    body.dark .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-    body.dark .hover\:bg-emerald-600:hover { background-color: #047857; }
-    body.dark .hover\:bg-red-700:hover { background-color: #b91c1c; }
-    .hidden { display: none !important; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border-bottom: 1px solid #e2e8f0; text-align: left; }
-    body.dark th, body.dark td { border-color: #334155; }
-    th { background-color: #f8fafc; font-weight: 600; position: sticky; top: 0; z-index: 1; }
-    body.dark th { background-color: #1f2937; }
-    button, select, input, textarea { font: inherit; }
-    button { cursor: pointer; border: none; }
-    textarea { resize: vertical; }
+    body.dark .text-slate-500 { color: #94a3b8; }
+    body.dark input,
+    body.dark textarea,
+    body.dark select {
+      background: #0f172a;
+      color: #e2e8f0;
+      border-color: #475569;
+    }
     a { color: inherit; }
+    button { font: inherit; cursor: pointer; border: none; background: none; }
+    input, textarea, select { font: inherit; border: 1px solid #cbd5f5; border-radius: 0.55rem; padding: 0.55rem 0.75rem; }
+    textarea { resize: vertical; }
+    ::placeholder { color: #94a3b8; }
 
     .min-h-screen { min-height: 100vh; }
     .flex { display: flex; }
     .flex-col { flex-direction: column; }
+    .flex-row { flex-direction: row; }
     .flex-wrap { flex-wrap: wrap; }
     .items-center { align-items: center; }
     .items-start { align-items: flex-start; }
     .justify-between { justify-content: space-between; }
     .justify-start { justify-content: flex-start; }
+    .justify-center { justify-content: center; }
+    .justify-end { justify-content: flex-end; }
     .gap-1 { gap: 0.25rem; }
     .gap-2 { gap: 0.5rem; }
     .gap-3 { gap: 0.75rem; }
     .gap-4 { gap: 1rem; }
+    .gap-5 { gap: 1.25rem; }
     .gap-6 { gap: 1.5rem; }
+    .gap-8 { gap: 2rem; }
+    .gap-10 { gap: 2.5rem; }
     .p-2 { padding: 0.5rem; }
     .p-3 { padding: 0.75rem; }
     .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
     .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
     .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
     .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
     .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
     .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
     .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
     .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
     .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
     .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+    .mt-1 { margin-top: 0.25rem; }
     .mt-2 { margin-top: 0.5rem; }
     .mt-3 { margin-top: 0.75rem; }
     .mt-4 { margin-top: 1rem; }
+    .mt-5 { margin-top: 1.25rem; }
     .mt-6 { margin-top: 1.5rem; }
     .mt-8 { margin-top: 2rem; }
+    .mt-10 { margin-top: 2.5rem; }
     .mb-2 { margin-bottom: 0.5rem; }
     .mb-3 { margin-bottom: 0.75rem; }
     .mb-4 { margin-bottom: 1rem; }
@@ -71,1470 +89,1170 @@
     .mb-8 { margin-bottom: 2rem; }
     .mx-auto { margin-left: auto; margin-right: auto; }
     .w-full { width: 100%; }
-    .h-32 { height: 8rem; }
-    .min-w-full { min-width: 100%; }
-    .overflow-x-auto { overflow-x: auto; }
-    .overflow-y-auto { overflow-y: auto; }
-    .bg-white { background-color: #ffffff; }
-    .bg-slate-50 { background-color: #f8fafc; }
-    .bg-slate-100 { background-color: #f1f5f9; }
-    .bg-slate-200 { background-color: #e2e8f0; }
-    .bg-slate-700 { background-color: #334155; }
-    .bg-slate-800 { background-color: #1e293b; }
-    .bg-slate-900 { background-color: #0f172a; }
-    .bg-blue-600 { background-color: #2563eb; }
-    .bg-blue-700 { background-color: #1d4ed8; }
-    .bg-emerald-500 { background-color: #10b981; }
-    .bg-emerald-600 { background-color: #059669; }
-    .bg-red-600 { background-color: #dc2626; }
-    .bg-red-700 { background-color: #b91c1c; }
-    .bg-amber-500 { background-color: #f59e0b; }
-    .bg-amber-600 { background-color: #d97706; }
-    .bg-rose-100 { background-color: #ffe4e6; }
-    .bg-blue-100 { background-color: #dbeafe; }
-    .text-white { color: #ffffff; }
-    .text-slate-500 { color: #64748b; }
-    .text-slate-600 { color: #475569; }
-    .text-slate-700 { color: #334155; }
-    .text-slate-900 { color: #0f172a; }
-    .text-emerald-600 { color: #059669; }
-    .text-red-600 { color: #dc2626; }
+    .w-1\/3 { width: 33.333%; }
+    .w-2\/3 { width: 66.666%; }
+    .shrink-0 { flex-shrink: 0; }
+    .grow { flex-grow: 1; }
     .text-xs { font-size: 0.75rem; }
     .text-sm { font-size: 0.875rem; }
     .text-base { font-size: 1rem; }
     .text-lg { font-size: 1.125rem; }
     .text-xl { font-size: 1.25rem; }
     .text-2xl { font-size: 1.5rem; }
-    .font-bold { font-weight: 700; }
+    .text-3xl { font-size: 1.75rem; }
     .font-medium { font-weight: 500; }
-    .uppercase { text-transform: uppercase; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .uppercase { text-transform: uppercase; letter-spacing: 0.08em; }
     .rounded { border-radius: 0.5rem; }
-    .rounded-md { border-radius: 0.4rem; }
-    .rounded-lg { border-radius: 0.75rem; }
+    .rounded-md { border-radius: 0.65rem; }
+    .rounded-lg { border-radius: 0.85rem; }
     .rounded-full { border-radius: 9999px; }
-    .shadow { box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); }
-    .shadow-sm { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
     .border { border: 1px solid #e2e8f0; }
     .border-slate-200 { border-color: #e2e8f0; }
-    .border-red-500 { border-color: #ef4444; }
-    .text-right { text-align: right; }
+    .shadow-sm { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
+    .shadow { box-shadow: 0 22px 45px -18px rgba(15, 23, 42, 0.35); }
+    .bg-white { background: #ffffff; }
+    .bg-slate-50 { background: #f8fafc; }
+    .bg-slate-100 { background: #f1f5f9; }
+    .bg-slate-800 { background: #1e293b; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-900 { color: #0f172a; }
+    .text-emerald-600 { color: #059669; }
+    .text-red-600 { color: #dc2626; }
+    .text-blue-600 { color: #2563eb; }
+    .text-amber-500 { color: #f59e0b; }
+    .bg-emerald-500 { background: #10b981; }
+    .bg-emerald-600 { background: #059669; }
+    .bg-blue-600 { background: #2563eb; }
+    .bg-blue-700 { background: #1d4ed8; }
+    .bg-red-600 { background: #dc2626; }
+    .bg-red-700 { background: #b91c1c; }
+    .bg-amber-500 { background: #f59e0b; }
+    .bg-amber-600 { background: #d97706; }
+    .text-white { color: #ffffff; }
     .text-center { text-align: center; }
-    .cursor-pointer { cursor: pointer; }
+    .text-right { text-align: right; }
     .whitespace-nowrap { white-space: nowrap; }
-    .pl-4 { padding-left: 1rem; }
-    .ml-2 { margin-left: 0.5rem; }
-    .leading-tight { line-height: 1.25; }
+    .leading-tight { line-height: 1.3; }
     .tracking-wide { letter-spacing: 0.08em; }
-    .hover\:bg-slate-200:hover { background-color: #e2e8f0; }
-    .hover\:bg-slate-700:hover { background-color: #1e293b; }
-    .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
-    .hover\:bg-emerald-600:hover { background-color: #059669; }
-    .hover\:bg-amber-600:hover { background-color: #d97706; }
-    .hover\:bg-red-700:hover { background-color: #b91c1c; }
-    .transition { transition: background-color 0.15s ease, color 0.15s ease; }
-    .font-mono { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace; }
+    .hidden { display: none !important; }
 
-    .btn { border-radius: 0.5rem; padding: 0.5rem 0.85rem; font-size: 0.875rem; font-weight: 500; }
-    .btn-ghost { background-color: transparent; border: 1px solid #cbd5f5; }
-    .btn-surface { background-color: #e2e8f0; }
-    .tab-btn { background-color: #e2e8f0; color: #334155; border-radius: 9999px; padding: 0.5rem 0.9rem; }
-    .tab-btn-active { background-color: #2563eb; color: #ffffff; }
-    .table-input { width: 100%; padding: 0.35rem 0.45rem; border: 1px solid #cbd5f5; border-radius: 0.4rem; background-color: #ffffff; }
-    body.dark .table-input { background-color: #0f172a; border-color: #475569; }
-    .table-input:focus { outline: 2px solid #2563eb33; }
-    .badge { display: inline-block; background-color: #e2e8f0; color: #334155; border-radius: 999px; padding: 0.15rem 0.5rem; font-size: 0.75rem; }
-    body.dark .badge { background-color: #334155; color: #e2e8f0; }
-    .tree-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; border-radius: 0.5rem; }
-    .tree-row:hover { background-color: #e2e8f0; }
-    body.dark .tree-row:hover { background-color: #1f2937; }
-    .tree-toggle { width: 1.5rem; height: 1.5rem; border-radius: 0.375rem; background-color: #e2e8f0; border: none; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .tree-toggle:disabled { opacity: 0.35; cursor: default; }
-    body.dark .tree-toggle { background-color: #1f2937; color: #e2e8f0; }
-    .tree-node-active { background-color: #dbeafe; color: #1d4ed8; }
-    body.dark .tree-node-active { background-color: #1e3a8a; color: #bfdbfe; }
-    .tree-children { margin-left: 1rem; border-left: 1px dashed #cbd5f5; padding-left: 0.75rem; }
-    body.dark .tree-children { border-color: #334155; }
-    .status-success { color: #047857; }
-    .status-error { color: #b91c1c; }
-    .status-info { color: #2563eb; }
-    .tooltip { position: relative; }
-    .tooltip[data-title]:hover::after { content: attr(data-title); position: absolute; left: 0; top: 100%; margin-top: 0.25rem; background: #0f172a; color: #f8fafc; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; white-space: nowrap; z-index: 20; }
-    body.dark .tooltip[data-title]:hover::after { background: #f8fafc; color: #0f172a; }
-    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .card { background-color: #ffffff; border-radius: 0.75rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px -15px rgba(15, 23, 42, 0.3); }
-    body.dark .card { background-color: #1e293b; border-color: #334155; box-shadow: none; }
-    .selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
-    .subtle-text { color: #64748b; font-size: 0.85rem; }
-    body.dark .subtle-text { color: #cbd5f5; }
+    .page { max-width: 1320px; margin: 0 auto; padding: 2.5rem 1.75rem 4rem; display: flex; flex-direction: column; gap: 2rem; }
+    header.page-header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start; }
+    header.page-header h1 { margin: 0; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.05rem;
+      border-radius: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      background: #e2e8f0;
+      color: #0f172a;
+      transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px -18px rgba(15, 23, 42, 0.35); }
+    .btn-primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; }
+    .btn-accent { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
+    .btn-ghost { background: transparent; border: 1px solid #cbd5f5; color: inherit; }
+    .btn-outline { background: transparent; border: 1px solid rgba(37,99,235,0.35); color: #1d4ed8; }
+
+    .card { background: #ffffff; border-radius: 1rem; border: 1px solid #e2e8f0; box-shadow: 0 18px 40px -24px rgba(15, 23, 42, 0.35); display: flex; flex-direction: column; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
+    .card-body { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+    .selector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.85rem; }
+    .selector-card { position: relative; overflow: hidden; border-radius: 0.95rem; border: 1px solid #e2e8f0; padding: 1rem; background: #f8fafc; display: flex; flex-direction: column; gap: 0.65rem; text-align: left; transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+    .selector-card:hover { transform: translateY(-2px); box-shadow: 0 18px 35px -22px rgba(15, 23, 42, 0.35); }
+    .selector-card-active { border-color: #1d4ed8; box-shadow: 0 18px 30px -22px rgba(37, 99, 235, 0.45); background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(15,23,42,0.03)); }
+    .selector-card-add { border: 1px dashed #94a3b8; background: #ffffff; justify-content: center; align-items: center; font-weight: 600; color: #64748b; }
+    .selector-card-add:hover { border-color: #1d4ed8; color: #1d4ed8; box-shadow: none; transform: translateY(0); }
+    .selector-icon { font-size: 1.5rem; }
+    .selector-title { font-weight: 600; font-size: 1rem; }
+    .selector-sub { font-size: 0.8rem; color: #475569; }
+    .selector-dev { font-size: 0.75rem; color: #94a3b8; }
+
+    .wizard { display: flex; flex-direction: column; gap: 1.5rem; }
+    .stepper { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .step-pill { padding: 0.55rem 0.95rem; border-radius: 999px; background: #e2e8f0; color: #475569; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; transition: background 0.2s ease, color 0.2s ease; }
+    .step-pill span { font-size: 0.75rem; font-weight: 500; opacity: 0.7; }
+    .step-pill-active { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; box-shadow: 0 14px 32px -20px rgba(37,99,235,0.8); }
+
+    .pill-button { border-radius: 999px; padding: 0.45rem 0.9rem; font-size: 0.8rem; background: #e2e8f0; color: #0f172a; font-weight: 600; }
+    .pill-button-active { background: #2563eb; color: #ffffff; }
+
+    .input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .field { display: flex; flex-direction: column; gap: 0.45rem; }
+    .field label { font-weight: 600; font-size: 0.85rem; }
+    .field small { color: #64748b; font-size: 0.75rem; }
+
+    .stage-list { display: flex; flex-direction: column; gap: 0.85rem; }
+    .stage-details { border-radius: 0.85rem; border: 1px solid #e2e8f0; background: #ffffff; padding: 0.75rem 1rem; }
+    .stage-header { display: flex; align-items: center; gap: 0.75rem; }
+    .stage-icon { font-size: 1.25rem; }
+    .stage-summary { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
+    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.7rem; border-radius: 999px; background: #e2e8f0; font-size: 0.75rem; font-weight: 600; color: #334155; }
+    body.dark .badge { background: #273347; color: #cbd5f5; }
+
+    details summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; font-weight: 600; }
+    details summary::-webkit-details-marker { display: none; }
+    details[open] { border-color: #2563eb; box-shadow: 0 18px 35px -24px rgba(37,99,235,0.45); }
+    details .details-body { margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed #cbd5f5; display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-radius: 0.8rem; border: 1px solid #e2e8f0; background: #f8fafc; }
+    .toggle-row .toggle-info { display: flex; flex-direction: column; gap: 0.25rem; }
+
+    .switch { position: relative; width: 48px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5f5; transition: .2s; border-radius: 26px; }
+    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .2s; border-radius: 50%; box-shadow: 0 2px 6px rgba(15,23,42,0.2); }
+    .switch input:checked + .slider { background-color: #2563eb; }
+    .switch input:checked + .slider:before { transform: translateX(22px); }
+
+    .range-row { display: flex; flex-direction: column; gap: 0.4rem; }
+    .range-row label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; }
+    input[type=range] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 999px; background: #e2e8f0; outline: none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #2563eb; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.45); }
+    input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #2563eb; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,0.45); }
+
+    .message { border-radius: 0.8rem; padding: 0.65rem 0.9rem; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .message-info { background: #dbeafe; color: #1d4ed8; }
+    .message-success { background: #dcfce7; color: #047857; }
+    .message-error { background: #fee2e2; color: #b91c1c; }
+
+    .export-panel { border-radius: 1rem; border: 1px solid #e2e8f0; padding: 1.25rem; background: #ffffff; display: flex; flex-direction: column; gap: 1rem; }
+    .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+    .export-chip { padding: 0.45rem 0.75rem; border-radius: 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+    .export-text { white-space: pre; overflow-x: auto; background: #0f172a; color: #e2e8f0; border-radius: 0.75rem; padding: 1rem; font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.8rem; }
+
+    .callout { border-radius: 0.9rem; padding: 0.9rem 1rem; background: #fef3c7; color: #92400e; font-size: 0.85rem; }
+    .callout-error { background: #fee2e2; color: #b91c1c; }
+
+    @media (max-width: 960px) {
+      .page { padding: 1.75rem 1.25rem 3rem; }
+      .layout { display: flex; flex-direction: column; gap: 1.5rem; }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col" id="pageBody">
-  <div class="w-full max-w-7xl mx-auto flex flex-col gap-6 p-6">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+<body class="min-h-screen" id="pageBody">
+  <div class="page">
+    <header class="page-header">
       <div>
-        <p class="uppercase text-xs tracking-wide text-slate-600">Unified Modding Interface</p>
-        <h1 class="text-2xl font-bold mt-2">Competition Editor Dashboard</h1>
-        <p class="text-sm text-slate-600 mt-1">Visually manage CompObj hierarchies and keep every linked file synchronized.</p>
+        <p class="uppercase text-xs tracking-wide text-slate-600">Unified Competition Builder</p>
+        <h1 class="text-3xl font-bold mt-2">Competition Architect</h1>
+        <p class="text-sm text-slate-600 mt-1">Plan federations, design league structures, and export synchronized data packs without touching raw IDs.</p>
       </div>
-      <div class="flex items-center gap-2">
-        <label for="themeToggle" class="text-sm text-slate-600">Theme</label>
-        <button id="themeToggle" class="btn bg-slate-800 text-white hover:bg-slate-700 transition">Toggle Dark</button>
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="developerToggle" class="btn btn-ghost">Developer Mode</button>
+        <button id="themeToggle" class="btn btn-ghost">Toggle Dark</button>
+        <button id="buildExportBtn" class="btn btn-primary">Build &amp; Export</button>
       </div>
     </header>
 
-    <main class="grid gap-4" style="grid-template-columns: minmax(260px, 320px) 1fr;">
-      <aside class="card flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between border-b border-slate-200 p-4">
+    <div id="globalMessage" class="hidden"></div>
+
+    <section class="layout" style="display:grid; grid-template-columns: 320px 320px 1fr; gap:1.5rem; align-items:start;">
+      <article class="card" id="federationPanel">
+        <div class="card-header">
           <div>
-            <h2 class="text-lg font-bold">Competition Tree</h2>
-            <p id="treeSummary" class="text-xs text-slate-600 mt-1"></p>
-          </div>
-          <button id="clearSelectionBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Clear</button>
-        </div>
-        <div id="compTree" class="flex-1 overflow-y-auto p-2"></div>
-      </aside>
-
-      <section class="flex flex-col gap-4">
-        <div class="card">
-          <div class="border-b border-slate-200 p-4">
-            <h2 class="text-lg font-bold">Selection Details</h2>
-            <p id="selectionBreadcrumb" class="text-xs text-slate-600 mt-1"></p>
-          </div>
-          <div id="selectionPanel" class="p-4"></div>
-        </div>
-
-        <div class="card flex flex-col">
-          <div id="tabButtons" class="flex flex-wrap gap-2 border-b border-slate-200 p-3"></div>
-          <div id="tabPanels" class="p-4">
-            <div id="tab-comp" class="tab-panel" data-tab="comp">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="compFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="compPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <select id="compDelimiterSelect" class="px-3 py-2 border rounded">
-                  <option value=",">Comma</option>
-                  <option value="\t">Tab</option>
-                  <option value=";">Semicolon</option>
-                  <option value="|">Pipe</option>
-                  <option value="auto" selected>Auto</option>
-                </select>
-                <button id="compAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="compExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="compValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="compPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste CompObj lines here..."></textarea>
-              <div id="compMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 320px; overflow-y: auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">ID</th>
-                      <th class="p-2">Level</th>
-                      <th class="p-2">Code</th>
-                      <th class="p-2">Name</th>
-                      <th class="p-2">Parent</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="compTableBody"></tbody>
-                </table>
-              </div>
-              <div id="compMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-settings" class="tab-panel hidden" data-tab="settings">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="settingsFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="settingsPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <button id="settingsAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="settingsExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="settingsValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="settingsPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste SETTINGS lines (CompObjID,Key,Value)"></textarea>
-              <div id="settingsMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">CompObj ID</th>
-                      <th class="p-2">Setting Key</th>
-                      <th class="p-2">Value</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="settingsTableBody"></tbody>
-                </table>
-              </div>
-              <div id="settingsMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-tasks" class="tab-panel hidden" data-tab="tasks">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="tasksFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="tasksPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <select id="tasksDelimiterSelect" class="px-3 py-2 border rounded">
-                  <option value=",">Comma</option>
-                  <option value="\t">Tab</option>
-                  <option value=";">Semicolon</option>
-                  <option value="|">Pipe</option>
-                  <option value="auto" selected>Auto</option>
-                </select>
-                <button id="tasksAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="tasksExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="tasksValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="tasksPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste TASKS lines (TrophyID,Phase,Command,Target,Ref1,Ref2,Ref3)"></textarea>
-              <div id="tasksMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">Trophy ID</th>
-                      <th class="p-2">Phase</th>
-                      <th class="p-2">Command</th>
-                      <th class="p-2">Target</th>
-                      <th class="p-2">Ref1</th>
-                      <th class="p-2">Ref2</th>
-                      <th class="p-2">Ref3</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tasksTableBody"></tbody>
-                </table>
-              </div>
-              <div id="tasksMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-adv" class="tab-panel hidden" data-tab="adv">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="advFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="advPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <select id="advDelimiterSelect" class="px-3 py-2 border rounded">
-                  <option value=",">Comma</option>
-                  <option value="\t">Tab</option>
-                  <option value=";">Semicolon</option>
-                  <option value="|">Pipe</option>
-                  <option value="auto" selected>Auto</option>
-                </select>
-                <button id="advAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="advExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="advValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="advPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste ADVANCEMENT lines (FromGroup,Placement,ToGroup,Slot)"></textarea>
-              <div id="advMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">From Group ID</th>
-                      <th class="p-2">Placement</th>
-                      <th class="p-2">To Group ID</th>
-                      <th class="p-2">Slot</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="advTableBody"></tbody>
-                </table>
-              </div>
-              <div id="advMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-standings" class="tab-panel hidden" data-tab="standings">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="standFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="standPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <select id="standDelimiterSelect" class="px-3 py-2 border rounded">
-                  <option value=",">Comma</option>
-                  <option value="\t">Tab</option>
-                  <option value=";">Semicolon</option>
-                  <option value="|">Pipe</option>
-                  <option value="auto" selected>Auto</option>
-                </select>
-                <button id="standAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="standExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="standValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="standPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste STANDINGS lines (GroupID,TeamCount)"></textarea>
-              <div id="standMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">Group ID</th>
-                      <th class="p-2">Team Count</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="standTableBody"></tbody>
-                </table>
-              </div>
-              <div id="standMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-schedule" class="tab-panel hidden" data-tab="schedule">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="schedFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="schedPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <button id="schedAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="schedExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="schedValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="schedPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste SCHEDULE lines (StageID,DateID,MatchDay,MinGames,MaxGames,Time)"></textarea>
-              <div id="schedMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">Stage ID</th>
-                      <th class="p-2">Date ID</th>
-                      <th class="p-2">Match Day</th>
-                      <th class="p-2">Min Games</th>
-                      <th class="p-2">Max Games</th>
-                      <th class="p-2">Time</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="schedTableBody"></tbody>
-                </table>
-              </div>
-              <div id="schedMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-objectives" class="tab-panel hidden" data-tab="objectives">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="objFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="objPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <select id="objDelimiterSelect" class="px-3 py-2 border rounded">
-                  <option value=",">Comma</option>
-                  <option value="\t">Tab</option>
-                  <option value=";">Semicolon</option>
-                  <option value="|">Pipe</option>
-                  <option value="auto" selected>Auto</option>
-                </select>
-                <button id="objAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="objExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="objValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="objPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste OBJECTIVES lines (GroupID,ObjectiveType,Value)"></textarea>
-              <div id="objMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">Group ID</th>
-                      <th class="p-2">Objective Type</th>
-                      <th class="p-2">Value</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="objTableBody"></tbody>
-                </table>
-              </div>
-              <div id="objMessages" class="mt-3 text-sm"></div>
-            </div>
-
-            <div id="tab-weather" class="tab-panel hidden" data-tab="weather">
-              <div class="flex flex-wrap gap-2 mb-3">
-                <input id="weatherFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
-                <button id="weatherPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
-                <button id="weatherAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
-                <button id="weatherExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
-                <button id="weatherValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
-              </div>
-              <textarea id="weatherPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste WEATHER lines (FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime)"></textarea>
-              <div id="weatherMeta" class="text-xs text-slate-600 mt-2"></div>
-              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
-                <table class="text-sm">
-                  <thead>
-                    <tr>
-                      <th class="p-2">#</th>
-                      <th class="p-2">Federation ID</th>
-                      <th class="p-2">Day ID</th>
-                      <th class="p-2">Weather Type</th>
-                      <th class="p-2">Param1</th>
-                      <th class="p-2">Param2</th>
-                      <th class="p-2">Param3</th>
-                      <th class="p-2">Param4</th>
-                      <th class="p-2">Start</th>
-                      <th class="p-2">End</th>
-                      <th class="p-2 text-center">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="weatherTableBody"></tbody>
-                </table>
-              </div>
-              <div id="weatherMessages" class="mt-3 text-sm"></div>
-            </div>
+            <h2 class="text-xl font-semibold">Federation Selector</h2>
+            <p class="text-xs text-slate-600 mt-1">Pick a confederation to browse its competitions.</p>
           </div>
         </div>
-
-        <div class="card p-4">
-          <div class="flex flex-wrap gap-3">
-            <button id="validateAllBtn" class="btn bg-blue-600 text-white hover:bg-blue-700">Validate All</button>
-            <button id="exportAllBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export All</button>
-            <button id="rebaseBtn" class="btn bg-amber-500 text-white hover:bg-amber-600">Rebase IDs</button>
-            <button id="rebuildBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Rebuild Tree</button>
-          </div>
-          <div id="globalMessages" class="mt-3 text-sm"></div>
-          <div id="validationSummary" class="mt-3 text-sm"></div>
+        <div class="card-body">
+          <div id="federationList" class="selector-grid"></div>
         </div>
-      </section>
-    </main>
+      </article>
+
+      <article class="card" id="leaguePanel">
+        <div class="card-header">
+          <div>
+            <h2 class="text-xl font-semibold">League Browser</h2>
+            <p id="leaguePanelSummary" class="text-xs text-slate-600 mt-1"></p>
+          </div>
+          <button id="addLeagueBtn" class="btn btn-ghost">New Competition</button>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label for="leagueSearch" class="text-sm font-semibold">Search</label>
+            <input id="leagueSearch" type="search" placeholder="Search competitions by name or code" />
+          </div>
+          <div id="leagueList" class="selector-grid"></div>
+        </div>
+      </article>
+
+      <article class="card" id="editorPanel">
+        <div class="card-header">
+          <div>
+            <h2 class="text-xl font-semibold">Competition Editor</h2>
+            <p id="editorSummary" class="text-xs text-slate-600 mt-1"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="prevStepBtn" class="btn btn-ghost">Back</button>
+            <button id="nextStepBtn" class="btn btn-ghost">Next</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="editorContent" class="wizard"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <div>
+          <h2 class="text-xl font-semibold">Build Output</h2>
+          <p class="text-xs text-slate-600 mt-1">Validated data files appear here after each build.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="downloadZipBtn" class="btn btn-outline">Download ZIP</button>
+          <button id="copyTextBtn" class="btn btn-outline">Copy All Text</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="exportResults" class="export-panel"></div>
+      </div>
+    </section>
   </div>
+
   <script>
-    (function(){
+    (() => {
       const $ = (id) => document.getElementById(id);
+      const state = {
+        federations: [],
+        selectedFederation: null,
+        selectedLeague: null,
+        developerMode: false,
+        stepIndex: 0,
+        leagueSearch: '',
+        lastBuild: null
+      };
 
-      const compRows = [];
-      const advRows = [];
-      const taskRows = [];
-      const standRows = [];
-      const setRows = [];
-      const schedRows = [];
-      const weatherRows = [];
-      const objectiveRows = [];
+      const editorConfigs = new Map();
+      const idRegistry = new Map();
+      let uidCounter = 1;
+      let idSeed = 1200;
 
-      let compDelimiter = ',';
-      let advDelimiter = ',';
-      let taskDelimiter = ',';
-      let standDelimiter = ',';
-      let objectiveDelimiter = ',';
+      const structureTypes = [
+        { key: 'league', label: 'League Stage', description: 'Single table, round-robin competition with standings.', icon: '⚽' },
+        { key: 'groups', label: 'Group Phase', description: 'Multiple pools with advancement to later rounds.', icon: '🧩' },
+        { key: 'playoffs', label: 'Playoffs', description: 'Knockout bracket with configurable rounds.', icon: '🏆' }
+      ];
 
-      const treeState = new Map();
-      const levelNames = { '0': 'Nation', '1': 'Competition', '2': 'Stage', '3': 'Group', '4': 'Group', '5': 'Node' };
+      const stageIcons = {
+        league: '⚽',
+        groups: '🧩',
+        playoff: '🏆',
+        qualifying: '🎯',
+        final: '🥇'
+      };
 
-      let activeTab = 'comp';
-      let selectedId = null;
-
-      let compIdSet = new Set();
-      const compIndexById = new Map();
-      const childrenByParent = new Map();
-
-      const compTableBody = $('compTableBody');
-      const settingsTableBody = $('settingsTableBody');
-      const tasksTableBody = $('tasksTableBody');
-      const advTableBody = $('advTableBody');
-      const standTableBody = $('standTableBody');
-      const schedTableBody = $('schedTableBody');
-      const objTableBody = $('objTableBody');
-      const weatherTableBody = $('weatherTableBody');
-
-      function autoDetectDelimiter(text){
-        const sample = text.split(/\r?\n/).map(line => line.trim()).find(Boolean) || '';
-        const candidates = [',', '\t', ';', '|'];
-        let best = ',';
-        let bestCount = 0;
-        candidates.forEach(candidate => {
-          const count = sample ? sample.split(candidate).length : 0;
-          if(count > bestCount){
-            best = candidate;
-            bestCount = count;
-          }
-        });
-        return best;
+      function createUuid(prefix = 'id') {
+        return `${prefix}-${uidCounter++}`;
       }
 
-      function showMessage(message, tone='info'){
-        const container = $('globalMessages');
-        if(!container) return;
-        let cls = 'status-info';
-        if(tone === 'success') cls = 'status-success';
-        if(tone === 'error') cls = 'status-error';
-        container.innerHTML = `<span class="${cls}">${message}</span>`;
-      }
-
-      function setPanelMessage(id, message){
-        const el = $(id);
-        if(el) el.innerHTML = message;
-      }
-
-      function downloadText(filename, text){
-        const blob = new Blob([text], { type: 'text/plain' });
-        downloadBlob(filename, blob);
-      }
-
-      function downloadBlob(filename, blob){
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 400);
-      }
-
-      function rebuildIdMaps(){
-        compIdSet = new Set();
-        compIndexById.clear();
-        childrenByParent.clear();
-        compRows.forEach((row, index) => {
-          const id = String(row.id || '').trim();
-          if(id){
-            compIdSet.add(id);
-            if(!compIndexById.has(id)) compIndexById.set(id, index);
-          }
-        });
-        compRows.forEach(row => {
-          const parent = String(row.parent || '').trim();
-          const id = String(row.id || '').trim();
-          if(parent){
-            if(!childrenByParent.has(parent)) childrenByParent.set(parent, []);
-            if(id) childrenByParent.get(parent).push(id);
-          }
-        });
-        if(selectedId && !compIdSet.has(String(selectedId))){
-          selectedId = null;
+      function getIdForKey(key) {
+        if (!idRegistry.has(key)) {
+          idRegistry.set(key, allocateId());
         }
-        updateTreeSummary();
+        return idRegistry.get(key);
       }
 
-      function updateTreeSummary(){
-        const counts = new Map();
-        compRows.forEach(row => {
-          const level = String(row.level || '');
-          counts.set(level, (counts.get(level) || 0) + 1);
-        });
-        const pieces = [];
-        counts.forEach((value, key) => {
-          const label = levelNames[key] || `L${key}`;
-          pieces.push(`${value} ${label}${value === 1 ? '' : 's'}`);
-        });
-        const summary = pieces.length ? pieces.join(' • ') : 'No CompObj data loaded yet.';
-        $('treeSummary').textContent = summary;
+      function allocateId() {
+        const used = new Set(idRegistry.values());
+        while (used.has(String(idSeed))) {
+          idSeed += 1;
+        }
+        const assigned = String(idSeed);
+        idSeed += 1;
+        return assigned;
       }
 
-      function buildHierarchy(){
-        const nodes = new Map();
-        compRows.forEach(row => {
-          const id = String(row.id || '').trim();
-          if(!id) return;
-          nodes.set(id, { row, children: [] });
-        });
-        const roots = [];
-        const sorter = (a, b) => {
-          const levelDiff = Number(a.row.level || 0) - Number(b.row.level || 0);
-          if(levelDiff !== 0) return levelDiff;
-          const nameA = (a.row.name || a.row.code || '').toLowerCase();
-          const nameB = (b.row.name || b.row.code || '').toLowerCase();
-          if(nameA < nameB) return -1;
-          if(nameA > nameB) return 1;
-          return String(a.row.id).localeCompare(String(b.row.id));
+      function setIdForKey(key, desiredId) {
+        const normalized = String(desiredId || '').trim();
+        if (!normalized) return false;
+        const takenBy = Array.from(idRegistry.entries()).find(([, value]) => value === normalized && value !== idRegistry.get(key));
+        if (takenBy) return false;
+        idRegistry.set(key, normalized);
+        return true;
+      }
+
+      function ensureConfig(league) {
+        if (!editorConfigs.has(league.uuid)) {
+          editorConfigs.set(league.uuid, createDefaultConfig());
+        }
+        return editorConfigs.get(league.uuid);
+      }
+
+      function createDefaultConfig() {
+        return {
+          structureType: 'league',
+          teamCount: 20,
+          groupCount: 1,
+          rounds: 2,
+          homeAndAway: true,
+          includePlayoffs: false,
+          playoffTeams: 8,
+          gamesPerMatchup: 2,
+          includeThirdPlace: false,
+          matchTime: '20:00'
         };
-        nodes.forEach((node, id) => {
-          const parent = String(node.row.parent || '').trim();
-          if(parent && nodes.has(parent)){
-            nodes.get(parent).children.push(node);
-          } else {
-            roots.push(node);
-          }
+      }
+
+      function createFederation(name, code, region) {
+        const federation = {
+          uuid: createUuid('fed'),
+          name,
+          code,
+          region,
+          leagues: []
+        };
+        getIdForKey(`fed:${federation.uuid}`);
+        return federation;
+      }
+
+      function createLeague(name, code, season) {
+        const league = {
+          uuid: createUuid('league'),
+          name,
+          code,
+          season,
+          notes: ''
+        };
+        getIdForKey(`league:${league.uuid}`);
+        editorConfigs.set(league.uuid, createDefaultConfig());
+        return league;
+      }
+
+      function createInitialProject() {
+        const uefa = createFederation('UEFA', 'UEFA', 'Europe');
+        const concacaf = createFederation('CONCACAF', 'CONCACAF', 'North & Central America');
+        const afc = createFederation('AFC', 'AFC', 'Asia');
+
+        const ucl = createLeague('UEFA Champions League', 'UCL', '2024/25');
+        editorConfigs.set(ucl.uuid, {
+          structureType: 'groups',
+          teamCount: 32,
+          groupCount: 8,
+          rounds: 2,
+          homeAndAway: true,
+          includePlayoffs: true,
+          playoffTeams: 16,
+          gamesPerMatchup: 2,
+          includeThirdPlace: false,
+          matchTime: '21:00'
         });
-        nodes.forEach(node => node.children.sort(sorter));
-        roots.sort(sorter);
-        return roots;
+
+        const europa = createLeague('UEFA Europa League', 'UEL', '2024/25');
+        editorConfigs.set(europa.uuid, {
+          structureType: 'groups',
+          teamCount: 48,
+          groupCount: 12,
+          rounds: 2,
+          homeAndAway: true,
+          includePlayoffs: true,
+          playoffTeams: 32,
+          gamesPerMatchup: 2,
+          includeThirdPlace: false,
+          matchTime: '21:00'
+        });
+
+        const mls = createLeague('Major League Soccer', 'MLS', '2024');
+        editorConfigs.set(mls.uuid, {
+          structureType: 'league',
+          teamCount: 29,
+          groupCount: 1,
+          rounds: 1,
+          homeAndAway: false,
+          includePlayoffs: true,
+          playoffTeams: 16,
+          gamesPerMatchup: 2,
+          includeThirdPlace: false,
+          matchTime: '19:30'
+        });
+
+        const acl = createLeague('AFC Champions League', 'ACL', '2024/25');
+        editorConfigs.set(acl.uuid, {
+          structureType: 'groups',
+          teamCount: 40,
+          groupCount: 10,
+          rounds: 2,
+          homeAndAway: true,
+          includePlayoffs: true,
+          playoffTeams: 16,
+          gamesPerMatchup: 2,
+          includeThirdPlace: true,
+          matchTime: '20:00'
+        });
+
+        uefa.leagues.push(ucl, europa);
+        concacaf.leagues.push(mls);
+        afc.leagues.push(acl);
+
+        return [uefa, concacaf, afc];
       }
 
-      function levelLabel(level){
-        const normalized = String(level || '');
-        return levelNames[normalized] || `Level ${normalized || '??'}`;
+      function getSelectedFederation() {
+        return state.federations.find((f) => f.uuid === state.selectedFederation) || null;
       }
 
-      function renderTree(){
-        const container = $('compTree');
-        if(!container) return;
+      function getSelectedLeague() {
+        const federation = getSelectedFederation();
+        if (!federation) return null;
+        return federation.leagues.find((l) => l.uuid === state.selectedLeague) || null;
+      }
+
+      function showMessage(text, tone = 'info') {
+        const box = $('globalMessage');
+        if (!box) return;
+        const classMap = {
+          info: 'message message-info',
+          success: 'message message-success',
+          error: 'message message-error'
+        };
+        box.className = classMap[tone] || classMap.info;
+        box.textContent = text;
+        box.classList.remove('hidden');
+        clearTimeout(showMessage.timer);
+        showMessage.timer = setTimeout(() => box.classList.add('hidden'), 4000);
+      }
+
+      function renderFederations() {
+        const container = $('federationList');
+        if (!container) return;
         container.innerHTML = '';
-        const hierarchy = buildHierarchy();
-        if(!hierarchy.length){
-          container.innerHTML = '<p class="text-sm text-slate-600 p-3">Import CompObj data to begin.</p>';
+        state.federations.forEach((fed) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.dataset.fedId = fed.uuid;
+          btn.className = 'selector-card' + (state.selectedFederation === fed.uuid ? ' selector-card-active' : '');
+          const leagueCount = fed.leagues.length;
+          const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`fed:${fed.uuid}`)}</div>` : '';
+          btn.innerHTML = `
+            <div class="selector-icon">🌍</div>
+            <div class="selector-title">${fed.name || 'Untitled Federation'}</div>
+            <div class="selector-sub">${fed.code || 'No code'} • ${leagueCount} competition${leagueCount === 1 ? '' : 's'}</div>
+            ${fed.region ? `<div class="selector-sub">${fed.region}</div>` : ''}
+            ${idInfo}
+          `;
+          container.appendChild(btn);
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'selector-card selector-card-add';
+        addBtn.textContent = '+ New Federation';
+        addBtn.onclick = () => {
+          const name = prompt('Federation name', 'New Federation');
+          if (!name) return;
+          const code = prompt('Federation code', name.slice(0, 4).toUpperCase());
+          const region = prompt('Region or description', '');
+          const federation = createFederation(name, code || name.slice(0, 4).toUpperCase(), region || '');
+          state.federations.push(federation);
+          state.selectedFederation = federation.uuid;
+          state.selectedLeague = null;
+          renderAll();
+          showMessage('Federation added.', 'success');
+        };
+        container.appendChild(addBtn);
+      }
+
+      function renderLeagues() {
+        const container = $('leagueList');
+        const summary = $('leaguePanelSummary');
+        if (!container || !summary) return;
+        container.innerHTML = '';
+        const federation = getSelectedFederation();
+        if (!federation) {
+          summary.textContent = 'Select a federation to browse its competitions.';
           return;
         }
-        const fragment = document.createDocumentFragment();
-        hierarchy.forEach(node => fragment.appendChild(renderTreeNode(node)));
-        container.appendChild(fragment);
+        const filtered = federation.leagues.filter((league) => {
+          if (!state.leagueSearch) return true;
+          const q = state.leagueSearch.toLowerCase();
+          return (
+            (league.name || '').toLowerCase().includes(q) ||
+            (league.code || '').toLowerCase().includes(q)
+          );
+        });
+        summary.textContent = `${filtered.length} competition${filtered.length === 1 ? '' : 's'} in ${federation.name}`;
+        filtered.forEach((league) => {
+          const config = ensureConfig(league);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.dataset.leagueId = league.uuid;
+          btn.className = 'selector-card' + (state.selectedLeague === league.uuid ? ' selector-card-active' : '');
+          const stageIcon = structureTypes.find((s) => s.key === config.structureType)?.icon || '⚙️';
+          const groupsLabel = config.structureType === 'league' ? 'Single table' : `${config.groupCount} group${config.groupCount === 1 ? '' : 's'}`;
+          const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`league:${league.uuid}`)}</div>` : '';
+          btn.innerHTML = `
+            <div class="selector-icon">${stageIcon}</div>
+            <div class="selector-title">${league.name || 'Untitled Competition'}</div>
+            <div class="selector-sub">${league.code || 'No code'} • ${config.teamCount} teams • ${groupsLabel}</div>
+            ${league.season ? `<div class="selector-sub">Season ${league.season}</div>` : ''}
+            ${idInfo}
+          `;
+          container.appendChild(btn);
+        });
+        if (!filtered.length) {
+          const empty = document.createElement('div');
+          empty.className = 'callout';
+          empty.textContent = 'No competitions yet. Create one to begin designing.';
+          container.appendChild(empty);
+        }
       }
 
-      function renderTreeNode(node){
-        const wrapper = document.createElement('div');
-        wrapper.className = 'pl-4';
-        const row = document.createElement('div');
-        row.className = 'tree-row cursor-pointer transition';
-        if(selectedId && String(node.row.id) === String(selectedId)){
-          row.classList.add('tree-node-active');
+      function renderEditor() {
+        const editor = $('editorContent');
+        const summary = $('editorSummary');
+        if (!editor || !summary) return;
+        editor.innerHTML = '';
+        const federation = getSelectedFederation();
+        const league = getSelectedLeague();
+        if (!federation || !league) {
+          summary.textContent = 'Choose a competition to unlock the guided editor.';
+          const placeholder = document.createElement('div');
+          placeholder.className = 'callout';
+          placeholder.textContent = 'Select a competition card from the League Browser to begin editing its structure.';
+          editor.appendChild(placeholder);
+          return;
         }
-        const toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'tree-toggle';
-        if(node.children.length){
-          const collapsed = treeState.get(node.row.id) === true;
-          toggle.textContent = collapsed ? '+' : '−';
-          toggle.onclick = (ev) => {
-            ev.stopPropagation();
-            treeState.set(node.row.id, !collapsed);
-            renderTree();
+        const config = ensureConfig(league);
+        summary.textContent = `${federation.name} • ${league.name}`;
+        renderStepper(editor);
+        renderStepContent(editor, league, config, federation);
+      }
+
+      function renderStepper(editor) {
+        const stepper = document.createElement('div');
+        stepper.className = 'stepper';
+        const steps = ['Overview', 'Structure', 'Stages', 'Review'];
+        steps.forEach((label, index) => {
+          const pill = document.createElement('button');
+          pill.type = 'button';
+          pill.className = 'step-pill' + (state.stepIndex === index ? ' step-pill-active' : '');
+          pill.innerHTML = `<span>${index + 1}</span>${label}`;
+          pill.onclick = () => {
+            state.stepIndex = index;
+            renderEditor();
           };
+          stepper.appendChild(pill);
+        });
+        editor.appendChild(stepper);
+      }
+
+      function renderStepContent(editor, league, config, federation) {
+        const content = document.createElement('div');
+        content.className = 'flex flex-col gap-6';
+        const step = state.stepIndex;
+        if (step === 0) {
+          content.appendChild(renderOverviewStep(league, config, federation));
+        } else if (step === 1) {
+          content.appendChild(renderStructureStep(league, config));
+        } else if (step === 2) {
+          content.appendChild(renderStagesStep(league, config));
         } else {
-          toggle.textContent = '•';
-          toggle.disabled = true;
+          content.appendChild(renderReviewStep(league, config, federation));
         }
-        row.appendChild(toggle);
+        editor.appendChild(content);
+      }
 
-        const label = document.createElement('div');
-        label.className = 'flex flex-col';
-        const name = document.createElement('span');
-        name.className = 'text-sm font-medium';
-        name.textContent = node.row.name || node.row.code || '(Unnamed)';
-        const meta = document.createElement('span');
-        meta.className = 'text-xs text-slate-600';
-        meta.textContent = `${levelLabel(node.row.level)} • #${node.row.id || '?'}${node.row.parent ? ` • Parent ${node.row.parent}` : ''}`;
-        label.appendChild(name);
-        label.appendChild(meta);
-        row.appendChild(label);
-        row.onclick = () => selectNode(String(node.row.id));
-        wrapper.appendChild(row);
+      function renderOverviewStep(league, config, federation) {
+        const container = document.createElement('div');
+        container.className = 'flex flex-col gap-6';
 
-        if(node.children.length){
-          const collapsed = treeState.get(node.row.id) === true;
-          if(!collapsed){
-            const childWrap = document.createElement('div');
-            childWrap.className = 'tree-children';
-            node.children.forEach(child => childWrap.appendChild(renderTreeNode(child)));
-            wrapper.appendChild(childWrap);
-          }
+        const breadcrumb = document.createElement('div');
+        breadcrumb.className = 'badge';
+        breadcrumb.textContent = `${federation.name} • ${league.name}`;
+        container.appendChild(breadcrumb);
+
+        const grid = document.createElement('div');
+        grid.className = 'input-grid';
+
+        grid.appendChild(createField('Competition Name', league.name, 'text', (value) => {
+          league.name = value;
+          renderLeagues();
+          renderEditor();
+        }));
+
+        grid.appendChild(createField('Short Code', league.code, 'text', (value) => {
+          league.code = value.toUpperCase();
+          renderLeagues();
+        }, 'Uppercase identifier used in generated files.'));
+
+        grid.appendChild(createField('Season', league.season, 'text', (value) => {
+          league.season = value;
+          renderLeagues();
+        }, 'Optional season label for settings.'));
+
+        grid.appendChild(createField('Notes', league.notes, 'textarea', (value) => {
+          league.notes = value;
+        }, 'Internal notes for collaborators.'));
+
+        container.appendChild(grid);
+
+        if (state.developerMode) {
+          const devBox = document.createElement('div');
+          devBox.className = 'callout';
+          const fedId = getIdForKey(`fed:${federation.uuid}`);
+          const leagueId = getIdForKey(`league:${league.uuid}`);
+          devBox.innerHTML = `
+            <div class="font-semibold mb-2">Developer identifiers</div>
+            <div class="flex flex-wrap gap-3">
+              <div>Federation ID: <code>${fedId}</code></div>
+              <div>Competition ID: <input id="leagueIdInput" value="${leagueId}" class="px-2 py-1" style="width:6rem" /></div>
+            </div>
+          `;
+          setTimeout(() => {
+            const input = $('leagueIdInput');
+            if (input) {
+              input.addEventListener('change', () => {
+                const ok = setIdForKey(`league:${league.uuid}`, input.value);
+                if (!ok) {
+                  showMessage('ID already in use or invalid.', 'error');
+                  input.value = getIdForKey(`league:${league.uuid}`);
+                } else {
+                  showMessage('Competition ID updated.', 'success');
+                }
+              });
+            }
+          }, 10);
+          container.appendChild(devBox);
+        }
+
+        return container;
+      }
+
+      function createField(label, value, type, onChange, helper) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'field';
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        wrapper.appendChild(labelEl);
+        let input;
+        if (type === 'textarea') {
+          input = document.createElement('textarea');
+          input.rows = 3;
+        } else {
+          input = document.createElement('input');
+          input.type = type;
+        }
+        input.value = value || '';
+        input.addEventListener('input', (event) => onChange(event.target.value));
+        wrapper.appendChild(input);
+        if (helper) {
+          const helperEl = document.createElement('small');
+          helperEl.textContent = helper;
+          wrapper.appendChild(helperEl);
         }
         return wrapper;
       }
 
-      function selectNode(id){
-        selectedId = id;
-        renderSelectionPanel();
-        renderAllTables();
-        renderTree();
-      }
+      function renderStructureStep(league, config) {
+        const container = document.createElement('div');
+        container.className = 'flex flex-col gap-6';
 
-      function getActiveIdSet(){
-        if(!selectedId) return null;
-        const visited = new Set();
-        const visit = (id) => {
-          if(!id || visited.has(id)) return;
-          visited.add(id);
-          const children = childrenByParent.get(id) || [];
-          children.forEach(child => visit(child));
-        };
-        visit(String(selectedId));
-        return visited;
-      }
-
-      function buildBreadcrumb(id){
-        const chain = [];
-        let current = String(id || '');
-        const guard = new Set();
-        while(current && !guard.has(current)){
-          guard.add(current);
-          const index = compIndexById.get(current);
-          if(index === undefined) break;
-          const row = compRows[index];
-          chain.unshift(`${row.name || row.code || 'Node'} (#${row.id})`);
-          current = String(row.parent || '');
-        }
-        return chain;
-      }
-
-      function renderSelectionPanel(){
-        const panel = $('selectionPanel');
-        if(!panel) return;
-        panel.innerHTML = '';
-        if(!selectedId){
-          $('selectionBreadcrumb').textContent = 'No node selected.';
-          panel.innerHTML = '<p class="text-sm text-slate-600">Select a node from the tree to edit its properties and view linked records.</p>';
-          return;
-        }
-        const index = compIndexById.get(String(selectedId));
-        if(index === undefined){
-          $('selectionBreadcrumb').textContent = 'Node not found.';
-          panel.innerHTML = '<p class="text-sm text-red-600">The selected node no longer exists.</p>';
-          return;
-        }
-        const row = compRows[index];
-        const breadcrumb = buildBreadcrumb(selectedId);
-        $('selectionBreadcrumb').textContent = breadcrumb.join(' › ');
-
-        const grid = document.createElement('div');
-        grid.className = 'selection-grid';
-
-        const createField = (labelText, field, placeholder='') => {
-          const wrapper = document.createElement('label');
-          wrapper.className = 'flex flex-col gap-1 text-sm';
-          const labelSpan = document.createElement('span');
-          labelSpan.className = 'text-xs uppercase tracking-wide text-slate-600';
-          labelSpan.textContent = labelText;
-          const input = document.createElement('input');
-          input.className = 'table-input';
-          input.value = row[field] ?? '';
-          input.placeholder = placeholder;
-          input.onfocus = () => { input.dataset.prev = input.value; };
-          input.onchange = () => {
-            const value = input.value.trim();
-            const previous = input.dataset.prev || '';
-            if(field === 'id' && previous && previous !== value){
-              const mapping = {};
-              mapping[previous] = value;
-              row[field] = value;
-              applyIdMapping(mapping);
-              return;
-            }
-            row[field] = value;
-            rebuildIdMaps();
-            renderTree();
-            renderAllTables();
-            input.dataset.prev = value;
-            showMessage('CompObj details updated.', 'success');
-          };
-          wrapper.appendChild(labelSpan);
-          wrapper.appendChild(input);
-          return wrapper;
-        };
-
-        grid.appendChild(createField('ID', 'id'));
-        grid.appendChild(createField('Level', 'level'));
-        grid.appendChild(createField('Code', 'code'));
-        grid.appendChild(createField('Name', 'name'));
-        grid.appendChild(createField('Parent', 'parent'));
-        panel.appendChild(grid);
-
-        const hint = document.createElement('p');
-        hint.className = 'subtle-text mt-3';
-        hint.textContent = 'ID edits cascade across all linked files automatically.';
-        panel.appendChild(hint);
-
-        const actions = document.createElement('div');
-        actions.className = 'flex flex-wrap gap-2 mt-4';
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn bg-red-600 text-white hover:bg-red-700';
-        deleteBtn.textContent = 'Delete Node';
-        deleteBtn.onclick = () => {
-          if(!confirm('Delete this CompObj entry?')) return;
-          compRows.splice(index, 1);
-          rebuildIdMaps();
-          selectedId = null;
-          renderSelectionPanel();
-          renderTree();
-          renderAllTables();
-          showMessage('CompObj entry removed.', 'success');
-        };
-        actions.appendChild(deleteBtn);
-
-        const addChildBtn = document.createElement('button');
-        addChildBtn.className = 'btn bg-slate-700 text-white hover:bg-slate-800';
-        addChildBtn.textContent = 'Add Child Node';
-        addChildBtn.onclick = () => {
-          const newRow = { id: '', level: String(Number(row.level || 0) + 1), code: '', name: '', parent: String(row.id || '') };
-          compRows.push(newRow);
-          rebuildIdMaps();
-          renderTree();
-          renderAllTables();
-          showMessage('New child node added. Assign it an ID to complete the link.', 'info');
-        };
-        actions.appendChild(addChildBtn);
-
-        panel.appendChild(actions);
-      }
-      function renderActiveTab(){
-        const buttons = Array.from(document.querySelectorAll('#tabButtons button'));
-        buttons.forEach(btn => {
-          const key = btn.dataset.tab;
-          if(key === activeTab){
-            btn.classList.add('tab-btn-active');
-          } else {
-            btn.classList.remove('tab-btn-active');
-          }
-        });
-        document.querySelectorAll('.tab-panel').forEach(panel => {
-          panel.classList.toggle('hidden', panel.dataset.tab !== activeTab);
-        });
-      }
-
-      function initTabs(){
-        const tabContainer = $('tabButtons');
-        const tabs = [
-          { key: 'comp', label: 'CompObj' },
-          { key: 'settings', label: 'Settings' },
-          { key: 'tasks', label: 'Tasks' },
-          { key: 'adv', label: 'Advancements' },
-          { key: 'standings', label: 'Standings' },
-          { key: 'schedule', label: 'Schedule' },
-          { key: 'objectives', label: 'Objectives' },
-          { key: 'weather', label: 'Weather' }
-        ];
-        tabs.forEach(tab => {
+        const structureRow = document.createElement('div');
+        structureRow.className = 'flex flex-wrap gap-2';
+        structureTypes.forEach((type) => {
           const button = document.createElement('button');
           button.type = 'button';
-          button.dataset.tab = tab.key;
-          button.textContent = tab.label;
-          button.className = 'tab-btn transition';
+          button.className = 'pill-button' + (config.structureType === type.key ? ' pill-button-active' : '');
+          button.innerHTML = `${type.icon} ${type.label}`;
           button.onclick = () => {
-            activeTab = tab.key;
-            renderActiveTab();
+            config.structureType = type.key;
+            if (type.key === 'league') config.groupCount = 1;
+            renderEditor();
           };
-          tabContainer.appendChild(button);
+          button.title = type.description;
+          structureRow.appendChild(button);
         });
-        renderActiveTab();
+        container.appendChild(structureRow);
+
+        const sliders = document.createElement('div');
+        sliders.className = 'flex flex-col gap-4';
+        sliders.appendChild(createRange('Teams', 2, 64, config.teamCount, 1, (value) => {
+          config.teamCount = value;
+          renderLeagues();
+        }));
+
+        const groupDisabled = config.structureType === 'league' || config.structureType === 'playoffs';
+        sliders.appendChild(createRange('Groups', 1, 16, config.groupCount, 1, (value) => {
+          config.groupCount = value;
+        }, groupDisabled, groupDisabled ? 'Group count is fixed for this structure.' : 'Distribute teams evenly across groups.'));
+
+        sliders.appendChild(createRange('Rounds', 1, 6, config.rounds, 1, (value) => {
+          config.rounds = value;
+        }, false, 'Number of round-robin cycles.'));
+
+        container.appendChild(sliders);
+
+        const toggles = document.createElement('div');
+        toggles.className = 'flex flex-col gap-3';
+        toggles.appendChild(createToggle('Home & Away fixtures', config.homeAndAway, (checked) => {
+          config.homeAndAway = checked;
+        }));
+        toggles.appendChild(createToggle('Include playoff stage', config.includePlayoffs, (checked) => {
+          config.includePlayoffs = checked;
+          renderEditor();
+        }, 'Generates a knockout bracket after the main stage.'));
+        container.appendChild(toggles);
+
+        return container;
       }
 
-      function createFilterInfo(shown, total){
-        if(!total) return 'No rows loaded yet.';
-        if(shown === total) return `${total} rows`;
-        return `${shown} shown of ${total} total`;
-      }
-
-      function attachTableInputHandlers(container){
-        container.querySelectorAll('input.table-input').forEach(input => {
-          input.onfocus = () => { input.dataset.prev = input.value; };
-          input.onchange = () => {
-            const type = input.dataset.type;
-            const field = input.dataset.field;
-            const index = Number(input.dataset.index);
-            const value = input.value.trim();
-            const prev = input.dataset.prev || '';
-            if(type === 'comp'){
-              if(field === 'id' && prev && prev !== value){
-                const mapping = {};
-                mapping[prev] = value;
-                compRows[index][field] = value;
-                applyIdMapping(mapping);
-                return;
-              }
-              compRows[index][field] = value;
-              rebuildIdMaps();
-              renderTree();
-              renderSelectionPanel();
-              renderAllTables();
-              showMessage('CompObj row updated.', 'success');
-              return;
-            }
-            if(type === 'settings'){
-              setRows[index][field] = value;
-            } else if(type === 'tasks'){
-              taskRows[index][field] = value;
-            } else if(type === 'adv'){
-              advRows[index][field] = value;
-            } else if(type === 'stand'){
-              standRows[index][field] = value;
-            } else if(type === 'sched'){
-              schedRows[index][field] = value;
-            } else if(type === 'obj'){
-              objectiveRows[index][field] = value;
-            } else if(type === 'weather'){
-              weatherRows[index][field] = value;
-            }
-            input.dataset.prev = value;
-          };
+      function createRange(label, min, max, value, step, onChange, disabled = false, helper) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'range-row';
+        const labelRow = document.createElement('label');
+        labelRow.innerHTML = `<span>${label}</span><span>${value}</span>`;
+        wrapper.appendChild(labelRow);
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = String(min);
+        input.max = String(max);
+        input.step = String(step);
+        input.value = String(value);
+        input.disabled = disabled;
+        input.addEventListener('input', (event) => {
+          const newValue = Number(event.target.value);
+          labelRow.innerHTML = `<span>${label}</span><span>${newValue}</span>`;
         });
+        input.addEventListener('change', (event) => {
+          const newValue = Number(event.target.value);
+          onChange(newValue);
+        });
+        wrapper.appendChild(input);
+        if (helper) {
+          const helperEl = document.createElement('small');
+          helperEl.textContent = helper;
+          wrapper.appendChild(helperEl);
+        }
+        return wrapper;
       }
 
-      function renderCompTable(){
-        compTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        compRows.forEach((row, index) => {
-          const id = String(row.id || '').trim();
-          const parent = String(row.parent || '').trim();
-          if(!activeSet || activeSet.has(id) || (id && activeSet.has(id)) || (parent && activeSet.has(parent))){
-            filtered.push({ row, index });
+      function createToggle(label, value, onChange, helper) {
+        const row = document.createElement('div');
+        row.className = 'toggle-row';
+        const info = document.createElement('div');
+        info.className = 'toggle-info';
+        const title = document.createElement('div');
+        title.className = 'font-semibold';
+        title.textContent = label;
+        info.appendChild(title);
+        if (helper) {
+          const helperEl = document.createElement('small');
+          helperEl.textContent = helper;
+          info.appendChild(helperEl);
+        }
+        const toggle = document.createElement('label');
+        toggle.className = 'switch';
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = value;
+        input.addEventListener('change', (event) => onChange(event.target.checked));
+        const slider = document.createElement('span');
+        slider.className = 'slider';
+        toggle.appendChild(input);
+        toggle.appendChild(slider);
+        row.appendChild(info);
+        row.appendChild(toggle);
+        return row;
+      }
+
+      function renderStagesStep(league, config) {
+        const container = document.createElement('div');
+        container.className = 'flex flex-col gap-5';
+
+        if (config.includePlayoffs || config.structureType === 'playoffs') {
+          container.appendChild(createRange('Playoff entrants', 2, Math.max(2, config.teamCount), config.playoffTeams, 2, (value) => {
+            config.playoffTeams = value;
+            renderEditor();
+          }, false, 'Number of teams advancing to the knockout bracket.'));
+
+          container.appendChild(createRange('Games per matchup', 1, 3, config.gamesPerMatchup, 1, (value) => {
+            config.gamesPerMatchup = value;
+          }, false, 'Best-of series length for playoff rounds.'));
+
+          container.appendChild(createToggle('Third-place match', config.includeThirdPlace, (checked) => {
+            config.includeThirdPlace = checked;
+            renderEditor();
+          }));
+        }
+
+        const plan = createCompetitionPlan(league, config);
+        const stageList = document.createElement('div');
+        stageList.className = 'stage-list';
+
+        plan.stages.forEach((stage) => {
+          const details = document.createElement('details');
+          details.className = 'stage-details';
+          details.open = stage.key === 'main';
+          const summary = document.createElement('summary');
+          const header = document.createElement('div');
+          header.className = 'stage-header';
+          const icon = document.createElement('div');
+          icon.className = 'stage-icon';
+          icon.textContent = stage.icon || '⚙️';
+          const title = document.createElement('div');
+          title.className = 'flex flex-col';
+          title.innerHTML = `<span class="font-semibold">${stage.name}</span><span class="text-sm text-slate-600">${stage.groups.length} group${stage.groups.length === 1 ? '' : 's'} • ${stage.rounds} round${stage.rounds === 1 ? '' : 's'}</span>`;
+          header.appendChild(icon);
+          header.appendChild(title);
+          summary.appendChild(header);
+          details.appendChild(summary);
+
+          const body = document.createElement('div');
+          body.className = 'details-body';
+          const summaryRow = document.createElement('div');
+          summaryRow.className = 'stage-summary';
+          summaryRow.innerHTML = `
+            <span class="badge">${stage.rounds} round${stage.rounds === 1 ? '' : 's'}</span>
+            <span class="badge">${stage.estimatedMinGames} games</span>
+            <span class="badge${state.developerMode ? '' : ' hidden'}">Stage ID ${stage.id}</span>
+          `;
+          body.appendChild(summaryRow);
+
+          const list = document.createElement('div');
+          list.className = 'flex flex-col gap-2';
+          stage.groups.forEach((group) => {
+            const item = document.createElement('div');
+            item.className = 'badge';
+            const idBadge = state.developerMode ? ` • ID ${group.id}` : '';
+            item.textContent = `${group.name} • ${group.teamCount} teams${idBadge}`;
+            list.appendChild(item);
+          });
+          body.appendChild(list);
+
+          if (stage.entryTargetId && state.developerMode) {
+            const idBlock = document.createElement('div');
+            idBlock.className = 'callout';
+            idBlock.innerHTML = `Stage key: <code>${stage.stageKey}</code><br>Stage ID: <code>${stage.id}</code>`;
+            body.appendChild(idBlock);
+          }
+
+          details.appendChild(body);
+          stageList.appendChild(details);
+        });
+
+        container.appendChild(stageList);
+        return container;
+      }
+
+      function renderReviewStep(league, config, federation) {
+        const container = document.createElement('div');
+        container.className = 'flex flex-col gap-5';
+
+        const plan = createCompetitionPlan(league, config);
+        const summary = document.createElement('div');
+        summary.className = 'callout';
+        const totalGroups = plan.stages.reduce((sum, stage) => sum + stage.groups.length, 0);
+        summary.innerHTML = `
+          <div class="font-semibold mb-2">Summary</div>
+          <div>${config.teamCount} teams • ${totalGroups} group${totalGroups === 1 ? '' : 's'} • ${plan.stages.length} stage${plan.stages.length === 1 ? '' : 's'}</div>
+          <div>${plan.stages.map((stage) => stage.name).join(' → ')}</div>
+        `;
+        container.appendChild(summary);
+
+        const tree = document.createElement('div');
+        tree.className = 'flex flex-col gap-2';
+        const fedId = getIdForKey(`fed:${federation.uuid}`);
+        const leagueId = getIdForKey(`league:${league.uuid}`);
+        tree.innerHTML = `
+          <div class="badge">${federation.name}${state.developerMode ? ` • ${fedId}` : ''}</div>
+          <div class="badge" style="margin-left:1.5rem;">${league.name}${state.developerMode ? ` • ${leagueId}` : ''}</div>
+        `;
+        plan.stages.forEach((stage) => {
+          const stageEl = document.createElement('div');
+          stageEl.className = 'badge';
+          stageEl.style.marginLeft = '3rem';
+          const idBadge = state.developerMode ? ` • ${stage.id}` : '';
+          stageEl.textContent = `${stage.name}${idBadge}`;
+          tree.appendChild(stageEl);
+          stage.groups.forEach((group) => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'badge';
+            groupEl.style.marginLeft = '4.5rem';
+            const idInfo = state.developerMode ? ` • ${group.id}` : '';
+            groupEl.textContent = `${group.name}${idInfo}`;
+            tree.appendChild(groupEl);
+          });
+        });
+        container.appendChild(tree);
+
+        const notes = document.createElement('div');
+        notes.className = 'text-sm text-slate-600';
+        notes.textContent = 'Use Build & Export to regenerate compobj, settings, tasks, advancements, standings, schedule, objectives, and weather files. All references remain synchronized.';
+        container.appendChild(notes);
+
+        return container;
+      }
+
+      function createCompetitionPlan(league, config) {
+        const plan = { stages: [], advancements: [], finalTargetId: null };
+        const structure = config.structureType;
+        const teamCount = Math.max(2, config.teamCount);
+
+        if (structure === 'playoffs' && !config.includePlayoffs) {
+          const playoffStage = buildPlayoffStage('playoff', league, config, teamCount);
+          plan.stages.push(playoffStage);
+          plan.finalTargetId = playoffStage.finalGroupId;
+          return plan;
+        }
+
+        const groupStage = buildGroupStage('main', league, config, teamCount);
+        plan.stages.push(groupStage);
+
+        if (config.includePlayoffs) {
+          const playoffTeams = Math.min(config.playoffTeams || teamCount, teamCount);
+          const playoffStage = buildPlayoffStage('playoff', league, config, playoffTeams);
+          plan.stages.push(playoffStage);
+          plan.finalTargetId = playoffStage.finalGroupId;
+          plan.advancements.push(...computeAdvancements(groupStage.groups, playoffStage.entryTargetId, playoffTeams));
+        } else {
+          plan.finalTargetId = groupStage.finalGroupId;
+        }
+
+        return plan;
+      }
+
+      function buildGroupStage(key, league, config, teamCount) {
+        const groupCount = config.structureType === 'league' ? 1 : Math.max(1, config.groupCount);
+        const stageKey = `league:${league.uuid}:stage:${key}`;
+        const id = getIdForKey(stageKey);
+        const rounds = Math.max(1, config.rounds);
+        const homeAwayMultiplier = config.homeAndAway ? 2 : 1;
+        const baseTeams = Math.floor(teamCount / groupCount);
+        const remainder = teamCount % groupCount;
+        const groups = [];
+        for (let i = 0; i < groupCount; i += 1) {
+          const teamsInGroup = baseTeams + (i < remainder ? 1 : 0);
+          const groupKey = `${stageKey}:group:${i + 1}`;
+          const groupId = getIdForKey(groupKey);
+          groups.push({
+            id: groupId,
+            name: groupCount === 1 ? `${league.name} Table` : `Group ${String.fromCharCode(65 + i)}`,
+            code: groupCount === 1 ? 'TABLE' : `G${i + 1}`,
+            teamCount: teamsInGroup,
+            objective: config.includePlayoffs ? 'ReachPlayoffs' : 'WinGroup',
+            objectiveValue: config.includePlayoffs ? String(Math.max(1, Math.floor((config.playoffTeams || 1) / groupCount))) : '1'
+          });
+        }
+        const matchesPerGroup = groups.reduce((sum, group) => sum + ((group.teamCount * (group.teamCount - 1)) / 2) * homeAwayMultiplier, 0);
+        const estimatedGames = matchesPerGroup * rounds;
+        return {
+          key,
+          stageKey,
+          id,
+          icon: stageIcons[config.structureType] || stageIcons.league,
+          name: config.structureType === 'groups' ? 'Group Stage' : 'League Stage',
+          code: config.structureType === 'groups' ? 'GRP' : 'REG',
+          rounds,
+          gamesPerMatchup: homeAwayMultiplier,
+          groups,
+          entryTargetId: groups[0]?.id || id,
+          finalGroupId: groups[groups.length - 1]?.id || id,
+          finalTargetId: groups[groups.length - 1]?.id || id,
+          estimatedMinGames: estimatedGames,
+          estimatedMaxGames: estimatedGames,
+          includeThird: false
+        };
+      }
+
+      function buildPlayoffStage(key, league, config, totalTeams) {
+        const safeTeams = Math.max(2, totalTeams);
+        const rounds = Math.max(1, Math.ceil(Math.log2(safeTeams)));
+        const stageKey = `league:${league.uuid}:stage:${key}`;
+        const id = getIdForKey(stageKey);
+        const names = ['Round of 64', 'Round of 32', 'Round of 16', 'Quarterfinal', 'Semifinal', 'Final'];
+        const startIndex = Math.max(0, names.length - rounds);
+        const groups = [];
+        let totalMatches = 0;
+        for (let r = 0; r < rounds; r += 1) {
+          const teamsInRound = Math.pow(2, rounds - r);
+          const matches = teamsInRound / 2;
+          totalMatches += matches * (config.gamesPerMatchup || 1);
+          const groupKey = `${stageKey}:round:${r + 1}`;
+          const groupId = getIdForKey(groupKey);
+          groups.push({
+            id: groupId,
+            name: names[startIndex + r] || `Round ${r + 1}`,
+            code: `R${rounds - r}`,
+            teamCount: teamsInRound,
+            objective: r === rounds - 1 ? 'WinFinal' : 'Advance',
+            objectiveValue: '1'
+          });
+        }
+        if (config.includeThirdPlace) {
+          const thirdKey = `${stageKey}:third`;
+          const thirdId = getIdForKey(thirdKey);
+          groups.push({
+            id: thirdId,
+            name: 'Third Place Playoff',
+            code: '3P',
+            teamCount: 2,
+            objective: 'WinMatch',
+            objectiveValue: '1'
+          });
+          totalMatches += config.gamesPerMatchup || 1;
+        }
+        const finalGroup = config.includeThirdPlace ? groups[groups.length - 2] : groups[groups.length - 1];
+        return {
+          key,
+          stageKey,
+          id,
+          icon: stageIcons.playoff,
+          name: key === 'playoff' ? 'Playoffs' : 'Knockout Stage',
+          code: 'PO',
+          rounds,
+          gamesPerMatchup: config.gamesPerMatchup || 1,
+          groups,
+          entryTargetId: groups[0]?.id || id,
+          finalGroupId: finalGroup?.id || id,
+          estimatedMinGames: totalMatches,
+          estimatedMaxGames: totalMatches,
+          includeThird: Boolean(config.includeThirdPlace)
+        };
+      }
+
+      function computeAdvancements(groups, targetGroupId, totalSlots) {
+        if (!groups.length || !targetGroupId) return [];
+        const slots = Math.max(1, totalSlots);
+        const perGroup = Math.max(1, Math.floor(slots / groups.length));
+        let remainder = slots % groups.length;
+        const adv = [];
+        let slotIndex = 1;
+        groups.forEach((group) => {
+          let advCount = perGroup;
+          if (remainder > 0) {
+            advCount += 1;
+            remainder -= 1;
+          }
+          for (let placement = 1; placement <= advCount; placement += 1) {
+            adv.push({
+              fromId: group.id,
+              placement: String(placement),
+              toId: targetGroupId,
+              slot: String(slotIndex)
+            });
+            slotIndex += 1;
           }
         });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const parentId = String(entry.row.parent || '').trim();
-          const invalidParent = parentId && !compIdSet.has(parentId);
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input" data-type="comp" data-field="id" data-index="${entry.index}" value="${entry.row.id ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="comp" data-field="level" data-index="${entry.index}" value="${entry.row.level ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="comp" data-field="code" data-index="${entry.index}" value="${entry.row.code ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="comp" data-field="name" data-index="${entry.index}" value="${entry.row.name ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input ${invalidParent ? 'bg-rose-100 border-red-500' : ''}" data-type="comp" data-field="parent" data-index="${entry.index}" value="${entry.row.parent ?? ''}" title="${invalidParent ? 'Parent ID not found' : ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-comp="${entry.index}">Delete</button></td>`
-          ].join('');
-          compTableBody.appendChild(tr);
-        });
-        $('compMeta').textContent = createFilterInfo(filtered.length, compRows.length);
-        attachTableInputHandlers(compTableBody);
-        compTableBody.querySelectorAll('button[data-remove-comp]').forEach(btn => {
-          btn.onclick = () => {
-            const idx = Number(btn.dataset.removeComp);
-            compRows.splice(idx, 1);
-            rebuildIdMaps();
-            renderTree();
-            renderSelectionPanel();
-            renderAllTables();
-            showMessage('CompObj row removed.', 'success');
-          };
-        });
+        return adv;
       }
 
-      function renderSettingsTable(){
-        settingsTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        setRows.forEach((row, index) => {
-          const id = String(row.id || '').trim();
-          if(!activeSet || activeSet.has(id)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const invalidId = entry.row.id && !compIdSet.has(String(entry.row.id));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${invalidId ? 'bg-rose-100 border-red-500' : ''}" data-type="settings" data-field="id" data-index="${entry.index}" value="${entry.row.id ?? ''}" title="${invalidId ? 'ID not found in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="settings" data-field="settingKey" data-index="${entry.index}" value="${entry.row.settingKey ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="settings" data-field="value" data-index="${entry.index}" value="${entry.row.value ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-setting="${entry.index}">Delete</button></td>`
-          ].join('');
-          settingsTableBody.appendChild(tr);
-        });
-        $('settingsMeta').textContent = createFilterInfo(filtered.length, setRows.length);
-        attachTableInputHandlers(settingsTableBody);
-        settingsTableBody.querySelectorAll('button[data-remove-setting]').forEach(btn => {
-          btn.onclick = () => {
-            setRows.splice(Number(btn.dataset.removeSetting), 1);
-            renderSettingsTable();
-          };
-        });
-      }
-
-      function renderTasksTable(){
-        tasksTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        taskRows.forEach((row, index) => {
-          const references = [row.trophyId, row.target, row.ref1, row.ref2, row.ref3].map(v => String(v || '').trim());
-          if(!activeSet || references.some(ref => ref && activeSet.has(ref))){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const trophyMissing = entry.row.trophyId && !compIdSet.has(String(entry.row.trophyId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${trophyMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="tasks" data-field="trophyId" data-index="${entry.index}" value="${entry.row.trophyId ?? ''}" title="${trophyMissing ? 'Trophy ID not found in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="phase" data-index="${entry.index}" value="${entry.row.phase ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="command" data-index="${entry.index}" value="${entry.row.command ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="target" data-index="${entry.index}" value="${entry.row.target ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref1" data-index="${entry.index}" value="${entry.row.ref1 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref2" data-index="${entry.index}" value="${entry.row.ref2 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref3" data-index="${entry.index}" value="${entry.row.ref3 ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-task="${entry.index}">Delete</button></td>`
-          ].join('');
-          tasksTableBody.appendChild(tr);
-        });
-        $('tasksMeta').textContent = createFilterInfo(filtered.length, taskRows.length);
-        attachTableInputHandlers(tasksTableBody);
-        tasksTableBody.querySelectorAll('button[data-remove-task]').forEach(btn => {
-          btn.onclick = () => {
-            taskRows.splice(Number(btn.dataset.removeTask), 1);
-            renderTasksTable();
-          };
-        });
-      }
-      function renderAdvTable(){
-        advTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        advRows.forEach((row, index) => {
-          const from = String(row.fromId || '').trim();
-          const to = String(row.toId || '').trim();
-          if(!activeSet || activeSet.has(from) || activeSet.has(to)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const fromMissing = entry.row.fromId && !compIdSet.has(String(entry.row.fromId));
-          const toMissing = entry.row.toId && !compIdSet.has(String(entry.row.toId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${fromMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="adv" data-field="fromId" data-index="${entry.index}" value="${entry.row.fromId ?? ''}" title="${fromMissing ? 'From group missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="adv" data-field="placement" data-index="${entry.index}" value="${entry.row.placement ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input ${toMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="adv" data-field="toId" data-index="${entry.index}" value="${entry.row.toId ?? ''}" title="${toMissing ? 'Destination group missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="adv" data-field="slot" data-index="${entry.index}" value="${entry.row.slot ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-adv="${entry.index}">Delete</button></td>`
-          ].join('');
-          advTableBody.appendChild(tr);
-        });
-        $('advMeta').textContent = createFilterInfo(filtered.length, advRows.length);
-        attachTableInputHandlers(advTableBody);
-        advTableBody.querySelectorAll('button[data-remove-adv]').forEach(btn => {
-          btn.onclick = () => {
-            advRows.splice(Number(btn.dataset.removeAdv), 1);
-            renderAdvTable();
-          };
-        });
-      }
-
-      function renderStandingsTable(){
-        standTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        standRows.forEach((row, index) => {
-          const groupId = String(row.groupId || '').trim();
-          if(!activeSet || activeSet.has(groupId)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const missing = entry.row.groupId && !compIdSet.has(String(entry.row.groupId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="stand" data-field="groupId" data-index="${entry.index}" value="${entry.row.groupId ?? ''}" title="${missing ? 'Group ID missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="stand" data-field="teamCount" data-index="${entry.index}" value="${entry.row.teamCount ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-stand="${entry.index}">Delete</button></td>`
-          ].join('');
-          standTableBody.appendChild(tr);
-        });
-        $('standMeta').textContent = createFilterInfo(filtered.length, standRows.length);
-        attachTableInputHandlers(standTableBody);
-        standTableBody.querySelectorAll('button[data-remove-stand]').forEach(btn => {
-          btn.onclick = () => {
-            standRows.splice(Number(btn.dataset.removeStand), 1);
-            renderStandingsTable();
-          };
-        });
-      }
-
-      function renderScheduleTable(){
-        schedTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        schedRows.forEach((row, index) => {
-          const stage = String(row.stageId || '').trim();
-          if(!activeSet || activeSet.has(stage)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const stageMissing = entry.row.stageId && !compIdSet.has(String(entry.row.stageId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${stageMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="sched" data-field="stageId" data-index="${entry.index}" value="${entry.row.stageId ?? ''}" title="${stageMissing ? 'Stage ID missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="sched" data-field="dateId" data-index="${entry.index}" value="${entry.row.dateId ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="sched" data-field="matchDay" data-index="${entry.index}" value="${entry.row.matchDay ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="sched" data-field="minGames" data-index="${entry.index}" value="${entry.row.minGames ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="sched" data-field="maxGames" data-index="${entry.index}" value="${entry.row.maxGames ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="sched" data-field="time" data-index="${entry.index}" value="${entry.row.time ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-sched="${entry.index}">Delete</button></td>`
-          ].join('');
-          schedTableBody.appendChild(tr);
-        });
-        $('schedMeta').textContent = createFilterInfo(filtered.length, schedRows.length);
-        attachTableInputHandlers(schedTableBody);
-        schedTableBody.querySelectorAll('button[data-remove-sched]').forEach(btn => {
-          btn.onclick = () => {
-            schedRows.splice(Number(btn.dataset.removeSched), 1);
-            renderScheduleTable();
-          };
-        });
-      }
-
-      function renderObjectivesTable(){
-        objTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        objectiveRows.forEach((row, index) => {
-          const groupId = String(row.groupId || '').trim();
-          if(!activeSet || activeSet.has(groupId)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const missing = entry.row.groupId && !compIdSet.has(String(entry.row.groupId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="obj" data-field="groupId" data-index="${entry.index}" value="${entry.row.groupId ?? ''}" title="${missing ? 'Group ID missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="obj" data-field="objective" data-index="${entry.index}" value="${entry.row.objective ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="obj" data-field="value" data-index="${entry.index}" value="${entry.row.value ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-obj="${entry.index}">Delete</button></td>`
-          ].join('');
-          objTableBody.appendChild(tr);
-        });
-        $('objMeta').textContent = createFilterInfo(filtered.length, objectiveRows.length);
-        attachTableInputHandlers(objTableBody);
-        objTableBody.querySelectorAll('button[data-remove-obj]').forEach(btn => {
-          btn.onclick = () => {
-            objectiveRows.splice(Number(btn.dataset.removeObj), 1);
-            renderObjectivesTable();
-          };
-        });
-      }
-
-      function renderWeatherTable(){
-        weatherTableBody.innerHTML = '';
-        const activeSet = getActiveIdSet();
-        const filtered = [];
-        weatherRows.forEach((row, index) => {
-          const fed = String(row.fedId || '').trim();
-          if(!activeSet || activeSet.has(fed)){
-            filtered.push({ row, index });
-          }
-        });
-        filtered.forEach((entry, displayIndex) => {
-          const tr = document.createElement('tr');
-          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
-          const missing = entry.row.fedId && !compIdSet.has(String(entry.row.fedId));
-          tr.innerHTML = [
-            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
-            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="weather" data-field="fedId" data-index="${entry.index}" value="${entry.row.fedId ?? ''}" title="${missing ? 'Federation ID missing in CompObj' : ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="dayId" data-index="${entry.index}" value="${entry.row.dayId ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="weatherType" data-index="${entry.index}" value="${entry.row.weatherType ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param1" data-index="${entry.index}" value="${entry.row.param1 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param2" data-index="${entry.index}" value="${entry.row.param2 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param3" data-index="${entry.index}" value="${entry.row.param3 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param4" data-index="${entry.index}" value="${entry.row.param4 ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="start" data-index="${entry.index}" value="${entry.row.start ?? ''}"></td>`,
-            `<td class="p-1"><input class="table-input" data-type="weather" data-field="end" data-index="${entry.index}" value="${entry.row.end ?? ''}"></td>`,
-            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-weather="${entry.index}">Delete</button></td>`
-          ].join('');
-          weatherTableBody.appendChild(tr);
-        });
-        $('weatherMeta').textContent = createFilterInfo(filtered.length, weatherRows.length);
-        attachTableInputHandlers(weatherTableBody);
-        weatherTableBody.querySelectorAll('button[data-remove-weather]').forEach(btn => {
-          btn.onclick = () => {
-            weatherRows.splice(Number(btn.dataset.removeWeather), 1);
-            renderWeatherTable();
-          };
-        });
-      }
-
-      function renderAllTables(){
-        renderCompTable();
-        renderSettingsTable();
-        renderTasksTable();
-        renderAdvTable();
-        renderStandingsTable();
-        renderScheduleTable();
-        renderObjectivesTable();
-        renderWeatherTable();
-      }
-      function parseCompText(text, delimChoice){
-        compRows.length = 0;
-        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
-        compDelimiter = delim;
-        $('compDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(delim).map(p => p.trim());
-          while(parts.length < 5) parts.push('');
-          const [id, level, code, name, parent] = parts;
-          compRows.push({ id, level, code, name, parent });
-        });
-        rebuildIdMaps();
-        renderTree();
-        renderSelectionPanel();
-        renderAllTables();
-        showMessage(`Loaded ${compRows.length} CompObj lines.`, 'success');
-      }
-
-      function parseSettingsText(text){
-        setRows.length = 0;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(',').map(p => p.trim());
-          const [id = '', key = '', value = ''] = parts;
-          if(id || key || value){
-            setRows.push({ id, settingKey: key, value });
-          }
-        });
-        renderSettingsTable();
-        showMessage(`Loaded ${setRows.length} settings rows.`, 'info');
-      }
-
-      function parseTasksText(text, delimChoice){
-        taskRows.length = 0;
-        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
-        taskDelimiter = delim;
-        $('tasksDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(delim).map(p => p.trim());
-          while(parts.length < 7) parts.push('');
-          const [trophyId, phase, command, target, ref1, ref2, ref3] = parts;
-          taskRows.push({ trophyId, phase, command, target, ref1, ref2, ref3 });
-        });
-        renderTasksTable();
-        showMessage(`Loaded ${taskRows.length} task lines.`, 'info');
-      }
-
-      function parseAdvText(text, delimChoice){
-        advRows.length = 0;
-        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
-        advDelimiter = delim;
-        $('advDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(delim).map(p => p.trim());
-          while(parts.length < 4) parts.push('');
-          const [fromId, placement, toId, slot] = parts;
-          advRows.push({ fromId, placement, toId, slot });
-        });
-        renderAdvTable();
-        showMessage(`Loaded ${advRows.length} advancement rows.`, 'info');
-      }
-
-      function parseStandingsText(text, delimChoice){
-        standRows.length = 0;
-        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
-        standDelimiter = delim;
-        $('standDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(delim).map(p => p.trim());
-          while(parts.length < 2) parts.push('');
-          const [groupId, teamCount] = parts;
-          standRows.push({ groupId, teamCount });
-        });
-        renderStandingsTable();
-        showMessage(`Loaded ${standRows.length} standings rows.`, 'info');
-      }
-
-      function parseScheduleText(text){
-        schedRows.length = 0;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(',').map(p => p.trim());
-          while(parts.length < 6) parts.push('');
-          const [stageId, dateId, matchDay, minGames, maxGames, time] = parts;
-          schedRows.push({ stageId, dateId, matchDay, minGames, maxGames, time });
-        });
-        renderScheduleTable();
-        showMessage(`Loaded ${schedRows.length} schedule rows.`, 'info');
-      }
-
-      function parseObjectivesText(text, delimChoice){
-        objectiveRows.length = 0;
-        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
-        objectiveDelimiter = delim;
-        $('objDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(delim).map(p => p.trim());
-          while(parts.length < 3) parts.push('');
-          const [groupId, objective, value] = parts;
-          objectiveRows.push({ groupId, objective, value });
-        });
-        renderObjectivesTable();
-        showMessage(`Loaded ${objectiveRows.length} objective rows.`, 'info');
-      }
-
-      function parseWeatherText(text){
-        weatherRows.length = 0;
-        text.split(/\r?\n/).forEach(line => {
-          const trimmed = line.trim();
-          if(!trimmed) return;
-          const parts = trimmed.split(',').map(p => p.trim());
-          while(parts.length < 9) parts.push('');
-          const [fedId, dayId, weatherType, param1, param2, param3, param4, start, end] = parts;
-          weatherRows.push({ fedId, dayId, weatherType, param1, param2, param3, param4, start, end });
-        });
-        renderWeatherTable();
-        showMessage(`Loaded ${weatherRows.length} weather rows.`, 'info');
-      }
-      function applyIdMapping(mapping){
-        if(!mapping) return;
-        const entries = Object.entries(mapping).map(([oldId, newId]) => [String(oldId || '').trim(), String(newId || '').trim()]).filter(([oldId, newId]) => oldId && newId && oldId !== newId);
-        if(!entries.length) return;
-        const map = new Map(entries);
-        let changed = false;
-
-        compRows.forEach(row => {
-          const id = String(row.id || '').trim();
-          const parent = String(row.parent || '').trim();
-          if(map.has(id)){
-            row.id = map.get(id);
-            changed = true;
-          }
-          if(map.has(parent)){
-            row.parent = map.get(parent);
-            changed = true;
-          }
-        });
-
-        advRows.forEach(row => {
-          if(map.has(String(row.fromId || ''))) { row.fromId = map.get(String(row.fromId)); changed = true; }
-          if(map.has(String(row.toId || ''))) { row.toId = map.get(String(row.toId)); changed = true; }
-        });
-
-        taskRows.forEach(row => {
-          ['trophyId', 'target', 'ref1', 'ref2', 'ref3'].forEach(field => {
-            const value = String(row[field] || '').trim();
-            if(map.has(value)){
-              row[field] = map.get(value);
-              changed = true;
+      function validateProject() {
+        const issues = [];
+        if (!state.federations.length) {
+          issues.push('No federations defined.');
+        }
+        state.federations.forEach((fed) => {
+          if (!fed.name) issues.push('Federation missing a name.');
+          if (!fed.code) issues.push(`Federation ${fed.name || fed.uuid} missing a code.`);
+          if (!fed.leagues.length) issues.push(`${fed.name} has no competitions.`);
+          fed.leagues.forEach((league) => {
+            if (!league.name) issues.push('A competition is missing a name.');
+            if (!league.code) issues.push(`${league.name || 'Competition'} is missing a short code.`);
+            const config = ensureConfig(league);
+            if (config.teamCount < 2) issues.push(`${league.name}: team count must be at least 2.`);
+            if (config.structureType !== 'league' && config.groupCount > config.teamCount) issues.push(`${league.name}: group count exceeds teams.`);
+            if (config.includePlayoffs) {
+              if (!Number.isInteger(config.playoffTeams) || config.playoffTeams < 2) issues.push(`${league.name}: playoff entrants must be at least 2.`);
+              if (config.playoffTeams > config.teamCount) issues.push(`${league.name}: playoff entrants cannot exceed team count.`);
             }
           });
         });
+        return issues;
+      }
 
-        standRows.forEach(row => {
-          const gid = String(row.groupId || '').trim();
-          if(map.has(gid)){
-            row.groupId = map.get(gid);
-            changed = true;
-          }
+      function buildProjectFiles() {
+        const context = {
+          compRows: [],
+          setRows: [],
+          taskRows: [],
+          advRows: [],
+          standRows: [],
+          schedRows: [],
+          objectiveRows: [],
+          weatherRows: []
+        };
+
+        state.federations.forEach((fed) => {
+          const fedId = getIdForKey(`fed:${fed.uuid}`);
+          context.compRows.push({ id: fedId, level: '0', code: fed.code || '', name: fed.name || 'Federation', parent: '' });
+          context.weatherRows.push({
+            fedId,
+            dayId: '1',
+            weatherType: 'Clear',
+            param1: '20',
+            param2: '50',
+            param3: '',
+            param4: '',
+            start: '1',
+            end: '365'
+          });
+
+          fed.leagues.forEach((league) => {
+            const leagueId = getIdForKey(`league:${league.uuid}`);
+            const config = ensureConfig(league);
+            context.compRows.push({ id: leagueId, level: '1', code: league.code || '', name: league.name || 'Competition', parent: fedId });
+            context.setRows.push({ id: leagueId, settingKey: 'season', value: league.season || '' });
+            context.setRows.push({ id: leagueId, settingKey: 'structure_type', value: config.structureType });
+            context.setRows.push({ id: leagueId, settingKey: 'team_count', value: String(config.teamCount) });
+
+            const plan = createCompetitionPlan(league, config);
+            let stageIndex = 1;
+            plan.stages.forEach((stage) => {
+              context.compRows.push({ id: stage.id, level: '2', code: stage.code, name: stage.name, parent: leagueId });
+              context.setRows.push({ id: stage.id, settingKey: 'rounds', value: String(stage.rounds) });
+              context.setRows.push({ id: stage.id, settingKey: 'games_per_matchup', value: String(stage.gamesPerMatchup) });
+              context.schedRows.push({
+                stageId: stage.id,
+                dateId: `AUTO-${stageIndex}`,
+                matchDay: '1',
+                minGames: String(stage.estimatedMinGames),
+                maxGames: String(stage.estimatedMaxGames),
+                time: config.matchTime || '20:00'
+              });
+              stage.groups.forEach((group, groupIndex) => {
+                context.compRows.push({ id: group.id, level: '3', code: group.code, name: group.name, parent: stage.id });
+                context.standRows.push({ groupId: group.id, teamCount: String(group.teamCount) });
+                context.objectiveRows.push({ groupId: group.id, objective: group.objective, value: group.objectiveValue });
+              });
+              stageIndex += 1;
+            });
+
+            plan.advancements.forEach((adv) => context.advRows.push(adv));
+            context.taskRows.push({ trophyId: leagueId, phase: 'FINALE', command: 'AWARD_TROPHY', target: plan.finalTargetId, ref1: '', ref2: '', ref3: '' });
+          });
         });
 
-        setRows.forEach(row => {
-          const id = String(row.id || '').trim();
-          if(map.has(id)){
-            row.id = map.get(id);
-            changed = true;
-          }
-        });
+        const files = [
+          { name: 'compobj.txt', content: context.compRows.map((r) => [r.id, r.level, r.code, r.name, r.parent].join(',')).join('\n') },
+          { name: 'settings.txt', content: context.setRows.map((r) => [r.id, r.settingKey, r.value].join(',')).join('\n') },
+          { name: 'tasks.txt', content: context.taskRows.map((r) => [r.trophyId, r.phase, r.command, r.target, r.ref1, r.ref2, r.ref3].join(',')).join('\n') },
+          { name: 'advancement.txt', content: context.advRows.map((r) => [r.fromId, r.placement, r.toId, r.slot].join(',')).join('\n') },
+          { name: 'standings.txt', content: context.standRows.map((r) => [r.groupId, r.teamCount].join(',')).join('\n') },
+          { name: 'schedule.txt', content: context.schedRows.map((r) => [r.stageId, r.dateId, r.matchDay, r.minGames, r.maxGames, r.time].join(',')).join('\n') },
+          { name: 'objectives.txt', content: context.objectiveRows.map((r) => [r.groupId, r.objective, r.value].join(',')).join('\n') },
+          { name: 'weather.txt', content: context.weatherRows.map((r) => [r.fedId, r.dayId, r.weatherType, r.param1, r.param2, r.param3, r.param4, r.start, r.end].join(',')).join('\n') }
+        ];
 
-        schedRows.forEach(row => {
-          const stage = String(row.stageId || '').trim();
-          if(map.has(stage)){
-            row.stageId = map.get(stage);
-            changed = true;
-          }
-        });
-
-        objectiveRows.forEach(row => {
-          const gid = String(row.groupId || '').trim();
-          if(map.has(gid)){
-            row.groupId = map.get(gid);
-            changed = true;
-          }
-        });
-
-        weatherRows.forEach(row => {
-          const fed = String(row.fedId || '').trim();
-          if(map.has(fed)){
-            row.fedId = map.get(fed);
-            changed = true;
-          }
-        });
-
-        if(selectedId && map.has(String(selectedId))){
-          selectedId = map.get(String(selectedId));
-        }
-
-        if(changed){
-          rebuildIdMaps();
-          renderTree();
-          renderSelectionPanel();
-          renderAllTables();
-          showMessage('Linked IDs successfully updated.', 'success');
-        }
+        return { files, context };
       }
 
-      function rebaseCompIds(startId){
-        const start = Number(startId);
-        if(!Number.isFinite(start)){
-          showMessage('Rebase cancelled — invalid starting ID.', 'error');
-          return;
-        }
-        const mapping = {};
-        let next = start;
-        compRows.forEach(row => {
-          const current = String(row.id || '').trim();
-          if(!current) return;
-          const newId = String(next++);
-          if(current !== newId){
-            mapping[current] = newId;
-          }
-        });
-        if(Object.keys(mapping).length){
-          applyIdMapping(mapping);
-        } else {
-          showMessage('No ID changes were required.', 'info');
-        }
-      }
-      function compRowsToText(){
-        const delim = compDelimiter || ',';
-        return compRows.map(r => [r.id ?? '', r.level ?? '', r.code ?? '', r.name ?? '', r.parent ?? ''].join(delim)).join('\n');
-      }
-
-      function settingsToText(){
-        return setRows.map(r => [r.id ?? '', r.settingKey ?? '', r.value ?? ''].join(',')).join('\n');
-      }
-
-      function tasksToText(){
-        const delim = taskDelimiter || ',';
-        return taskRows.map(r => [r.trophyId ?? '', r.phase ?? '', r.command ?? '', r.target ?? '', r.ref1 ?? '', r.ref2 ?? '', r.ref3 ?? ''].join(delim)).join('\n');
-      }
-
-      function advToText(){
-        const delim = advDelimiter || ',';
-        return advRows.map(r => [r.fromId ?? '', r.placement ?? '', r.toId ?? '', r.slot ?? ''].join(delim)).join('\n');
-      }
-
-      function standingsToText(){
-        const delim = standDelimiter || ',';
-        return standRows.map(r => [r.groupId ?? '', r.teamCount ?? ''].join(delim)).join('\n');
-      }
-
-      function scheduleToText(){
-        return schedRows.map(r => [r.stageId ?? '', r.dateId ?? '', r.matchDay ?? '', r.minGames ?? '', r.maxGames ?? '', r.time ?? ''].join(',')).join('\n');
-      }
-
-      function objectivesToText(){
-        const delim = objectiveDelimiter || ',';
-        return objectiveRows.map(r => [r.groupId ?? '', r.objective ?? '', r.value ?? ''].join(delim)).join('\n');
-      }
-
-      function weatherToText(){
-        return weatherRows.map(r => [r.fedId ?? '', r.dayId ?? '', r.weatherType ?? '', r.param1 ?? '', r.param2 ?? '', r.param3 ?? '', r.param4 ?? '', r.start ?? '', r.end ?? ''].join(',')).join('\n');
-      }
-
-      const CRC32_TABLE = new Uint32Array(256).map((_, n) => {
-        let c = n;
-        for(let k = 0; k < 8; k++){
-          c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
-        }
-        return c >>> 0;
-      });
-
-      function crc32(bytes){
-        let crc = 0 ^ (-1);
-        for(let i = 0; i < bytes.length; i++){
-          const y = (crc ^ bytes[i]) & 0xff;
-          crc = (crc >>> 8) ^ CRC32_TABLE[y];
-        }
-        return (crc ^ (-1)) >>> 0;
-      }
-
-      function createZip(files){
+      function createZip(files) {
         const encoder = new TextEncoder();
         const fileRecords = [];
         const chunks = [];
         let offset = 0;
-        files.forEach(file => {
+        files.forEach((file) => {
           const nameBytes = encoder.encode(file.name);
           const dataBytes = encoder.encode(file.content);
           const crc = crc32(dataBytes);
@@ -1561,7 +1279,7 @@
 
         const centralChunks = [];
         let centralSize = 0;
-        fileRecords.forEach(record => {
+        fileRecords.forEach((record) => {
           const centralHeader = new Uint8Array(46 + record.nameBytes.length);
           const view = new DataView(centralHeader.buffer);
           let p = 0;
@@ -1585,15 +1303,14 @@
           centralHeader.set(record.nameBytes, 46);
           centralChunks.push(centralHeader);
           centralSize += centralHeader.length;
-          record.offset += 0; // keep reference for final calculation
         });
 
         const centralOffset = offset;
         const totalSize = offset + centralSize + 22;
         const zipBuffer = new Uint8Array(totalSize);
         let cursor = 0;
-        chunks.forEach(chunk => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
-        centralChunks.forEach(chunk => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
+        chunks.forEach((chunk) => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
+        centralChunks.forEach((chunk) => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
 
         const end = new DataView(zipBuffer.buffer, cursor, 22);
         end.setUint32(0, 0x06054b50, true);
@@ -1608,292 +1325,220 @@
         return new Blob([zipBuffer], { type: 'application/zip' });
       }
 
-      function exportAllFiles(){
-        const files = [
-          { name: 'compobj.txt', content: compRowsToText() },
-          { name: 'advancement.txt', content: advToText() },
-          { name: 'tasks.txt', content: tasksToText() },
-          { name: 'standings.txt', content: standingsToText() },
-          { name: 'settings.txt', content: settingsToText() },
-          { name: 'schedule.txt', content: scheduleToText() },
-          { name: 'objectives.txt', content: objectivesToText() },
-          { name: 'weather.txt', content: weatherToText() }
-        ];
-        const zip = createZip(files);
-        downloadBlob('competition_editor_export.zip', zip);
-        showMessage('All files exported to ZIP archive.', 'success');
+      const CRC32_TABLE = new Uint32Array(256).map((_, n) => {
+        let c = n;
+        for (let k = 0; k < 8; k += 1) {
+          c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        }
+        return c >>> 0;
+      });
+
+      function crc32(bytes) {
+        let crc = 0 ^ (-1);
+        for (let i = 0; i < bytes.length; i += 1) {
+          const y = (crc ^ bytes[i]) & 0xff;
+          crc = (crc >>> 8) ^ CRC32_TABLE[y];
+        }
+        return (crc ^ (-1)) >>> 0;
       }
-      function validateComp(){
-        const problems = [];
-        const seen = new Set();
-        compRows.forEach((row, index) => {
-          const id = String(row.id || '').trim();
-          if(!id) problems.push(`CompObj line ${index + 1}: Missing ID`);
-          if(id && seen.has(id)) problems.push(`CompObj line ${index + 1}: Duplicate ID ${id}`);
-          seen.add(id);
-          const parent = String(row.parent || '').trim();
-          if(parent && !seen.has(parent) && !compIdSet.has(parent)){
-            problems.push(`CompObj line ${index + 1}: Parent ${parent} not found`);
+
+      function downloadBlob(filename, blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 400);
+      }
+
+      function renderExportResults() {
+        const container = $('exportResults');
+        if (!container) return;
+        container.innerHTML = '';
+        if (!state.lastBuild) {
+          const msg = document.createElement('div');
+          msg.className = 'text-sm text-slate-600';
+          msg.textContent = 'Run Build & Export to see generated files.';
+          container.appendChild(msg);
+          return;
+        }
+        const { files } = state.lastBuild;
+        const chips = document.createElement('div');
+        chips.className = 'export-grid';
+        files.forEach((file) => {
+          const chip = document.createElement('div');
+          chip.className = 'export-chip';
+          chip.innerHTML = `<span>${file.name}</span><span>${file.content.split(/\n/).filter(Boolean).length} lines</span>`;
+          chips.appendChild(chip);
+        });
+        container.appendChild(chips);
+
+        files.forEach((file) => {
+          const details = document.createElement('details');
+          details.className = 'stage-details';
+          details.innerHTML = `<summary>${file.name}</summary>`;
+          const pre = document.createElement('pre');
+          pre.className = 'export-text';
+          pre.textContent = file.content || '(empty)';
+          details.appendChild(pre);
+          container.appendChild(details);
+        });
+      }
+
+      function handleBuildExport() {
+        const issues = validateProject();
+        if (issues.length) {
+          showMessage('Build blocked by validation errors.', 'error');
+          const container = $('exportResults');
+          if (container) {
+            container.innerHTML = '';
+            const callout = document.createElement('div');
+            callout.className = 'callout callout-error';
+            callout.innerHTML = `<div class="font-semibold mb-2">Please fix the following:</div><ul>${issues.map((issue) => `<li>${issue}</li>`).join('')}</ul>`;
+            container.appendChild(callout);
           }
-        });
-        return problems;
+          return;
+        }
+        const build = buildProjectFiles();
+        state.lastBuild = build;
+        renderExportResults();
+        const zip = createZip(build.files);
+        downloadBlob('competition_export.zip', zip);
+        showMessage('Build succeeded — ZIP download started.', 'success');
       }
 
-      function validateAdv(){
-        const problems = [];
-        advRows.forEach((row, index) => {
-          if(row.fromId && !compIdSet.has(String(row.fromId))) problems.push(`Advancement line ${index + 1}: From group ${row.fromId} missing`);
-          if(row.toId && !compIdSet.has(String(row.toId))) problems.push(`Advancement line ${index + 1}: To group ${row.toId} missing`);
-          if(!row.fromId || !row.toId) problems.push(`Advancement line ${index + 1}: Missing source or destination`);
-        });
-        return problems;
+      function handleDownloadZip() {
+        if (!state.lastBuild) {
+          showMessage('Nothing to download yet — run Build & Export first.', 'info');
+          return;
+        }
+        const zip = createZip(state.lastBuild.files);
+        downloadBlob('competition_export.zip', zip);
       }
 
-      function validateTasks(){
-        const problems = [];
-        const numericPattern = /^\d+$/;
-        taskRows.forEach((row, index) => {
-          if(!row.trophyId) problems.push(`Task line ${index + 1}: Missing Trophy ID`);
-          if(row.trophyId && !compIdSet.has(String(row.trophyId))) problems.push(`Task line ${index + 1}: Trophy ${row.trophyId} missing in CompObj`);
-          if(!row.phase) problems.push(`Task line ${index + 1}: Missing phase`);
-          if(!row.command) problems.push(`Task line ${index + 1}: Missing command`);
-          ['target', 'ref1', 'ref2', 'ref3'].forEach(field => {
-            const value = row[field];
-            if(value && numericPattern.test(value) && !compIdSet.has(String(value))){
-              problems.push(`Task line ${index + 1}: Reference ${value} not found in CompObj`);
-            }
-          });
-        });
-        return problems;
-      }
-
-      function validateSettings(){
-        const problems = [];
-        setRows.forEach((row, index) => {
-          if(!row.id) problems.push(`Settings line ${index + 1}: Missing CompObj ID`);
-          if(row.id && !compIdSet.has(String(row.id))) problems.push(`Settings line ${index + 1}: ID ${row.id} missing in CompObj`);
-          if(!row.settingKey) problems.push(`Settings line ${index + 1}: Missing setting key`);
-          if(row.value === undefined || row.value === '') problems.push(`Settings line ${index + 1}: Missing value`);
-        });
-        return problems;
-      }
-
-      function validateStandings(){
-        const problems = [];
-        standRows.forEach((row, index) => {
-          if(!row.groupId) problems.push(`Standings line ${index + 1}: Missing Group ID`);
-          if(row.groupId && !compIdSet.has(String(row.groupId))) problems.push(`Standings line ${index + 1}: Group ${row.groupId} missing in CompObj`);
-          if(row.teamCount === undefined || row.teamCount === '') problems.push(`Standings line ${index + 1}: Missing team count`);
-        });
-        return problems;
-      }
-
-      function validateSchedule(){
-        const problems = [];
-        schedRows.forEach((row, index) => {
-          if(!row.stageId) problems.push(`Schedule line ${index + 1}: Missing stage ID`);
-          if(row.stageId && !compIdSet.has(String(row.stageId))) problems.push(`Schedule line ${index + 1}: Stage ${row.stageId} missing in CompObj`);
-          ['dateId', 'matchDay', 'minGames', 'maxGames', 'time'].forEach(field => {
-            if(row[field] === undefined || row[field] === '') problems.push(`Schedule line ${index + 1}: Missing ${field}`);
-          });
-        });
-        return problems;
-      }
-
-      function validateObjectives(){
-        const problems = [];
-        objectiveRows.forEach((row, index) => {
-          if(!row.groupId) problems.push(`Objectives line ${index + 1}: Missing Group ID`);
-          if(row.groupId && !compIdSet.has(String(row.groupId))) problems.push(`Objectives line ${index + 1}: Group ${row.groupId} missing in CompObj`);
-          if(!row.objective) problems.push(`Objectives line ${index + 1}: Missing objective type`);
-        });
-        return problems;
-      }
-
-      function validateWeather(){
-        const problems = [];
-        weatherRows.forEach((row, index) => {
-          if(row.fedId && !compIdSet.has(String(row.fedId))) problems.push(`Weather line ${index + 1}: Federation ${row.fedId} missing in CompObj`);
-          ['dayId', 'weatherType', 'param1', 'param2', 'param3', 'param4', 'start', 'end'].forEach(field => {
-            const value = row[field];
-            if(value !== '' && value !== undefined && value !== null && Number.isNaN(Number(value))){
-              problems.push(`Weather line ${index + 1}: ${field} should be numeric`);
-            }
-          });
-        });
-        return problems;
-      }
-
-      function validateAll(){
-        const allProblems = [
-          ...validateComp(),
-          ...validateSettings(),
-          ...validateTasks(),
-          ...validateAdv(),
-          ...validateStandings(),
-          ...validateSchedule(),
-          ...validateObjectives(),
-          ...validateWeather()
-        ];
-        if(allProblems.length){
-          $('validationSummary').innerHTML = allProblems.map(msg => `<div class="text-red-600">• ${msg}</div>`).join('');
-          showMessage('Validation found issues. Review the summary below.', 'error');
-        } else {
-          $('validationSummary').innerHTML = '<div class="text-emerald-600">All linked files passed validation.</div>';
-          showMessage('Validation successful — no issues detected.', 'success');
+      async function handleCopyText() {
+        if (!state.lastBuild) {
+          showMessage('Nothing to copy yet — run Build & Export first.', 'info');
+          return;
+        }
+        const combined = state.lastBuild.files.map((file) => `# ${file.name}\n${file.content}`).join('\n\n');
+        try {
+          await navigator.clipboard.writeText(combined);
+          showMessage('All file contents copied to clipboard.', 'success');
+        } catch (err) {
+          showMessage('Clipboard copy failed.', 'error');
         }
       }
-      function toggleTextarea(id){
-        const el = $(id);
-        if(!el) return;
-        el.classList.toggle('hidden');
-        if(!el.classList.contains('hidden')) el.focus();
+
+      function renderAll() {
+        renderFederations();
+        renderLeagues();
+        renderEditor();
+        renderExportResults();
       }
 
-      function bindFileInput(id, handler){
-        const input = $(id);
-        if(!input) return;
-        input.onchange = (event) => {
-          const file = event.target.files && event.target.files[0];
-          if(!file) return;
-          const reader = new FileReader();
-          reader.onload = () => handler(reader.result || '');
-          reader.readAsText(file);
-        };
+      function setupEventHandlers() {
+        const federationList = $('federationList');
+        if (federationList) {
+          federationList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-fed-id]');
+            if (!button) return;
+            state.selectedFederation = button.dataset.fedId;
+            const federation = getSelectedFederation();
+            state.selectedLeague = federation?.leagues[0]?.uuid || null;
+            renderAll();
+          });
+        }
+
+        const leagueList = $('leagueList');
+        if (leagueList) {
+          leagueList.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-league-id]');
+            if (!button) return;
+            state.selectedLeague = button.dataset.leagueId;
+            renderEditor();
+            renderLeagues();
+          });
+        }
+
+        const search = $('leagueSearch');
+        if (search) {
+          search.addEventListener('input', (event) => {
+            state.leagueSearch = event.target.value;
+            renderLeagues();
+          });
+        }
+
+        const addLeagueBtn = $('addLeagueBtn');
+        if (addLeagueBtn) {
+          addLeagueBtn.addEventListener('click', () => {
+            const federation = getSelectedFederation();
+            if (!federation) {
+              showMessage('Select a federation first.', 'info');
+              return;
+            }
+            const name = prompt('Competition name', 'New Competition');
+            if (!name) return;
+            const code = prompt('Short code', name.slice(0, 4).toUpperCase());
+            const season = prompt('Season label', new Date().getFullYear());
+            const league = createLeague(name, (code || name.slice(0, 4)).toUpperCase(), season || '');
+            federation.leagues.push(league);
+            state.selectedLeague = league.uuid;
+            renderAll();
+            showMessage('Competition created.', 'success');
+          });
+        }
+
+        const buildBtn = $('buildExportBtn');
+        if (buildBtn) buildBtn.addEventListener('click', handleBuildExport);
+        const zipBtn = $('downloadZipBtn');
+        if (zipBtn) zipBtn.addEventListener('click', handleDownloadZip);
+        const copyBtn = $('copyTextBtn');
+        if (copyBtn) copyBtn.addEventListener('click', handleCopyText);
+
+        const themeToggle = $('themeToggle');
+        if (themeToggle) {
+          themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            themeToggle.textContent = document.body.classList.contains('dark') ? 'Toggle Light' : 'Toggle Dark';
+          });
+        }
+
+        const developerToggle = $('developerToggle');
+        if (developerToggle) {
+          developerToggle.addEventListener('click', () => {
+            state.developerMode = !state.developerMode;
+            developerToggle.textContent = state.developerMode ? 'Developer Mode • On' : 'Developer Mode';
+            renderAll();
+          });
+        }
+
+        const prevStepBtn = $('prevStepBtn');
+        const nextStepBtn = $('nextStepBtn');
+        if (prevStepBtn) {
+          prevStepBtn.addEventListener('click', () => {
+            state.stepIndex = Math.max(0, state.stepIndex - 1);
+            renderEditor();
+          });
+        }
+        if (nextStepBtn) {
+          nextStepBtn.addEventListener('click', () => {
+            state.stepIndex = Math.min(3, state.stepIndex + 1);
+            renderEditor();
+          });
+        }
       }
 
-      function setupEventHandlers(){
-        bindFileInput('compFileInput', text => parseCompText(text, $('compDelimiterSelect').value));
-        bindFileInput('settingsFileInput', parseSettingsText);
-        bindFileInput('tasksFileInput', text => parseTasksText(text, $('tasksDelimiterSelect').value));
-        bindFileInput('advFileInput', text => parseAdvText(text, $('advDelimiterSelect').value));
-        bindFileInput('standFileInput', text => parseStandingsText(text, $('standDelimiterSelect').value));
-        bindFileInput('schedFileInput', parseScheduleText);
-        bindFileInput('objFileInput', text => parseObjectivesText(text, $('objDelimiterSelect').value));
-        bindFileInput('weatherFileInput', parseWeatherText);
-
-        $('compPasteBtn').onclick = () => toggleTextarea('compPasteArea');
-        $('settingsPasteBtn').onclick = () => toggleTextarea('settingsPasteArea');
-        $('tasksPasteBtn').onclick = () => toggleTextarea('tasksPasteArea');
-        $('advPasteBtn').onclick = () => toggleTextarea('advPasteArea');
-        $('standPasteBtn').onclick = () => toggleTextarea('standPasteArea');
-        $('schedPasteBtn').onclick = () => toggleTextarea('schedPasteArea');
-        $('objPasteBtn').onclick = () => toggleTextarea('objPasteArea');
-        $('weatherPasteBtn').onclick = () => toggleTextarea('weatherPasteArea');
-
-        $('compPasteArea').onblur = (event) => parseCompText(event.target.value, $('compDelimiterSelect').value);
-        $('settingsPasteArea').onblur = (event) => parseSettingsText(event.target.value);
-        $('tasksPasteArea').onblur = (event) => parseTasksText(event.target.value, $('tasksDelimiterSelect').value);
-        $('advPasteArea').onblur = (event) => parseAdvText(event.target.value, $('advDelimiterSelect').value);
-        $('standPasteArea').onblur = (event) => parseStandingsText(event.target.value, $('standDelimiterSelect').value);
-        $('schedPasteArea').onblur = (event) => parseScheduleText(event.target.value);
-        $('objPasteArea').onblur = (event) => parseObjectivesText(event.target.value, $('objDelimiterSelect').value);
-        $('weatherPasteArea').onblur = (event) => parseWeatherText(event.target.value);
-
-        $('compAddBtn').onclick = () => {
-          const parent = selectedId ? String(selectedId) : '';
-          const level = selectedId ? String(Number(compRows[compIndexById.get(selectedId)]?.level || 0) + 1) : '';
-          compRows.push({ id: '', level, code: '', name: '', parent });
-          rebuildIdMaps();
-          renderTree();
-          renderSelectionPanel();
-          renderAllTables();
-        };
-        $('compExportBtn').onclick = () => downloadText('compobj.txt', compRowsToText());
-        $('compValidateBtn').onclick = () => {
-          const probs = validateComp();
-          $('compMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('settingsAddBtn').onclick = () => { setRows.push({ id: selectedId || '', settingKey: '', value: '' }); renderSettingsTable(); };
-        $('settingsExportBtn').onclick = () => downloadText('settings.txt', settingsToText());
-        $('settingsValidateBtn').onclick = () => {
-          const probs = validateSettings();
-          $('settingsMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('tasksAddBtn').onclick = () => { taskRows.push({ trophyId: selectedId || '', phase: '', command: '', target: '', ref1: '', ref2: '', ref3: '' }); renderTasksTable(); };
-        $('tasksExportBtn').onclick = () => downloadText('tasks.txt', tasksToText());
-        $('tasksValidateBtn').onclick = () => {
-          const probs = validateTasks();
-          $('tasksMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('advAddBtn').onclick = () => { advRows.push({ fromId: selectedId || '', placement: '', toId: '', slot: '' }); renderAdvTable(); };
-        $('advExportBtn').onclick = () => downloadText('advancement.txt', advToText());
-        $('advValidateBtn').onclick = () => {
-          const probs = validateAdv();
-          $('advMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('standAddBtn').onclick = () => { standRows.push({ groupId: selectedId || '', teamCount: '' }); renderStandingsTable(); };
-        $('standExportBtn').onclick = () => downloadText('standings.txt', standingsToText());
-        $('standValidateBtn').onclick = () => {
-          const probs = validateStandings();
-          $('standMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('schedAddBtn').onclick = () => { schedRows.push({ stageId: selectedId || '', dateId: '', matchDay: '', minGames: '', maxGames: '', time: '' }); renderScheduleTable(); };
-        $('schedExportBtn').onclick = () => downloadText('schedule.txt', scheduleToText());
-        $('schedValidateBtn').onclick = () => {
-          const probs = validateSchedule();
-          $('schedMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('objAddBtn').onclick = () => { objectiveRows.push({ groupId: selectedId || '', objective: '', value: '' }); renderObjectivesTable(); };
-        $('objExportBtn').onclick = () => downloadText('objectives.txt', objectivesToText());
-        $('objValidateBtn').onclick = () => {
-          const probs = validateObjectives();
-          $('objMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('weatherAddBtn').onclick = () => { weatherRows.push({ fedId: selectedId || '', dayId: '', weatherType: '', param1: '', param2: '', param3: '', param4: '', start: '', end: '' }); renderWeatherTable(); };
-        $('weatherExportBtn').onclick = () => downloadText('weather.txt', weatherToText());
-        $('weatherValidateBtn').onclick = () => {
-          const probs = validateWeather();
-          $('weatherMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
-        };
-
-        $('exportAllBtn').onclick = exportAllFiles;
-        $('validateAllBtn').onclick = validateAll;
-        $('rebaseBtn').onclick = () => {
-          const start = prompt('Rebase CompObj IDs starting from:', '1000');
-          if(start !== null) rebaseCompIds(start);
-        };
-        $('rebuildBtn').onclick = () => {
-          rebuildIdMaps();
-          renderTree();
-          renderSelectionPanel();
-          renderAllTables();
-          showMessage('Tree rebuilt from current CompObj data.', 'info');
-        };
-        $('clearSelectionBtn').onclick = () => {
-          selectedId = null;
-          renderTree();
-          renderSelectionPanel();
-          renderAllTables();
-        };
-
-        $('themeToggle').onclick = () => {
-          document.body.classList.toggle('dark');
-          $('themeToggle').textContent = document.body.classList.contains('dark') ? 'Toggle Light' : 'Toggle Dark';
-        };
-      }
-
-      function init(){
-        initTabs();
-        rebuildIdMaps();
-        renderTree();
-        renderSelectionPanel();
-        renderAllTables();
+      function init() {
+        state.federations = createInitialProject();
+        state.selectedFederation = state.federations[0]?.uuid || null;
+        state.selectedLeague = state.federations[0]?.leagues[0]?.uuid || null;
         setupEventHandlers();
-        showMessage('Load CompObj data to get started.', 'info');
+        renderAll();
+        showMessage('Designer ready — tweak a league and export when finished.', 'info');
       }
-
-      window.rebuildIdMaps = rebuildIdMaps;
-      window.renderAllTables = renderAllTables;
-      window.exportAllFiles = exportAllFiles;
-      window.validateAll = validateAll;
 
       init();
     })();
