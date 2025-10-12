@@ -173,6 +173,45 @@
     </section>
 
     <!-- ===================== -->
+    <!-- Settings Editor -->
+    <!-- ===================== -->
+    <section id="settingsEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Settings Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage competition settings lines formatted as <code>CompObjID,SettingKey,SettingValue</code>.
+        Each row links directly to a CompObj entry.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="settingsFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="settingsPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="settingsExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <button id="settingsValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+        <button id="settingsAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
+      </div>
+
+      <textarea id="settingsPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste settings lines here... (CompObjID,SettingKey,SettingValue)"></textarea>
+      <div id="settingsMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">CompObj ID</th>
+              <th class="p-2">Setting Key</th>
+              <th class="p-2">Setting Value</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="settingsBody"></tbody>
+        </table>
+      </div>
+
+      <div id="settingsMessages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
     <!-- Tasks Editor -->
     <!-- ===================== -->
     <section id="taskEditor" class="mt-10">
@@ -503,6 +542,84 @@
       });
       document.getElementById('standingsMessages').innerHTML = msgs.length ? msgs.join('<br>') : 'No validation issues.';
     };
+
+    /* -----------------------
+       Settings Section
+    ----------------------- */
+    let settingRows = [];
+    const settingsBody=document.getElementById('settingsBody');
+
+    function updateSettingsMeta(){
+      document.getElementById('settingsMeta').textContent=`${settingRows.length} setting line${settingRows.length===1?'':'s'} parsed`;
+    }
+
+    function renderSettingsTable(){
+      settingsBody.innerHTML='';
+      settingRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="id" data-i="${i}" class="w-28 p-1 border rounded" value="${r.id ?? ''}"></td>
+          <td class="p-2"><input data-f="key" data-i="${i}" class="w-40 p-1 border rounded" value="${r.key ?? ''}"></td>
+          <td class="p-2"><input data-f="value" data-i="${i}" class="w-48 p-1 border rounded" value="${r.value ?? ''}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        settingsBody.appendChild(tr);
+      });
+      settingsBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{settingRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateSettingsMeta();};
+      });
+      settingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{settingRows.splice(+btn.dataset.del,1);renderSettingsTable();};
+      });
+      updateSettingsMeta();
+    }
+
+    function parseSettings(text){
+      settingRows=[];
+      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts=line.split(',').map(s=>s.trim());
+        const [id='', key='', value=''] = parts;
+        if(id || key || value) settingRows.push({id, key, value});
+      }
+      renderSettingsTable();
+    }
+
+    document.getElementById('settingsFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseSettings(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById('settingsPasteBtn').onclick=()=>{
+      const pa=document.getElementById('settingsPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('settingsPasteArea').onblur=e=>parseSettings(e.target.value);
+
+    document.getElementById('settingsAddBtn').onclick=()=>{settingRows.push({id:'',key:'',value:''});renderSettingsTable();};
+
+    document.getElementById('settingsExportBtn').onclick=()=>{
+      const blob=new Blob([settingRows.map(r=>[r.id,r.key,r.value].join(',')).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='settings.txt';a.click();
+    };
+
+    document.getElementById('settingsValidateBtn').onclick=()=>{
+      const probs=[];
+      const ids=new Set(rows.map(r=>String(r.id)));
+      settingRows.forEach((r,i)=>{
+        if(!r.id) probs.push(`Row ${i+1}: Missing CompObj ID`);
+        else if(!ids.has(String(r.id))) probs.push(`Row ${i+1}: CompObj ID ${r.id} not found in CompObj table`);
+        if(!r.key) probs.push(`Row ${i+1}: Missing Setting Key`);
+        if(!r.value) probs.push(`Row ${i+1}: Missing Setting Value`);
+      });
+      document.getElementById('settingsMessages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
+    };
+
+    updateSettingsMeta();
 
     /* -----------------------
        Tasks Section
