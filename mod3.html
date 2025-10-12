@@ -173,6 +173,8 @@
     .selector-card-active { border-color: #1d4ed8; box-shadow: 0 18px 30px -22px rgba(37, 99, 235, 0.45); background: linear-gradient(135deg, rgba(37,99,235,0.12), rgba(15,23,42,0.03)); }
     .selector-card-add { border: 1px dashed #94a3b8; background: #ffffff; justify-content: center; align-items: center; font-weight: 600; color: #64748b; }
     .selector-card-add:hover { border-color: #1d4ed8; color: #1d4ed8; box-shadow: none; transform: translateY(0); }
+    .selector-card-static { pointer-events: none; background: #e2e8f0; color: #1e293b; }
+    body.dark .selector-card-static { background: #1f2937; color: #e2e8f0; border-color: #334155; }
     .selector-icon { font-size: 1.5rem; }
     .selector-title { font-weight: 600; font-size: 1rem; }
     .selector-sub { font-size: 0.8rem; color: #475569; }
@@ -380,15 +382,23 @@
   <script>
     (() => {
       const $ = (id) => document.getElementById(id);
+
+      function createWorldRoot() {
+        return { uuid: 'world-root', name: 'World', federations: [] };
+      }
+
       const state = {
+        world: createWorldRoot(),
         federations: [],
         selectedFederation: null,
-        selectedLeague: null,
+        selectedCompetition: null,
         developerMode: false,
         stepIndex: 0,
         leagueSearch: '',
         lastBuild: null
       };
+
+      state.federations = state.world.federations;
 
       let compRows = [];
       let setRows = [];
@@ -752,13 +762,25 @@
         }
         resetRegistries();
         editorConfigs.clear();
-        state.federations = [];
+        const worldRow = compRows.find((row) => Number(row.level) === 1 && (row.code || '').trim().toUpperCase() === 'WORLD');
+        if (worldRow) {
+          state.world = { uuid: 'world-root', name: worldRow.name || 'World', federations: [] };
+          setIdForKey('world:root', worldRow.id);
+        } else {
+          state.world = createWorldRoot();
+        }
+        state.federations = state.world.federations;
+
+        const rowById = new Map();
         const children = new Map();
         compRows.forEach((row) => {
-          if (!children.has(row.parent)) children.set(row.parent, []);
-          children.get(row.parent).push(row);
+          rowById.set(row.id, row);
+          const parent = row.parent || '';
+          if (!children.has(parent)) children.set(parent, []);
+          children.get(parent).push(row);
         });
         children.forEach((list) => list.sort((a, b) => (a.index || 0) - (b.index || 0)));
+
         const settingsMap = new Map();
         setRows.forEach((row) => {
           if (!settingsMap.has(row.id)) settingsMap.set(row.id, new Map());
@@ -771,46 +793,131 @@
           if (!scheduleMap.has(row.stageId)) scheduleMap.set(row.stageId, row);
         });
 
-        const federationRows = compRows.filter((row) => row.level === '0').sort((a, b) => (a.index || 0) - (b.index || 0));
-        federationRows.forEach((fedRow) => {
+        const federationNameOverrides = new Map([
+          ['FIFA', 'FIFA'],
+          ['UEFA', 'UEFA'],
+          ['AFC', 'AFC'],
+          ['CCAF', 'CONCACAF'],
+          ['CNBL', 'CONMEBOL']
+        ]);
+
+        const isFederationRow = (row) => {
+          if (!row) return false;
+          const level = Number(row.level);
+          if (level === 2) {
+            const text = `${row.code || ''} ${row.name || ''}`;
+            return /nationname_|continentname_/i.test(text);
+          }
+          return false;
+        };
+
+        const isDisplayFederationRow = (row) => {
+          if (!row) return false;
+          const level = Number(row.level);
+          if (level <= 1) {
+            const code = (row.code || '').trim().toUpperCase();
+            return code !== 'WORLD';
+          }
+          return isFederationRow(row);
+        };
+
+        const getFederationDisplayName = (row) => {
+          if (!row) return 'Federation';
+          const code = (row.code || '').trim();
+          if (federationNameOverrides.has(code)) return federationNameOverrides.get(code);
+          const name = (row.name || '').trim();
+          if (!name || /^(nationname_|continentname_)/i.test(name)) {
+            return code || `Federation ${row.id}`;
+          }
+          return name;
+        };
+
+        const federationMap = new Map();
+        const ensureFederation = (row) => {
+          if (!isDisplayFederationRow(row)) return null;
+          if (federationMap.has(row.id)) return federationMap.get(row.id);
           const federation = {
             uuid: createUuid('fed'),
-            name: fedRow.name,
-            code: fedRow.code,
+            id: row.id,
+            name: getFederationDisplayName(row),
+            code: row.code,
             region: '',
-            leagues: []
+            level: Number(row.level) || 0,
+            order: row.index || 0,
+            competitions: []
           };
-          setIdForKey(`fed:${federation.uuid}`, fedRow.id);
-          const leagueRows = (children.get(fedRow.id) || []).filter((row) => row.level === '1');
-          leagueRows.forEach((leagueRow) => {
-            const league = {
-              uuid: createUuid('league'),
-              name: leagueRow.name,
-              code: leagueRow.code,
-              season: '',
-              notes: ''
-            };
-            setIdForKey(`league:${league.uuid}`, leagueRow.id);
-            const config = deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap);
-            editorConfigs.set(league.uuid, config);
-            federation.leagues.push(league);
-          });
+          setIdForKey(`fed:${federation.uuid}`, row.id);
+          federationMap.set(row.id, federation);
           state.federations.push(federation);
+          return federation;
+        };
+
+        const candidateFederations = compRows
+          .filter((row) => isDisplayFederationRow(row))
+          .sort((a, b) => (a.index || 0) - (b.index || 0));
+        candidateFederations.forEach((row) => ensureFederation(row));
+
+        const isCompetitionRow = (row) => Number(row.level) === 3 && /^c/i.test(row.code || '');
+        const competitionRows = compRows
+          .filter((row) => isCompetitionRow(row))
+          .sort((a, b) => (a.index || 0) - (b.index || 0));
+
+        competitionRows.forEach((row) => {
+          const parentRow = rowById.get(row.parent);
+          const federation = ensureFederation(parentRow);
+          if (!federation) return;
+          const league = {
+            uuid: createUuid('league'),
+            id: row.id,
+            name: row.name,
+            code: row.code,
+            season: '',
+            notes: '',
+            order: row.index || 0
+          };
+          setIdForKey(`league:${league.uuid}`, row.id);
+          const config = deriveConfigFromData(league, row, children, settingsMap, standingsMap, scheduleMap);
+          editorConfigs.set(league.uuid, config);
+          federation.competitions.push(league);
         });
+
+        state.federations = state.federations.filter((fed) => fed.competitions.length);
+        state.world.federations = state.federations;
+        state.federations = state.world.federations;
+
+        state.federations.forEach((fed) => {
+          fed.competitions.sort((a, b) => (a.order || 0) - (b.order || 0));
+        });
+        state.federations.sort((a, b) => (a.order || 0) - (b.order || 0));
+
         state.selectedFederation = state.federations[0]?.uuid || null;
-        state.selectedLeague = state.federations[0]?.leagues[0]?.uuid || null;
+        state.selectedCompetition = state.federations[0]?.competitions[0]?.uuid || null;
         state.stepIndex = 0;
         renderAll();
       }
 
       function deriveConfigFromData(league, leagueRow, children, settingsMap, standingsMap, scheduleMap) {
         const config = createDefaultConfig();
-        const stageRows = (children.get(leagueRow.id) || []).filter((row) => row.level === '2').sort((a, b) => (a.index || 0) - (b.index || 0));
+        const stageRows = (children.get(leagueRow.id) || [])
+          .filter((row) => {
+            const level = Number(row.level);
+            return level === 4 || level === 2;
+          })
+          .sort((a, b) => (a.index || 0) - (b.index || 0));
         const isPlayoffStage = (row) => (row.code || '').toUpperCase() === 'PO' || /(playoff|knockout)/i.test(row.name || '');
         const playoffStage = stageRows.find((row) => isPlayoffStage(row)) || null;
         const mainStage = stageRows.find((row) => !isPlayoffStage(row)) || (playoffStage ? null : stageRows[0] || null);
 
-        const groupsForStage = (stage) => (stage ? (children.get(stage.id) || []).filter((row) => row.level === '3').sort((a, b) => (a.index || 0) - (b.index || 0)) : []);
+        const groupsForStage = (stage) => (
+          stage
+            ? (children.get(stage.id) || [])
+                .filter((row) => {
+                  const level = Number(row.level);
+                  return level === 5 || level === 3;
+                })
+                .sort((a, b) => (a.index || 0) - (b.index || 0))
+            : []
+        );
         const mainGroups = groupsForStage(mainStage);
         const playoffGroups = groupsForStage(playoffStage);
 
@@ -989,12 +1096,40 @@
       function validateFiles() {
         const issues = [];
         const compIdSet = new Set(compRows.map((row) => row.id));
-        const stageIdSet = new Set(compRows.filter((row) => row.level === '2').map((row) => row.id));
-        const groupIdSet = new Set(compRows.filter((row) => row.level === '3').map((row) => row.id));
-        const leagueIdSet = new Set(compRows.filter((row) => row.level === '1').map((row) => row.id));
-        const federationIdSet = new Set(compRows.filter((row) => row.level === '0').map((row) => row.id));
+        const stageIdSet = new Set(
+          compRows
+            .filter((row) => {
+              const level = Number(row.level);
+              return level >= 4 || level === 2;
+            })
+            .map((row) => row.id)
+        );
+        const groupIdSet = new Set(
+          compRows
+            .filter((row) => {
+              const level = Number(row.level);
+              return level >= 5 || level === 3;
+            })
+            .map((row) => row.id)
+        );
+        const leagueIdSet = new Set(
+          compRows
+            .filter((row) => {
+              const level = Number(row.level);
+              return level === 3 || level === 1;
+            })
+            .map((row) => row.id)
+        );
+        const federationIdSet = new Set(
+          compRows
+            .filter((row) => {
+              const level = Number(row.level);
+              return level === 2 || level === 0;
+            })
+            .map((row) => row.id)
+        );
         compRows.forEach((row) => {
-          if (row.level !== '0' && row.parent && !compIdSet.has(row.parent)) {
+          if (Number(row.level) > 1 && row.parent && !compIdSet.has(row.parent)) {
             issues.push(`Competition entry ${row.id} references missing parent ${row.parent}.`);
           }
         });
@@ -1071,13 +1206,13 @@
           name,
           code,
           region,
-          leagues: []
+          competitions: []
         };
         getIdForKey(`fed:${federation.uuid}`);
         return federation;
       }
 
-      function createLeague(name, code, season) {
+      function createCompetition(name, code, season) {
         const league = {
           uuid: createUuid('league'),
           name,
@@ -1095,7 +1230,7 @@
         const concacaf = createFederation('CONCACAF', 'CONCACAF', 'North & Central America');
         const afc = createFederation('AFC', 'AFC', 'Asia');
 
-        const ucl = createLeague('UEFA Champions League', 'UCL', '2024/25');
+        const ucl = createCompetition('UEFA Champions League', 'UCL', '2024/25');
         editorConfigs.set(ucl.uuid, {
           structureType: 'groups',
           teamCount: 32,
@@ -1109,7 +1244,7 @@
           matchTime: '21:00'
         });
 
-        const europa = createLeague('UEFA Europa League', 'UEL', '2024/25');
+        const europa = createCompetition('UEFA Europa League', 'UEL', '2024/25');
         editorConfigs.set(europa.uuid, {
           structureType: 'groups',
           teamCount: 48,
@@ -1123,7 +1258,7 @@
           matchTime: '21:00'
         });
 
-        const mls = createLeague('Major League Soccer', 'MLS', '2024');
+        const mls = createCompetition('Major League Soccer', 'MLS', '2024');
         editorConfigs.set(mls.uuid, {
           structureType: 'league',
           teamCount: 29,
@@ -1137,7 +1272,7 @@
           matchTime: '19:30'
         });
 
-        const acl = createLeague('AFC Champions League', 'ACL', '2024/25');
+        const acl = createCompetition('AFC Champions League', 'ACL', '2024/25');
         editorConfigs.set(acl.uuid, {
           structureType: 'groups',
           teamCount: 40,
@@ -1151,9 +1286,9 @@
           matchTime: '20:00'
         });
 
-        uefa.leagues.push(ucl, europa);
-        concacaf.leagues.push(mls);
-        afc.leagues.push(acl);
+        uefa.competitions.push(ucl, europa);
+        concacaf.competitions.push(mls);
+        afc.competitions.push(acl);
 
         return [uefa, concacaf, afc];
       }
@@ -1162,10 +1297,10 @@
         return state.federations.find((f) => f.uuid === state.selectedFederation) || null;
       }
 
-      function getSelectedLeague() {
+      function getSelectedCompetition() {
         const federation = getSelectedFederation();
         if (!federation) return null;
-        return federation.leagues.find((l) => l.uuid === state.selectedLeague) || null;
+        return federation.competitions.find((l) => l.uuid === state.selectedCompetition) || null;
       }
 
       function showMessage(text, tone = 'info') {
@@ -1187,12 +1322,21 @@
         const container = $('federationList');
         if (!container) return;
         container.innerHTML = '';
+        const worldCard = document.createElement('div');
+        worldCard.className = 'selector-card selector-card-static';
+        const worldCount = state.federations.length;
+        worldCard.innerHTML = `
+          <div class="selector-icon">🌐</div>
+          <div class="selector-title">${state.world.name}</div>
+          <div class="selector-sub">${worldCount} federation${worldCount === 1 ? '' : 's'}</div>
+        `;
+        container.appendChild(worldCard);
         state.federations.forEach((fed) => {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.dataset.fedId = fed.uuid;
           btn.className = 'selector-card' + (state.selectedFederation === fed.uuid ? ' selector-card-active' : '');
-          const leagueCount = fed.leagues.length;
+          const leagueCount = fed.competitions.length;
           const idInfo = state.developerMode ? `<div class="selector-dev">ID ${getIdForKey(`fed:${fed.uuid}`)}</div>` : '';
           btn.innerHTML = `
             <div class="selector-icon">🌍</div>
@@ -1216,7 +1360,7 @@
           const federation = createFederation(name, code || name.slice(0, 4).toUpperCase(), region || '');
           state.federations.push(federation);
           state.selectedFederation = federation.uuid;
-          state.selectedLeague = null;
+          state.selectedCompetition = null;
           syncDataFromState();
           renderAll();
           showMessage('Federation added.', 'success');
@@ -1224,7 +1368,7 @@
         container.appendChild(addBtn);
       }
 
-      function renderLeagues() {
+      function renderCompetitions() {
         const container = $('leagueList');
         const summary = $('leaguePanelSummary');
         if (!container || !summary) return;
@@ -1234,7 +1378,7 @@
           summary.textContent = 'Select a federation to browse its competitions.';
           return;
         }
-        const filtered = federation.leagues.filter((league) => {
+        const filtered = federation.competitions.filter((league) => {
           if (!state.leagueSearch) return true;
           const q = state.leagueSearch.toLowerCase();
           return (
@@ -1247,8 +1391,8 @@
           const config = ensureConfig(league);
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.dataset.leagueId = league.uuid;
-          btn.className = 'selector-card' + (state.selectedLeague === league.uuid ? ' selector-card-active' : '');
+          btn.dataset.competitionId = league.uuid;
+          btn.className = 'selector-card' + (state.selectedCompetition === league.uuid ? ' selector-card-active' : '');
           const stageIcon = structureTypes.find((s) => s.key === config.structureType)?.icon || '⚙️';
           const typeLabel = describeCompetitionType(config);
           const teamLabel = `${config.teamCount} team${config.teamCount === 1 ? '' : 's'}`;
@@ -1276,7 +1420,7 @@
         if (!editor || !summary) return;
         editor.innerHTML = '';
         const federation = getSelectedFederation();
-        const league = getSelectedLeague();
+        const league = getSelectedCompetition();
         if (!federation || !league) {
           summary.textContent = 'Choose a competition to unlock the guided editor.';
           const placeholder = document.createElement('div');
@@ -1339,18 +1483,18 @@
 
         grid.appendChild(createField('Competition Name', league.name, 'text', (value) => {
           league.name = value;
-          renderLeagues();
+          renderCompetitions();
           renderEditor();
         }));
 
         grid.appendChild(createField('Short Code', league.code, 'text', (value) => {
           league.code = value.toUpperCase();
-          renderLeagues();
+          renderCompetitions();
         }, 'Uppercase identifier used in generated files.'));
 
         grid.appendChild(createField('Season', league.season, 'text', (value) => {
           league.season = value;
-          renderLeagues();
+          renderCompetitions();
         }, 'Optional season label for settings.'));
 
         grid.appendChild(createField('Notes', league.notes, 'textarea', (value) => {
@@ -1446,7 +1590,7 @@
         sliders.className = 'flex flex-col gap-4';
         sliders.appendChild(createRange('Teams', 2, 64, config.teamCount, 1, (value) => {
           config.teamCount = value;
-          renderLeagues();
+          renderCompetitions();
         }));
 
         const groupDisabled = config.structureType === 'league' || config.structureType === 'playoffs';
@@ -1826,8 +1970,8 @@
         state.federations.forEach((fed) => {
           if (!fed.name) issues.push('Federation missing a name.');
           if (!fed.code) issues.push(`Federation ${fed.name || fed.uuid} missing a code.`);
-          if (!fed.leagues.length) issues.push(`${fed.name} has no competitions.`);
-          fed.leagues.forEach((league) => {
+          if (!fed.competitions.length) issues.push(`${fed.name} has no competitions.`);
+          fed.competitions.forEach((league) => {
             if (!league.name) issues.push('A competition is missing a name.');
             if (!league.code) issues.push(`${league.name || 'Competition'} is missing a short code.`);
             const config = ensureConfig(league);
@@ -1854,9 +1998,12 @@
           weatherRows: []
         };
 
+        const worldId = getIdForKey('world:root');
+        context.compRows.push({ id: worldId, level: '1', code: 'WORLD', name: state.world.name || 'World', parent: '' });
+
         state.federations.forEach((fed) => {
           const fedId = getIdForKey(`fed:${fed.uuid}`);
-          context.compRows.push({ id: fedId, level: '0', code: fed.code || '', name: fed.name || 'Federation', parent: '' });
+          context.compRows.push({ id: fedId, level: '2', code: fed.code || '', name: fed.name || 'Federation', parent: worldId });
           context.weatherRows.push({
             fedId,
             dayId: '1',
@@ -1869,10 +2016,10 @@
             end: '365'
           });
 
-          fed.leagues.forEach((league) => {
+          fed.competitions.forEach((league) => {
             const leagueId = getIdForKey(`league:${league.uuid}`);
             const config = ensureConfig(league);
-            context.compRows.push({ id: leagueId, level: '1', code: league.code || '', name: league.name || 'Competition', parent: fedId });
+            context.compRows.push({ id: leagueId, level: '3', code: league.code || '', name: league.name || 'Competition', parent: fedId });
             context.setRows.push({ id: leagueId, settingKey: 'season', value: league.season || '' });
             context.setRows.push({ id: leagueId, settingKey: 'structure_type', value: config.structureType });
             context.setRows.push({ id: leagueId, settingKey: 'team_count', value: String(config.teamCount) });
@@ -1880,7 +2027,7 @@
             const plan = createCompetitionPlan(league, config);
             let stageIndex = 1;
             plan.stages.forEach((stage) => {
-              context.compRows.push({ id: stage.id, level: '2', code: stage.code, name: stage.name, parent: leagueId });
+              context.compRows.push({ id: stage.id, level: '4', code: stage.code, name: stage.name, parent: leagueId });
               context.setRows.push({ id: stage.id, settingKey: 'rounds', value: String(stage.rounds) });
               context.setRows.push({ id: stage.id, settingKey: 'games_per_matchup', value: String(stage.gamesPerMatchup) });
               context.schedRows.push({
@@ -1892,14 +2039,16 @@
                 time: config.matchTime || '20:00'
               });
               stage.groups.forEach((group, groupIndex) => {
-                context.compRows.push({ id: group.id, level: '3', code: group.code, name: group.name, parent: stage.id });
+                context.compRows.push({ id: group.id, level: '5', code: group.code, name: group.name, parent: stage.id });
                 context.standRows.push({ groupId: group.id, teamCount: String(group.teamCount) });
                 context.objectiveRows.push({ groupId: group.id, objective: group.objective, value: group.objectiveValue });
               });
               stageIndex += 1;
             });
 
-            plan.advancements.forEach((adv) => context.advRows.push(adv));
+            plan.advancements.forEach((adv) => {
+              context.advRows.push({ fromId: adv.fromId, placement: adv.placement, toId: adv.toId, slot: adv.slot });
+            });
             context.taskRows.push({ trophyId: leagueId, phase: 'FINALE', command: 'AWARD_TROPHY', target: plan.finalTargetId, ref1: '', ref2: '', ref3: '' });
           });
         });
@@ -2106,7 +2255,7 @@
       function renderAll() {
         renderFileStatus();
         renderFederations();
-        renderLeagues();
+        renderCompetitions();
         renderEditor();
         renderExportResults();
       }
@@ -2174,7 +2323,7 @@
             if (!button) return;
             state.selectedFederation = button.dataset.fedId;
             const federation = getSelectedFederation();
-            state.selectedLeague = federation?.leagues[0]?.uuid || null;
+            state.selectedCompetition = federation?.competitions[0]?.uuid || null;
             renderAll();
           });
         }
@@ -2182,11 +2331,11 @@
         const leagueList = $('leagueList');
         if (leagueList) {
           leagueList.addEventListener('click', (event) => {
-            const button = event.target.closest('button[data-league-id]');
+            const button = event.target.closest('button[data-competition-id]');
             if (!button) return;
-            state.selectedLeague = button.dataset.leagueId;
+            state.selectedCompetition = button.dataset.competitionId;
             renderEditor();
-            renderLeagues();
+            renderCompetitions();
           });
         }
 
@@ -2194,7 +2343,7 @@
         if (search) {
           search.addEventListener('input', (event) => {
             state.leagueSearch = event.target.value;
-            renderLeagues();
+            renderCompetitions();
           });
         }
 
@@ -2210,9 +2359,9 @@
             if (!name) return;
             const code = prompt('Short code', name.slice(0, 4).toUpperCase());
             const season = prompt('Season label', new Date().getFullYear());
-            const league = createLeague(name, (code || name.slice(0, 4)).toUpperCase(), season || '');
-            federation.leagues.push(league);
-            state.selectedLeague = league.uuid;
+            const league = createCompetition(name, (code || name.slice(0, 4)).toUpperCase(), season || '');
+            federation.competitions.push(league);
+            state.selectedCompetition = league.uuid;
             syncDataFromState();
             renderAll();
             showMessage('Competition created.', 'success');
@@ -2260,9 +2409,12 @@
       }
 
       function init() {
-        state.federations = createInitialProject();
+        state.world = createWorldRoot();
+        state.federations = state.world.federations;
+        const seedFederations = createInitialProject();
+        seedFederations.forEach((fed) => state.federations.push(fed));
         state.selectedFederation = state.federations[0]?.uuid || null;
-        state.selectedLeague = state.federations[0]?.leagues[0]?.uuid || null;
+        state.selectedCompetition = state.federations[0]?.competitions[0]?.uuid || null;
         setupEventHandlers();
         syncDataFromState();
         renderAll();
