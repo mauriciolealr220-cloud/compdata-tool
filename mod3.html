@@ -212,6 +212,47 @@
     </section>
 
     <!-- ===================== -->
+    <!-- Schedule Editor -->
+    <!-- ===================== -->
+    <section id="scheduleEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Schedule Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage fixture schedule rows formatted as <code>StageID,DateID,RoundNumber,MinGames,MaxGames,Time</code>.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="scheduleFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="schedulePasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="scheduleExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <button id="scheduleValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+        <button id="scheduleAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
+      </div>
+
+      <textarea id="schedulePasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste schedule lines here... (StageID,DateID,RoundNumber,MinGames,MaxGames,Time)"></textarea>
+      <div id="scheduleMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Stage ID</th>
+              <th class="p-2">Date ID</th>
+              <th class="p-2">Round #</th>
+              <th class="p-2">Min Games</th>
+              <th class="p-2">Max Games</th>
+              <th class="p-2">Time</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleBody"></tbody>
+        </table>
+      </div>
+
+      <div id="scheduleMessages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
     <!-- Tasks Editor -->
     <!-- ===================== -->
     <section id="taskEditor" class="mt-10">
@@ -705,6 +746,128 @@
     };
 
     updateSettingsMeta();
+
+    /* -----------------------
+       Schedule Section
+    ----------------------- */
+    let scheduleRows = [];
+    const scheduleBody = document.getElementById('scheduleBody');
+    const scheduleMetaEl = document.getElementById('scheduleMeta');
+    const scheduleMessagesEl = document.getElementById('scheduleMessages');
+
+    function updateScheduleMeta(){
+      if(scheduleMetaEl){
+        scheduleMetaEl.textContent = `${scheduleRows.length} lines parsed`;
+      }
+    }
+
+    function renderScheduleTable(){
+      scheduleBody.innerHTML='';
+      scheduleRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="stage" data-i="${i}" class="w-24 p-1 border rounded" value="${r.stage ?? ''}"></td>
+          <td class="p-2"><input data-f="date" data-i="${i}" class="w-24 p-1 border rounded" value="${r.date ?? ''}"></td>
+          <td class="p-2"><input data-f="round" data-i="${i}" class="w-20 p-1 border rounded" value="${r.round ?? ''}"></td>
+          <td class="p-2"><input data-f="min" data-i="${i}" class="w-24 p-1 border rounded" value="${r.min ?? ''}"></td>
+          <td class="p-2"><input data-f="max" data-i="${i}" class="w-24 p-1 border rounded" value="${r.max ?? ''}"></td>
+          <td class="p-2"><input data-f="time" data-i="${i}" class="w-24 p-1 border rounded" value="${r.time ?? ''}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        scheduleBody.appendChild(tr);
+      });
+      scheduleBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{scheduleRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+      });
+      scheduleBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{scheduleRows.splice(+btn.dataset.del,1);renderScheduleTable();};
+      });
+      updateScheduleMeta();
+    }
+
+    function parseSchedule(text){
+      scheduleRows=[];
+      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const parts=line.split(',').map(s=>s.trim());
+        while(parts.length<6) parts.push('');
+        const [stage='',date='',round='',min='',max='',time='']=parts;
+        scheduleRows.push({stage,date,round,min,max,time});
+      }
+      renderScheduleTable();
+      if(scheduleMessagesEl){
+        scheduleMessagesEl.textContent='';
+      }
+    }
+
+    document.getElementById('scheduleFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const reader=new FileReader();
+      reader.onload=()=>parseSchedule(reader.result);
+      reader.readAsText(f);
+    };
+
+    document.getElementById('schedulePasteBtn').onclick=()=>{
+      const pa=document.getElementById('schedulePasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('schedulePasteArea').onblur=e=>parseSchedule(e.target.value);
+
+    document.getElementById('scheduleAddBtn').onclick=()=>{
+      scheduleRows.push({stage:'',date:'',round:'',min:'',max:'',time:''});
+      renderScheduleTable();
+    };
+
+    document.getElementById('scheduleExportBtn').onclick=()=>{
+      const blob=new Blob([scheduleRows.map(r=>[r.stage,r.date,r.round,r.min,r.max,r.time].join(',')).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='schedule.txt';a.click();
+    };
+
+    document.getElementById('scheduleValidateBtn').onclick=()=>{
+      const probs=[];
+      const stageIds=new Set(rows.map(r=>String(r.id)));
+      const numericFields=[['date','Date ID'],['round','Round #'],['min','Min Games'],['max','Max Games'],['time','Time']];
+      scheduleRows.forEach((r,i)=>{
+        const rowNum=i+1;
+        if(!r.stage) probs.push(`Row ${rowNum}: Missing Stage ID`);
+        else if(!stageIds.has(String(r.stage))) probs.push(`Row ${rowNum}: Stage ID ${r.stage} not found in CompObj table`);
+        numericFields.forEach(([field,label])=>{
+          const val=r[field];
+          if(val==='') probs.push(`Row ${rowNum}: Missing ${label}`);
+          else if(Number.isNaN(Number(val))) probs.push(`Row ${rowNum}: ${label} must be numeric`);
+        });
+      });
+      scheduleMessagesEl.innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
+    };
+
+    function applyGlobalIdMapping(mapping){
+      if(!mapping) return;
+      const mappingLookup=new Map();
+      if(mapping instanceof Map){
+        mapping.forEach((newId,oldId)=>{mappingLookup.set(String(oldId), newId);});
+      } else {
+        Object.keys(mapping).forEach(oldId=>{mappingLookup.set(String(oldId), mapping[oldId]);});
+      }
+      let scheduleChanged=false;
+      scheduleRows.forEach(row=>{
+        const replacement=mappingLookup.get(String(row.stage));
+        if(replacement!==undefined){
+          row.stage=replacement;
+          scheduleChanged=true;
+        }
+      });
+      if(scheduleChanged){
+        renderScheduleTable();
+        if(scheduleMessagesEl){
+          scheduleMessagesEl.textContent='Schedule updated with new stage references.';
+        }
+      }
+    }
+    window.applyGlobalIdMapping=applyGlobalIdMapping;
+
+    updateScheduleMeta();
 
     /* -----------------------
        Tasks Section
