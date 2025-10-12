@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CompObj + Advancement Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    .row-dirty { outline: 2px dashed rgb(251 191 36 / 0.7); }
+    .sticky-th { position: sticky; top: 0; z-index: 10; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 p-6">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <header class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">CompObj & Advancement Editor</h1>
+        <p class="text-sm text-slate-600">
+          Manage competition structures (CompObj) and advancement mapping lines in one tool.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-sm">Theme</label>
+        <select id="themeSelect" class="p-2 rounded border bg-white">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- ===================== -->
+    <!-- CompObj Editor -->
+    <!-- ===================== -->
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-2">CompObj Editor</h2>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="fileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="pasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="exportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <button id="rebaseBtn" class="px-3 py-2 bg-amber-500 text-white rounded">Rebase IDs</button>
+        <button id="autoFixBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Auto-Fix Parents</button>
+        <button id="dedupeBtn" class="px-3 py-2 bg-fuchsia-600 text-white rounded">De-duplicate IDs</button>
+      </div>
+
+      <div class="mb-3 flex flex-wrap items-center gap-3">
+        <label class="text-sm">Rebase start ID:</label>
+        <input id="rebaseStart" type="number" value="1000" class="p-2 rounded border w-24 bg-white">
+        <label class="text-sm">Delimiter:</label>
+        <select id="delimiter" class="p-2 rounded border bg-white">
+          <option value=",">Comma</option>
+          <option value="\t">Tab</option>
+          <option value=";">Semicolon</option>
+          <option value="|">Pipe</option>
+          <option value="auto" selected>Auto-detect</option>
+        </select>
+      </div>
+
+      <textarea id="pasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste CompObj lines here..."></textarea>
+      <div id="meta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table id="dataTable" class="min-w-full table-auto text-sm">
+          <thead>
+            <tr class="bg-slate-50 sticky-th">
+              <th class="p-2">#</th>
+              <th class="p-2">ID</th>
+              <th class="p-2">Level</th>
+              <th class="p-2">Code</th>
+              <th class="p-2">Name</th>
+              <th class="p-2">Parent</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-4 flex gap-2">
+        <button id="addLineBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
+        <button id="sortByIdBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by ID</button>
+        <button id="validateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <div id="messages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
+    <!-- Advancement Editor -->
+    <!-- ===================== -->
+    <section id="advEditor">
+      <h2 class="text-xl font-bold mb-2">Advancement Editor</h2>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="advFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="advPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="advExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+      </div>
+
+      <textarea id="advPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste advancement lines here... (FromGroup,PlacementOrWinner,ToGroup,Slot)"></textarea>
+      <div id="advMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table id="advTable" class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">From Group ID</th>
+              <th class="p-2">Placement / Winner</th>
+              <th class="p-2">To Group ID</th>
+              <th class="p-2">Slot #</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="advBody"></tbody>
+        </table>
+      </div>
+
+      <div class="mt-3 flex gap-2">
+        <button id="advAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
+        <button id="advSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by From ID</button>
+        <button id="advValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <div id="advMessages" class="mt-3 text-sm"></div>
+    </section>
+
+  </div>
+
+  <!-- ===================== -->
+  <!-- JavaScript -->
+  <!-- ===================== -->
+  <script>
+    /* -----------------------
+       CompObj Section
+    ----------------------- */
+    let rows = [];
+    const tbody = document.getElementById('tbody');
+
+    function parseText(text, delimSel='auto') {
+      rows = [];
+      const delim = (delimSel==='auto') ? ',' : delimSel;
+      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for (const line of lines) {
+        const parts = line.split(delim).map(p=>p.trim());
+        while (parts.length < 5) parts.push('');
+        const [id, level, code, name, parent] = parts;
+        rows.push({ id, level, code, name, parent });
+      }
+      document.getElementById('meta').textContent = `${rows.length} lines parsed`;
+      renderTable();
+    }
+
+    function renderTable(){
+      tbody.innerHTML = '';
+      rows.forEach((r,i)=>{
+        const tr = document.createElement('tr');
+        tr.className = i%2? 'bg-white':'bg-slate-50';
+        tr.innerHTML = `
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="id" data-i="${i}" class="w-24 p-1 border rounded" value="${r.id}"></td>
+          <td class="p-2"><input data-f="level" data-i="${i}" class="w-12 p-1 border rounded" value="${r.level}"></td>
+          <td class="p-2"><input data-f="code" data-i="${i}" class="w-32 p-1 border rounded" value="${r.code}"></td>
+          <td class="p-2"><input data-f="name" data-i="${i}" class="w-56 p-1 border rounded" value="${r.name}"></td>
+          <td class="p-2"><input data-f="parent" data-i="${i}" class="w-24 p-1 border rounded" value="${r.parent}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange = ()=>{ rows[+inp.dataset.i][inp.dataset.f]=inp.value; };
+      });
+      tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick = ()=>{ rows.splice(+btn.dataset.del,1); renderTable(); };
+      });
+    }
+
+    document.getElementById('fileInput').onchange = e=>{
+      const f = e.target.files[0]; if(!f) return;
+      const reader = new FileReader();
+      reader.onload = ()=>parseText(reader.result, document.getElementById('delimiter').value);
+      reader.readAsText(f);
+    };
+
+    document.getElementById('pasteBtn').onclick = ()=>{
+      const pa=document.getElementById('pasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('pasteArea').onblur = e=>parseText(e.target.value, document.getElementById('delimiter').value);
+
+    document.getElementById('addLineBtn').onclick = ()=>{ rows.push({id:'',level:'',code:'',name:'',parent:''}); renderTable(); };
+
+    document.getElementById('exportBtn').onclick = ()=>{
+      const delim = document.getElementById('delimiter').value==='auto' ? ',' : document.getElementById('delimiter').value;
+      const blob = new Blob([rows.map(r=>[r.id,r.level,r.code,r.name,r.parent].join(delim)).join('\n')], {type:'text/plain'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='compobj.txt'; a.click();
+    };
+
+    document.getElementById('sortByIdBtn').onclick = ()=>{ rows.sort((a,b)=>Number(a.id)-Number(b.id)); renderTable(); };
+
+    document.getElementById('validateBtn').onclick = ()=>{
+      const ids=new Set(rows.map(r=>String(r.id)));
+      const probs=[];
+      rows.forEach((r,i)=>{
+        if(!r.id) probs.push(`Line ${i+1}: Missing ID`);
+        if(r.parent && !ids.has(String(r.parent))) probs.push(`Line ${i+1}: Parent ${r.parent} not found`);
+      });
+      document.getElementById('messages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
+    };
+
+    /* -----------------------
+       Advancement Section
+    ----------------------- */
+    let advRows = [];
+    const advBody = document.getElementById('advBody');
+
+    function parseAdv(text){
+      advRows = [];
+      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+      for(const line of lines){
+        const [fromId, qualifier, toId, slot] = line.split(',').map(s=>s.trim());
+        advRows.push({fromId,qualifier,toId,slot});
+      }
+      document.getElementById('advMeta').textContent=`${advRows.length} advancement lines parsed`;
+      renderAdvTable();
+    }
+
+    function renderAdvTable(){
+      advBody.innerHTML='';
+      advRows.forEach((r,i)=>{
+        const tr=document.createElement('tr');
+        tr.className=i%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${i+1}</td>
+          <td class="p-2"><input data-f="fromId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.fromId}"></td>
+          <td class="p-2"><input data-f="qualifier" data-i="${i}" class="w-16 p-1 border rounded" value="${r.qualifier}"></td>
+          <td class="p-2"><input data-f="toId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.toId}"></td>
+          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-16 p-1 border rounded" value="${r.slot}"></td>
+          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        advBody.appendChild(tr);
+      });
+      advBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{advRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
+      });
+      advBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{advRows.splice(+btn.dataset.del,1);renderAdvTable();};
+      });
+    }
+
+    document.getElementById('advFileInput').onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>parseAdv(r.result);
+      r.readAsText(f);
+    };
+
+    document.getElementById('advPasteBtn').onclick=()=>{
+      const pa=document.getElementById('advPasteArea');
+      pa.classList.toggle('hidden');
+      if(!pa.classList.contains('hidden')) pa.focus();
+    };
+    document.getElementById('advPasteArea').onblur=e=>parseAdv(e.target.value);
+
+    document.getElementById('advAddBtn').onclick=()=>{advRows.push({fromId:'',qualifier:'',toId:'',slot:''});renderAdvTable();};
+
+    document.getElementById('advSortBtn').onclick=()=>{advRows.sort((a,b)=>Number(a.fromId)-Number(b.fromId));renderAdvTable();};
+
+    document.getElementById('advExportBtn').onclick=()=>{
+      const blob=new Blob([advRows.map(r=>[r.fromId,r.qualifier,r.toId,r.slot].join(',')).join('\n')],{type:'text/plain'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='advancement.txt';a.click();
+    };
+
+    document.getElementById('advValidateBtn').onclick=()=>{
+      const ids=new Set(rows.map(r=>String(r.id)));
+      const missing=advRows.filter(r=>!ids.has(String(r.fromId))||!ids.has(String(r.toId)));
+      const msg=missing.length?`${missing.length} advancement lines reference missing group IDs`:'All advancement links valid.';
+      document.getElementById('advMessages').textContent=msg;
+    };
+
+    /* Theme */
+    document.getElementById('themeSelect').onchange=()=>{
+      const v=document.getElementById('themeSelect').value;
+      if(v==='dark'){document.body.classList.add('bg-slate-900','text-slate-100');}
+      else{document.body.classList.remove('bg-slate-900','text-slate-100');}
+    };
+
+  </script>
+</body>
+</html>
