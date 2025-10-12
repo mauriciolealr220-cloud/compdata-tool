@@ -2,1120 +2,1901 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CompObj + Advancement Editor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Competition Editor Dashboard</title>
   <style>
-    :root { color-scheme: light dark; }
-    .row-dirty { outline: 2px dashed rgb(251 191 36 / 0.7); }
-    .sticky-th { position: sticky; top: 0; z-index: 10; }
+    :root {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background-color: #f1f5f9; color: #0f172a; }
+    body.dark { background-color: #0f172a; color: #e2e8f0; }
+    body.dark .bg-white { background-color: #1e293b; color: #e2e8f0; }
+    body.dark .bg-slate-50 { background-color: #1f2937; }
+    body.dark .bg-slate-100 { background-color: #111827; }
+    body.dark .border { border-color: #334155; }
+    body.dark input, body.dark select, body.dark textarea { background-color: #0f172a; color: #e2e8f0; border-color: #475569; }
+    body.dark .text-slate-600 { color: #cbd5f5; }
+    body.dark .hover\:bg-slate-200:hover { background-color: #334155; }
+    body.dark .hover\:bg-slate-700:hover { background-color: #0f172a; }
+    body.dark .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+    body.dark .hover\:bg-emerald-600:hover { background-color: #047857; }
+    body.dark .hover\:bg-red-700:hover { background-color: #b91c1c; }
+    .hidden { display: none !important; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #e2e8f0; text-align: left; }
+    body.dark th, body.dark td { border-color: #334155; }
+    th { background-color: #f8fafc; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+    body.dark th { background-color: #1f2937; }
+    button, select, input, textarea { font: inherit; }
+    button { cursor: pointer; border: none; }
+    textarea { resize: vertical; }
+    a { color: inherit; }
+
+    .min-h-screen { min-height: 100vh; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .justify-between { justify-content: space-between; }
+    .justify-start { justify-content: flex-start; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .py-3 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+    .py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mt-8 { margin-top: 2rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .w-full { width: 100%; }
+    .h-32 { height: 8rem; }
+    .min-w-full { min-width: 100%; }
+    .overflow-x-auto { overflow-x: auto; }
+    .overflow-y-auto { overflow-y: auto; }
+    .bg-white { background-color: #ffffff; }
+    .bg-slate-50 { background-color: #f8fafc; }
+    .bg-slate-100 { background-color: #f1f5f9; }
+    .bg-slate-200 { background-color: #e2e8f0; }
+    .bg-slate-700 { background-color: #334155; }
+    .bg-slate-800 { background-color: #1e293b; }
+    .bg-slate-900 { background-color: #0f172a; }
+    .bg-blue-600 { background-color: #2563eb; }
+    .bg-blue-700 { background-color: #1d4ed8; }
+    .bg-emerald-500 { background-color: #10b981; }
+    .bg-emerald-600 { background-color: #059669; }
+    .bg-red-600 { background-color: #dc2626; }
+    .bg-red-700 { background-color: #b91c1c; }
+    .bg-amber-500 { background-color: #f59e0b; }
+    .bg-amber-600 { background-color: #d97706; }
+    .bg-rose-100 { background-color: #ffe4e6; }
+    .bg-blue-100 { background-color: #dbeafe; }
+    .text-white { color: #ffffff; }
+    .text-slate-500 { color: #64748b; }
+    .text-slate-600 { color: #475569; }
+    .text-slate-700 { color: #334155; }
+    .text-slate-900 { color: #0f172a; }
+    .text-emerald-600 { color: #059669; }
+    .text-red-600 { color: #dc2626; }
+    .text-xs { font-size: 0.75rem; }
+    .text-sm { font-size: 0.875rem; }
+    .text-base { font-size: 1rem; }
+    .text-lg { font-size: 1.125rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-bold { font-weight: 700; }
+    .font-medium { font-weight: 500; }
+    .uppercase { text-transform: uppercase; }
+    .rounded { border-radius: 0.5rem; }
+    .rounded-md { border-radius: 0.4rem; }
+    .rounded-lg { border-radius: 0.75rem; }
+    .rounded-full { border-radius: 9999px; }
+    .shadow { box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); }
+    .shadow-sm { box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); }
+    .border { border: 1px solid #e2e8f0; }
+    .border-slate-200 { border-color: #e2e8f0; }
+    .border-red-500 { border-color: #ef4444; }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .cursor-pointer { cursor: pointer; }
+    .whitespace-nowrap { white-space: nowrap; }
+    .pl-4 { padding-left: 1rem; }
+    .ml-2 { margin-left: 0.5rem; }
+    .leading-tight { line-height: 1.25; }
+    .tracking-wide { letter-spacing: 0.08em; }
+    .hover\:bg-slate-200:hover { background-color: #e2e8f0; }
+    .hover\:bg-slate-700:hover { background-color: #1e293b; }
+    .hover\:bg-blue-700:hover { background-color: #1d4ed8; }
+    .hover\:bg-emerald-600:hover { background-color: #059669; }
+    .hover\:bg-amber-600:hover { background-color: #d97706; }
+    .hover\:bg-red-700:hover { background-color: #b91c1c; }
+    .transition { transition: background-color 0.15s ease, color 0.15s ease; }
+    .font-mono { font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace; }
+
+    .btn { border-radius: 0.5rem; padding: 0.5rem 0.85rem; font-size: 0.875rem; font-weight: 500; }
+    .btn-ghost { background-color: transparent; border: 1px solid #cbd5f5; }
+    .btn-surface { background-color: #e2e8f0; }
+    .tab-btn { background-color: #e2e8f0; color: #334155; border-radius: 9999px; padding: 0.5rem 0.9rem; }
+    .tab-btn-active { background-color: #2563eb; color: #ffffff; }
+    .table-input { width: 100%; padding: 0.35rem 0.45rem; border: 1px solid #cbd5f5; border-radius: 0.4rem; background-color: #ffffff; }
+    body.dark .table-input { background-color: #0f172a; border-color: #475569; }
+    .table-input:focus { outline: 2px solid #2563eb33; }
+    .badge { display: inline-block; background-color: #e2e8f0; color: #334155; border-radius: 999px; padding: 0.15rem 0.5rem; font-size: 0.75rem; }
+    body.dark .badge { background-color: #334155; color: #e2e8f0; }
+    .tree-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; border-radius: 0.5rem; }
+    .tree-row:hover { background-color: #e2e8f0; }
+    body.dark .tree-row:hover { background-color: #1f2937; }
+    .tree-toggle { width: 1.5rem; height: 1.5rem; border-radius: 0.375rem; background-color: #e2e8f0; border: none; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .tree-toggle:disabled { opacity: 0.35; cursor: default; }
+    body.dark .tree-toggle { background-color: #1f2937; color: #e2e8f0; }
+    .tree-node-active { background-color: #dbeafe; color: #1d4ed8; }
+    body.dark .tree-node-active { background-color: #1e3a8a; color: #bfdbfe; }
+    .tree-children { margin-left: 1rem; border-left: 1px dashed #cbd5f5; padding-left: 0.75rem; }
+    body.dark .tree-children { border-color: #334155; }
+    .status-success { color: #047857; }
+    .status-error { color: #b91c1c; }
+    .status-info { color: #2563eb; }
+    .tooltip { position: relative; }
+    .tooltip[data-title]:hover::after { content: attr(data-title); position: absolute; left: 0; top: 100%; margin-top: 0.25rem; background: #0f172a; color: #f8fafc; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; white-space: nowrap; z-index: 20; }
+    body.dark .tooltip[data-title]:hover::after { background: #f8fafc; color: #0f172a; }
+    .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .card { background-color: #ffffff; border-radius: 0.75rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px -15px rgba(15, 23, 42, 0.3); }
+    body.dark .card { background-color: #1e293b; border-color: #334155; box-shadow: none; }
+    .selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+    .subtle-text { color: #64748b; font-size: 0.85rem; }
+    body.dark .subtle-text { color: #cbd5f5; }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 p-6">
-  <div class="max-w-6xl mx-auto">
-
-    <!-- Header -->
-    <header class="flex items-start justify-between gap-4 mb-6">
+<body class="min-h-screen flex flex-col" id="pageBody">
+  <div class="w-full max-w-7xl mx-auto flex flex-col gap-6 p-6">
+    <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-2xl font-bold">CompObj & Advancement Editor</h1>
-        <p class="text-sm text-slate-600">
-          Manage competition structures (CompObj) and advancement mapping lines in one tool.
-        </p>
+        <p class="uppercase text-xs tracking-wide text-slate-600">Unified Modding Interface</p>
+        <h1 class="text-2xl font-bold mt-2">Competition Editor Dashboard</h1>
+        <p class="text-sm text-slate-600 mt-1">Visually manage CompObj hierarchies and keep every linked file synchronized.</p>
       </div>
       <div class="flex items-center gap-2">
-        <label class="text-sm">Theme</label>
-        <select id="themeSelect" class="p-2 rounded border bg-white">
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
+        <label for="themeToggle" class="text-sm text-slate-600">Theme</label>
+        <button id="themeToggle" class="btn bg-slate-800 text-white hover:bg-slate-700 transition">Toggle Dark</button>
       </div>
     </header>
 
-    <!-- ===================== -->
-    <!-- CompObj Editor -->
-    <!-- ===================== -->
-    <section class="mb-10">
-      <h2 class="text-xl font-bold mb-2">CompObj Editor</h2>
+    <main class="grid gap-4" style="grid-template-columns: minmax(260px, 320px) 1fr;">
+      <aside class="card flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between border-b border-slate-200 p-4">
+          <div>
+            <h2 class="text-lg font-bold">Competition Tree</h2>
+            <p id="treeSummary" class="text-xs text-slate-600 mt-1"></p>
+          </div>
+          <button id="clearSelectionBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Clear</button>
+        </div>
+        <div id="compTree" class="flex-1 overflow-y-auto p-2"></div>
+      </aside>
 
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="fileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="pasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="exportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-        <button id="rebaseBtn" class="px-3 py-2 bg-amber-500 text-white rounded">Rebase IDs</button>
-        <button id="autoFixBtn" class="px-3 py-2 bg-blue-600 text-white rounded">Auto-Fix Parents</button>
-        <button id="dedupeBtn" class="px-3 py-2 bg-fuchsia-600 text-white rounded">De-duplicate IDs</button>
-      </div>
+      <section class="flex flex-col gap-4">
+        <div class="card">
+          <div class="border-b border-slate-200 p-4">
+            <h2 class="text-lg font-bold">Selection Details</h2>
+            <p id="selectionBreadcrumb" class="text-xs text-slate-600 mt-1"></p>
+          </div>
+          <div id="selectionPanel" class="p-4"></div>
+        </div>
 
-      <div class="mb-3 flex flex-wrap items-center gap-3">
-        <label class="text-sm">Rebase start ID:</label>
-        <input id="rebaseStart" type="number" value="1000" class="p-2 rounded border w-24 bg-white">
-        <label class="text-sm">Delimiter:</label>
-        <select id="delimiter" class="p-2 rounded border bg-white">
-          <option value=",">Comma</option>
-          <option value="\t">Tab</option>
-          <option value=";">Semicolon</option>
-          <option value="|">Pipe</option>
-          <option value="auto" selected>Auto-detect</option>
-        </select>
-      </div>
+        <div class="card flex flex-col">
+          <div id="tabButtons" class="flex flex-wrap gap-2 border-b border-slate-200 p-3"></div>
+          <div id="tabPanels" class="p-4">
+            <div id="tab-comp" class="tab-panel" data-tab="comp">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="compFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="compPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <select id="compDelimiterSelect" class="px-3 py-2 border rounded">
+                  <option value=",">Comma</option>
+                  <option value="\t">Tab</option>
+                  <option value=";">Semicolon</option>
+                  <option value="|">Pipe</option>
+                  <option value="auto" selected>Auto</option>
+                </select>
+                <button id="compAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="compExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="compValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="compPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste CompObj lines here..."></textarea>
+              <div id="compMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 320px; overflow-y: auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">ID</th>
+                      <th class="p-2">Level</th>
+                      <th class="p-2">Code</th>
+                      <th class="p-2">Name</th>
+                      <th class="p-2">Parent</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="compTableBody"></tbody>
+                </table>
+              </div>
+              <div id="compMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <textarea id="pasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste CompObj lines here..."></textarea>
-      <div id="meta" class="text-sm text-slate-600 mb-2"></div>
+            <div id="tab-settings" class="tab-panel hidden" data-tab="settings">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="settingsFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="settingsPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <button id="settingsAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="settingsExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="settingsValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="settingsPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste SETTINGS lines (CompObjID,Key,Value)"></textarea>
+              <div id="settingsMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">CompObj ID</th>
+                      <th class="p-2">Setting Key</th>
+                      <th class="p-2">Value</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="settingsTableBody"></tbody>
+                </table>
+              </div>
+              <div id="settingsMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <div class="overflow-x-auto border rounded">
-        <table id="dataTable" class="min-w-full table-auto text-sm">
-          <thead>
-            <tr class="bg-slate-50 sticky-th">
-              <th class="p-2">#</th>
-              <th class="p-2">ID</th>
-              <th class="p-2">Level</th>
-              <th class="p-2">Code</th>
-              <th class="p-2">Name</th>
-              <th class="p-2">Parent</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+            <div id="tab-tasks" class="tab-panel hidden" data-tab="tasks">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="tasksFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="tasksPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <select id="tasksDelimiterSelect" class="px-3 py-2 border rounded">
+                  <option value=",">Comma</option>
+                  <option value="\t">Tab</option>
+                  <option value=";">Semicolon</option>
+                  <option value="|">Pipe</option>
+                  <option value="auto" selected>Auto</option>
+                </select>
+                <button id="tasksAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="tasksExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="tasksValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="tasksPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste TASKS lines (TrophyID,Phase,Command,Target,Ref1,Ref2,Ref3)"></textarea>
+              <div id="tasksMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">Trophy ID</th>
+                      <th class="p-2">Phase</th>
+                      <th class="p-2">Command</th>
+                      <th class="p-2">Target</th>
+                      <th class="p-2">Ref1</th>
+                      <th class="p-2">Ref2</th>
+                      <th class="p-2">Ref3</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tasksTableBody"></tbody>
+                </table>
+              </div>
+              <div id="tasksMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <div class="mt-4 flex gap-2">
-        <button id="addLineBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
-        <button id="sortByIdBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by ID</button>
-        <button id="validateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-      </div>
+            <div id="tab-adv" class="tab-panel hidden" data-tab="adv">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="advFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="advPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <select id="advDelimiterSelect" class="px-3 py-2 border rounded">
+                  <option value=",">Comma</option>
+                  <option value="\t">Tab</option>
+                  <option value=";">Semicolon</option>
+                  <option value="|">Pipe</option>
+                  <option value="auto" selected>Auto</option>
+                </select>
+                <button id="advAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="advExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="advValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="advPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste ADVANCEMENT lines (FromGroup,Placement,ToGroup,Slot)"></textarea>
+              <div id="advMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">From Group ID</th>
+                      <th class="p-2">Placement</th>
+                      <th class="p-2">To Group ID</th>
+                      <th class="p-2">Slot</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="advTableBody"></tbody>
+                </table>
+              </div>
+              <div id="advMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <div id="messages" class="mt-3 text-sm"></div>
-    </section>
+            <div id="tab-standings" class="tab-panel hidden" data-tab="standings">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="standFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="standPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <select id="standDelimiterSelect" class="px-3 py-2 border rounded">
+                  <option value=",">Comma</option>
+                  <option value="\t">Tab</option>
+                  <option value=";">Semicolon</option>
+                  <option value="|">Pipe</option>
+                  <option value="auto" selected>Auto</option>
+                </select>
+                <button id="standAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="standExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="standValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="standPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste STANDINGS lines (GroupID,TeamCount)"></textarea>
+              <div id="standMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">Group ID</th>
+                      <th class="p-2">Team Count</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="standTableBody"></tbody>
+                </table>
+              </div>
+              <div id="standMessages" class="mt-3 text-sm"></div>
+            </div>
 
-    <!-- ===================== -->
-    <!-- Advancement Editor -->
-    <!-- ===================== -->
-    <section id="advEditor">
-      <h2 class="text-xl font-bold mb-2">Advancement Editor</h2>
+            <div id="tab-schedule" class="tab-panel hidden" data-tab="schedule">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="schedFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="schedPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <button id="schedAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="schedExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="schedValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="schedPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste SCHEDULE lines (StageID,DateID,MatchDay,MinGames,MaxGames,Time)"></textarea>
+              <div id="schedMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">Stage ID</th>
+                      <th class="p-2">Date ID</th>
+                      <th class="p-2">Match Day</th>
+                      <th class="p-2">Min Games</th>
+                      <th class="p-2">Max Games</th>
+                      <th class="p-2">Time</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="schedTableBody"></tbody>
+                </table>
+              </div>
+              <div id="schedMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="advFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="advPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="advExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-      </div>
+            <div id="tab-objectives" class="tab-panel hidden" data-tab="objectives">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="objFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="objPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <select id="objDelimiterSelect" class="px-3 py-2 border rounded">
+                  <option value=",">Comma</option>
+                  <option value="\t">Tab</option>
+                  <option value=";">Semicolon</option>
+                  <option value="|">Pipe</option>
+                  <option value="auto" selected>Auto</option>
+                </select>
+                <button id="objAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="objExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="objValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="objPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste OBJECTIVES lines (GroupID,ObjectiveType,Value)"></textarea>
+              <div id="objMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">Group ID</th>
+                      <th class="p-2">Objective Type</th>
+                      <th class="p-2">Value</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="objTableBody"></tbody>
+                </table>
+              </div>
+              <div id="objMessages" class="mt-3 text-sm"></div>
+            </div>
 
-      <textarea id="advPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste advancement lines here... (FromGroup,PlacementOrWinner,ToGroup,Slot)"></textarea>
-      <div id="advMeta" class="text-sm text-slate-600 mb-2"></div>
+            <div id="tab-weather" class="tab-panel hidden" data-tab="weather">
+              <div class="flex flex-wrap gap-2 mb-3">
+                <input id="weatherFileInput" type="file" accept=".txt" class="btn-ghost px-3 py-2 rounded" />
+                <button id="weatherPasteBtn" class="btn bg-slate-200 text-slate-700 hover:bg-slate-200">Paste/Text</button>
+                <button id="weatherAddBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Add Row</button>
+                <button id="weatherExportBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export</button>
+                <button id="weatherValidateBtn" class="btn bg-red-600 text-white hover:bg-red-700">Validate</button>
+              </div>
+              <textarea id="weatherPasteArea" class="w-full h-32 border rounded hidden" placeholder="Paste WEATHER lines (FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime)"></textarea>
+              <div id="weatherMeta" class="text-xs text-slate-600 mt-2"></div>
+              <div class="overflow-x-auto border rounded mt-3" style="max-height: 300px; overflow-y:auto;">
+                <table class="text-sm">
+                  <thead>
+                    <tr>
+                      <th class="p-2">#</th>
+                      <th class="p-2">Federation ID</th>
+                      <th class="p-2">Day ID</th>
+                      <th class="p-2">Weather Type</th>
+                      <th class="p-2">Param1</th>
+                      <th class="p-2">Param2</th>
+                      <th class="p-2">Param3</th>
+                      <th class="p-2">Param4</th>
+                      <th class="p-2">Start</th>
+                      <th class="p-2">End</th>
+                      <th class="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="weatherTableBody"></tbody>
+                </table>
+              </div>
+              <div id="weatherMessages" class="mt-3 text-sm"></div>
+            </div>
+          </div>
+        </div>
 
-      <div class="overflow-x-auto border rounded">
-        <table id="advTable" class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">From Group ID</th>
-              <th class="p-2">Placement / Winner</th>
-              <th class="p-2">To Group ID</th>
-              <th class="p-2">Slot #</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="advBody"></tbody>
-        </table>
-      </div>
-
-      <div class="mt-3 flex gap-2">
-        <button id="advAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
-        <button id="advSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by From ID</button>
-        <button id="advValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-      </div>
-
-      <div id="advMessages" class="mt-3 text-sm"></div>
-    </section>
-
-    <!-- ===================== -->
-    <!-- Standings Editor -->
-    <!-- ===================== -->
-    <section id="standingsEditor" class="mt-10">
-      <h2 class="text-xl font-bold mb-2">Standings Editor</h2>
-      <p class="text-sm text-slate-600 mb-3">
-        Manage standings slot definitions such as <code>GroupId,ZeroBasedSlot</code>.
-        Remember that slot <code>0</code> represents the first team in a table.
-      </p>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="standingsFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="standingsPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="standingsExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-      </div>
-
-      <textarea id="standingsPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste standings lines here... (GroupId,ZeroBasedSlot)"></textarea>
-      <div id="standingsMeta" class="text-sm text-slate-600 mb-2"></div>
-
-      <div class="overflow-x-auto border rounded">
-        <table class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">Group ID</th>
-              <th class="p-2">Slot (0-index)</th>
-              <th class="p-2">Team #</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="standingsBody"></tbody>
-        </table>
-      </div>
-
-      <div class="mt-3 flex gap-2">
-        <button id="standingsAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
-        <button id="standingsSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by Group</button>
-        <button id="standingsValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-      </div>
-
-      <div id="standingsMessages" class="mt-3 text-sm"></div>
-    </section>
-
-    <!-- ===================== -->
-    <!-- Settings Editor -->
-    <!-- ===================== -->
-    <section id="settingsEditor" class="mt-10">
-      <h2 class="text-xl font-bold mb-2">Settings Editor</h2>
-      <p class="text-sm text-slate-600 mb-3">
-        Manage competition settings lines formatted as <code>CompObjID,SettingKey,SettingValue</code>.
-        Each row links directly to a CompObj entry.
-      </p>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="settingsFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="settingsPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="settingsExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-        <button id="settingsValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-        <button id="settingsAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
-      </div>
-
-      <textarea id="settingsPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste settings lines here... (CompObjID,SettingKey,SettingValue)"></textarea>
-      <div id="settingsMeta" class="text-sm text-slate-600 mb-2"></div>
-
-      <div class="overflow-x-auto border rounded">
-        <table class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">CompObj ID</th>
-              <th class="p-2">Setting Key</th>
-              <th class="p-2">Setting Value</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="settingsBody"></tbody>
-        </table>
-      </div>
-
-      <div id="settingsMessages" class="mt-3 text-sm"></div>
-    </section>
-
-    <!-- ===================== -->
-    <!-- Schedule Editor -->
-    <!-- ===================== -->
-    <section id="scheduleEditor" class="mt-10">
-      <h2 class="text-xl font-bold mb-2">Schedule Editor</h2>
-      <p class="text-sm text-slate-600 mb-3">
-        Manage fixture schedule rows formatted as <code>StageID,DateID,RoundNumber,MinGames,MaxGames,Time</code>.
-      </p>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="scheduleFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="schedulePasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="scheduleExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-        <button id="scheduleValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-        <button id="scheduleAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
-      </div>
-
-      <textarea id="schedulePasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste schedule lines here... (StageID,DateID,RoundNumber,MinGames,MaxGames,Time)"></textarea>
-      <div id="scheduleMeta" class="text-sm text-slate-600 mb-2"></div>
-
-      <div class="overflow-x-auto border rounded">
-        <table class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">Stage ID</th>
-              <th class="p-2">Date ID</th>
-              <th class="p-2">Round #</th>
-              <th class="p-2">Min Games</th>
-              <th class="p-2">Max Games</th>
-              <th class="p-2">Time</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="scheduleBody"></tbody>
-        </table>
-      </div>
-
-      <div id="scheduleMessages" class="mt-3 text-sm"></div>
-    </section>
-
-    <!-- ===================== -->
-    <!-- Tasks Editor -->
-    <!-- ===================== -->
-    <section id="taskEditor" class="mt-10">
-      <h2 class="text-xl font-bold mb-2">Tasks Editor</h2>
-      <p class="text-sm text-slate-600 mb-3">
-        Manage competition task lines such as <code>FillFromLeague</code>, <code>FillWithTeam</code>, and <code>UpdateTable</code>.
-      </p>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="taskFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="taskPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="taskExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-        <label class="text-sm">Delimiter:</label>
-        <select id="taskDelimiter" class="p-2 rounded border bg-white">
-          <option value=",">Comma</option>
-          <option value="\t">Tab</option>
-          <option value=";">Semicolon</option>
-          <option value="|">Pipe</option>
-          <option value="auto" selected>Auto-detect</option>
-        </select>
-      </div>
-
-      <textarea id="taskPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste tasks lines here... (TrophyLine,Phase,TaskType,Arg1,Arg2,Arg3,Arg4)"></textarea>
-      <div id="taskMeta" class="text-sm text-slate-600 mb-2"></div>
-
-      <div class="overflow-x-auto border rounded">
-        <table class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">Trophy Line</th>
-              <th class="p-2">Phase</th>
-              <th class="p-2">Task Type</th>
-              <th class="p-2">Arg 1</th>
-              <th class="p-2">Arg 2</th>
-              <th class="p-2">Arg 3</th>
-              <th class="p-2">Arg 4</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="taskBody"></tbody>
-        </table>
-      </div>
-
-      <div class="mt-3 flex gap-2">
-        <button id="taskAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Task</button>
-        <button id="taskSortBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by Trophy</button>
-        <button id="taskValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-      </div>
-
-      <div id="taskMessages" class="mt-3 text-sm"></div>
-    </section>
-
-    <!-- ===================== -->
-    <!-- Weather Editor -->
-    <!-- ===================== -->
-    <section id="weatherEditor" class="mt-10">
-      <h2 class="text-xl font-bold mb-2">Weather Editor</h2>
-      <p class="text-sm text-slate-600 mb-3">
-        Manage weather configuration lines formatted as
-        <code>FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime</code>.
-      </p>
-
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <input id="weatherFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
-        <button id="weatherPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
-        <button id="weatherAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Row</button>
-        <button id="weatherExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
-        <button id="weatherValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
-      </div>
-
-      <textarea id="weatherPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste weather lines here... (FederationID,DayID,WeatherType,Param1,Param2,Param3,Param4,StartTime,EndTime)"></textarea>
-      <div id="weatherMeta" class="text-sm text-slate-600 mb-2"></div>
-
-      <div class="overflow-x-auto border rounded">
-        <table class="min-w-full table-auto text-sm">
-          <thead class="bg-slate-50">
-            <tr>
-              <th class="p-2">#</th>
-              <th class="p-2">Federation ID</th>
-              <th class="p-2">Day ID</th>
-              <th class="p-2">Weather Type</th>
-              <th class="p-2">Param1</th>
-              <th class="p-2">Param2</th>
-              <th class="p-2">Param3</th>
-              <th class="p-2">Param4</th>
-              <th class="p-2">Start Time</th>
-              <th class="p-2">End Time</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="weatherBody"></tbody>
-        </table>
-      </div>
-
-      <div id="weatherMessages" class="mt-3 text-sm"></div>
-    </section>
-
+        <div class="card p-4">
+          <div class="flex flex-wrap gap-3">
+            <button id="validateAllBtn" class="btn bg-blue-600 text-white hover:bg-blue-700">Validate All</button>
+            <button id="exportAllBtn" class="btn bg-emerald-500 text-white hover:bg-emerald-600">Export All</button>
+            <button id="rebaseBtn" class="btn bg-amber-500 text-white hover:bg-amber-600">Rebase IDs</button>
+            <button id="rebuildBtn" class="btn bg-slate-700 text-white hover:bg-slate-800">Rebuild Tree</button>
+          </div>
+          <div id="globalMessages" class="mt-3 text-sm"></div>
+          <div id="validationSummary" class="mt-3 text-sm"></div>
+        </div>
+      </section>
+    </main>
   </div>
-
-  <!-- ===================== -->
-  <!-- JavaScript -->
-  <!-- ===================== -->
   <script>
-    /* -----------------------
-       CompObj Section
-    ----------------------- */
-    function autoDetectDelimiter(text){
-      const sample = text.split(/\r?\n/).map(l=>l.trim()).find(Boolean) || '';
-      const candidates=[',','\t',';','|'];
-      let best=',';
-      let bestCount=0;
-      candidates.forEach(del=>{
-        const count=sample ? sample.split(del).length : 0;
-        if(count>bestCount){ bestCount=count; best=del; }
-      });
-      return best;
-    }
+    (function(){
+      const $ = (id) => document.getElementById(id);
 
-    let rows = [];
-    let weatherRows = [];
-    const tbody = document.getElementById('tbody');
+      const compRows = [];
+      const advRows = [];
+      const taskRows = [];
+      const standRows = [];
+      const setRows = [];
+      const schedRows = [];
+      const weatherRows = [];
+      const objectiveRows = [];
 
-    function parseText(text, delimSel='auto') {
-      rows = [];
-      const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for (const line of lines) {
-        const parts = line.split(delim).map(p=>p.trim());
-        while (parts.length < 5) parts.push('');
-        const [id, level, code, name, parent] = parts;
-        rows.push({ id, level, code, name, parent });
-      }
-      document.getElementById('meta').textContent = `${rows.length} lines parsed`;
-      renderTable();
-    }
+      let compDelimiter = ',';
+      let advDelimiter = ',';
+      let taskDelimiter = ',';
+      let standDelimiter = ',';
+      let objectiveDelimiter = ',';
 
-    function renderTable(){
-      tbody.innerHTML = '';
-      rows.forEach((r,i)=>{
-        const tr = document.createElement('tr');
-        tr.className = i%2? 'bg-white':'bg-slate-50';
-        tr.innerHTML = `
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="id" data-i="${i}" class="w-24 p-1 border rounded" value="${r.id}"></td>
-          <td class="p-2"><input data-f="level" data-i="${i}" class="w-12 p-1 border rounded" value="${r.level}"></td>
-          <td class="p-2"><input data-f="code" data-i="${i}" class="w-32 p-1 border rounded" value="${r.code}"></td>
-          <td class="p-2"><input data-f="name" data-i="${i}" class="w-56 p-1 border rounded" value="${r.name}"></td>
-          <td class="p-2"><input data-f="parent" data-i="${i}" class="w-24 p-1 border rounded" value="${r.parent}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        tbody.appendChild(tr);
-      });
-      tbody.querySelectorAll('input').forEach(inp=>{
-        inp.onfocus = ()=>{ inp.dataset.prev = inp.value; };
-        inp.onchange = ()=>{
-          const rowIndex = +inp.dataset.i;
-          const field = inp.dataset.f;
-          const newValue = inp.value;
-          const prevValue = inp.dataset.prev ?? '';
-          rows[rowIndex][field] = newValue;
-          if(field === 'id'){
-            const normalizedPrev = String(prevValue).trim();
-            const normalizedNew = String(newValue).trim();
-            if(normalizedPrev && normalizedPrev !== normalizedNew){
-              const mapping = {};
-              mapping[normalizedPrev] = normalizedNew;
-              applyGlobalIdMapping(mapping);
-            }
+      const treeState = new Map();
+      const levelNames = { '0': 'Nation', '1': 'Competition', '2': 'Stage', '3': 'Group', '4': 'Group', '5': 'Node' };
+
+      let activeTab = 'comp';
+      let selectedId = null;
+
+      let compIdSet = new Set();
+      const compIndexById = new Map();
+      const childrenByParent = new Map();
+
+      const compTableBody = $('compTableBody');
+      const settingsTableBody = $('settingsTableBody');
+      const tasksTableBody = $('tasksTableBody');
+      const advTableBody = $('advTableBody');
+      const standTableBody = $('standTableBody');
+      const schedTableBody = $('schedTableBody');
+      const objTableBody = $('objTableBody');
+      const weatherTableBody = $('weatherTableBody');
+
+      function autoDetectDelimiter(text){
+        const sample = text.split(/\r?\n/).map(line => line.trim()).find(Boolean) || '';
+        const candidates = [',', '\t', ';', '|'];
+        let best = ',';
+        let bestCount = 0;
+        candidates.forEach(candidate => {
+          const count = sample ? sample.split(candidate).length : 0;
+          if(count > bestCount){
+            best = candidate;
+            bestCount = count;
           }
-          inp.dataset.prev = newValue;
+        });
+        return best;
+      }
+
+      function showMessage(message, tone='info'){
+        const container = $('globalMessages');
+        if(!container) return;
+        let cls = 'status-info';
+        if(tone === 'success') cls = 'status-success';
+        if(tone === 'error') cls = 'status-error';
+        container.innerHTML = `<span class="${cls}">${message}</span>`;
+      }
+
+      function setPanelMessage(id, message){
+        const el = $(id);
+        if(el) el.innerHTML = message;
+      }
+
+      function downloadText(filename, text){
+        const blob = new Blob([text], { type: 'text/plain' });
+        downloadBlob(filename, blob);
+      }
+
+      function downloadBlob(filename, blob){
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 400);
+      }
+
+      function rebuildIdMaps(){
+        compIdSet = new Set();
+        compIndexById.clear();
+        childrenByParent.clear();
+        compRows.forEach((row, index) => {
+          const id = String(row.id || '').trim();
+          if(id){
+            compIdSet.add(id);
+            if(!compIndexById.has(id)) compIndexById.set(id, index);
+          }
+        });
+        compRows.forEach(row => {
+          const parent = String(row.parent || '').trim();
+          const id = String(row.id || '').trim();
+          if(parent){
+            if(!childrenByParent.has(parent)) childrenByParent.set(parent, []);
+            if(id) childrenByParent.get(parent).push(id);
+          }
+        });
+        if(selectedId && !compIdSet.has(String(selectedId))){
+          selectedId = null;
+        }
+        updateTreeSummary();
+      }
+
+      function updateTreeSummary(){
+        const counts = new Map();
+        compRows.forEach(row => {
+          const level = String(row.level || '');
+          counts.set(level, (counts.get(level) || 0) + 1);
+        });
+        const pieces = [];
+        counts.forEach((value, key) => {
+          const label = levelNames[key] || `L${key}`;
+          pieces.push(`${value} ${label}${value === 1 ? '' : 's'}`);
+        });
+        const summary = pieces.length ? pieces.join(' • ') : 'No CompObj data loaded yet.';
+        $('treeSummary').textContent = summary;
+      }
+
+      function buildHierarchy(){
+        const nodes = new Map();
+        compRows.forEach(row => {
+          const id = String(row.id || '').trim();
+          if(!id) return;
+          nodes.set(id, { row, children: [] });
+        });
+        const roots = [];
+        const sorter = (a, b) => {
+          const levelDiff = Number(a.row.level || 0) - Number(b.row.level || 0);
+          if(levelDiff !== 0) return levelDiff;
+          const nameA = (a.row.name || a.row.code || '').toLowerCase();
+          const nameB = (b.row.name || b.row.code || '').toLowerCase();
+          if(nameA < nameB) return -1;
+          if(nameA > nameB) return 1;
+          return String(a.row.id).localeCompare(String(b.row.id));
         };
-      });
-      tbody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick = ()=>{ rows.splice(+btn.dataset.del,1); renderTable(); };
-      });
-    }
-
-    document.getElementById('fileInput').onchange = e=>{
-      const f = e.target.files[0]; if(!f) return;
-      const reader = new FileReader();
-      reader.onload = ()=>parseText(reader.result, document.getElementById('delimiter').value);
-      reader.readAsText(f);
-    };
-
-    document.getElementById('pasteBtn').onclick = ()=>{
-      const pa=document.getElementById('pasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('pasteArea').onblur = e=>parseText(e.target.value, document.getElementById('delimiter').value);
-
-    document.getElementById('addLineBtn').onclick = ()=>{ rows.push({id:'',level:'',code:'',name:'',parent:''}); renderTable(); };
-
-    document.getElementById('exportBtn').onclick = ()=>{
-      const delim = document.getElementById('delimiter').value==='auto' ? ',' : document.getElementById('delimiter').value;
-      const blob = new Blob([rows.map(r=>[r.id,r.level,r.code,r.name,r.parent].join(delim)).join('\n')], {type:'text/plain'});
-      const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='compobj_modified.txt'; a.click();
-    };
-
-    document.getElementById('rebaseBtn').onclick = ()=>{
-      let start = Number(document.getElementById('rebaseStart').value);
-      if(!Number.isFinite(start)) start = 1;
-      const mapping = {};
-      let nextId = start;
-      rows.forEach(row=>{
-        const oldId = String(row.id ?? '').trim();
-        if(!oldId) return;
-        const newId = String(nextId++);
-        if(oldId !== newId){
-          mapping[oldId] = newId;
-        }
-      });
-      if(Object.keys(mapping).length){
-        applyGlobalIdMapping(mapping);
-      } else {
-        document.getElementById('messages').textContent = 'Rebase skipped — IDs already aligned with the requested range.';
-      }
-    };
-
-    function applyGlobalIdMapping(mapping){
-      if(!mapping || typeof mapping !== 'object') return;
-      const entries = Object.entries(mapping)
-        .map(([oldId,newId])=>[String(oldId ?? '').trim(), String(newId ?? '').trim()])
-        .filter(([oldId,newId])=>oldId && oldId !== newId);
-      if(!entries.length) return;
-      const idMap = new Map(entries);
-
-      rows.forEach(row=>{
-        const currentId = String(row.id ?? '').trim();
-        if(idMap.has(currentId)) row.id = idMap.get(currentId);
-        const parentId = String(row.parent ?? '').trim();
-        if(idMap.has(parentId)) row.parent = idMap.get(parentId);
-      });
-
-      let weatherIdsChanged = false;
-      weatherRows.forEach(row=>{
-        const federationId = String(row.fed ?? '').trim();
-        if(idMap.has(federationId)){
-          row.fed = idMap.get(federationId);
-          weatherIdsChanged = true;
-        }
-      });
-
-      advRows.forEach(row=>{
-        const fromId = String(row.fromId ?? '').trim();
-        if(idMap.has(fromId)) row.fromId = idMap.get(fromId);
-        const toId = String(row.toId ?? '').trim();
-        if(idMap.has(toId)) row.toId = idMap.get(toId);
-      });
-
-      taskRows.forEach(row=>{
-        ['trophyLine','arg1','arg2','arg3','arg4'].forEach(field=>{
-          const val = String(row[field] ?? '').trim();
-          if(idMap.has(val)) row[field] = idMap.get(val);
+        nodes.forEach((node, id) => {
+          const parent = String(node.row.parent || '').trim();
+          if(parent && nodes.has(parent)){
+            nodes.get(parent).children.push(node);
+          } else {
+            roots.push(node);
+          }
         });
-      });
+        nodes.forEach(node => node.children.sort(sorter));
+        roots.sort(sorter);
+        return roots;
+      }
 
-      standingsRows.forEach(row=>{
-        const gid = String(row.groupId ?? '').trim();
-        if(idMap.has(gid)) row.groupId = idMap.get(gid);
-      });
+      function levelLabel(level){
+        const normalized = String(level || '');
+        return levelNames[normalized] || `Level ${normalized || '??'}`;
+      }
 
-      settingRows.forEach(row=>{
-        const sid = String(row.id ?? '').trim();
-        if(idMap.has(sid)) row.id = idMap.get(sid);
-      });
-
-      renderTable();
-      renderAdvTable();
-      renderStandingsTable();
-      renderSettingsTable();
-      renderTaskTable();
-      renderWeatherTable();
-
-      document.getElementById('messages').textContent = 'IDs were changed — all cross-file references updated successfully.';
-      if(weatherIdsChanged){
-        const weatherMessages = document.getElementById('weatherMessages');
-        if(weatherMessages){
-          weatherMessages.textContent = 'Weather federation references updated.';
+      function renderTree(){
+        const container = $('compTree');
+        if(!container) return;
+        container.innerHTML = '';
+        const hierarchy = buildHierarchy();
+        if(!hierarchy.length){
+          container.innerHTML = '<p class="text-sm text-slate-600 p-3">Import CompObj data to begin.</p>';
+          return;
         }
+        const fragment = document.createDocumentFragment();
+        hierarchy.forEach(node => fragment.appendChild(renderTreeNode(node)));
+        container.appendChild(fragment);
       }
-    }
 
-    document.getElementById('sortByIdBtn').onclick = ()=>{ rows.sort((a,b)=>Number(a.id)-Number(b.id)); renderTable(); };
-
-    document.getElementById('validateBtn').onclick = ()=>{
-      const ids=new Set(rows.map(r=>String(r.id)));
-      const probs=[];
-      rows.forEach((r,i)=>{
-        if(!r.id) probs.push(`Line ${i+1}: Missing ID`);
-        if(r.parent && !ids.has(String(r.parent))) probs.push(`Line ${i+1}: Parent ${r.parent} not found`);
-      });
-      document.getElementById('messages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
-    };
-
-    /* -----------------------
-       Advancement Section
-    ----------------------- */
-    let advRows = [];
-    const advBody = document.getElementById('advBody');
-
-    function parseAdv(text){
-      advRows = [];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const [fromId, qualifier, toId, slot] = line.split(',').map(s=>s.trim());
-        advRows.push({fromId,qualifier,toId,slot});
-      }
-      document.getElementById('advMeta').textContent=`${advRows.length} advancement lines parsed`;
-      renderAdvTable();
-    }
-
-    function renderAdvTable(){
-      advBody.innerHTML='';
-      advRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="fromId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.fromId}"></td>
-          <td class="p-2"><input data-f="qualifier" data-i="${i}" class="w-16 p-1 border rounded" value="${r.qualifier}"></td>
-          <td class="p-2"><input data-f="toId" data-i="${i}" class="w-24 p-1 border rounded" value="${r.toId}"></td>
-          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-16 p-1 border rounded" value="${r.slot}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        advBody.appendChild(tr);
-      });
-      advBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{advRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
-      });
-      advBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{advRows.splice(+btn.dataset.del,1);renderAdvTable();};
-      });
-    }
-
-    document.getElementById('advFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>parseAdv(r.result);
-      r.readAsText(f);
-    };
-
-    document.getElementById('advPasteBtn').onclick=()=>{
-      const pa=document.getElementById('advPasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('advPasteArea').onblur=e=>parseAdv(e.target.value);
-
-    document.getElementById('advAddBtn').onclick=()=>{advRows.push({fromId:'',qualifier:'',toId:'',slot:''});renderAdvTable();};
-
-    document.getElementById('advSortBtn').onclick=()=>{advRows.sort((a,b)=>Number(a.fromId)-Number(b.fromId));renderAdvTable();};
-
-    document.getElementById('advExportBtn').onclick=()=>{
-      const blob=new Blob([advRows.map(r=>[r.fromId,r.qualifier,r.toId,r.slot].join(',')).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='advancement.txt';a.click();
-    };
-
-    document.getElementById('advValidateBtn').onclick=()=>{
-      const ids=new Set(rows.map(r=>String(r.id)));
-      const missing=advRows.filter(r=>!ids.has(String(r.fromId))||!ids.has(String(r.toId)));
-      const msg=missing.length?`${missing.length} advancement lines reference missing group IDs`:'All advancement links valid.';
-      document.getElementById('advMessages').textContent=msg;
-    };
-
-    /* -----------------------
-       Standings Section
-    ----------------------- */
-    let standingsRows=[];
-    const standingsBody=document.getElementById('standingsBody');
-
-    function updateStandingsMeta(){
-      const groupCounts=new Map();
-      standingsRows.forEach(r=>{
-        if(!r.groupId) return;
-        const slotNum=r.slot===''?NaN:Number(r.slot);
-        if(!groupCounts.has(r.groupId)) groupCounts.set(r.groupId, Number.isFinite(slotNum)?slotNum+1:1);
-        else if(Number.isFinite(slotNum)) groupCounts.set(r.groupId, Math.max(groupCounts.get(r.groupId), slotNum+1));
-        else groupCounts.set(r.groupId, groupCounts.get(r.groupId)+1);
-      });
-      const groupCount=groupCounts.size;
-      let maxTeams=0;
-      groupCounts.forEach(v=>{if(v>maxTeams) maxTeams=v;});
-      const meta=`${standingsRows.length} rows parsed${groupCount?` across ${groupCount} groups`:''}${maxTeams?`. Largest table size: ${maxTeams} teams.`:''}`;
-      document.getElementById('standingsMeta').textContent=meta;
-    }
-
-    function renderStandingsTable(){
-      standingsBody.innerHTML='';
-      standingsRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        const slotNum=r.slot===''?NaN:Number(r.slot);
-        const teamLabel=Number.isFinite(slotNum)?`Team ${slotNum+1}`:'';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="groupId" data-i="${i}" class="w-28 p-1 border rounded" value="${r.groupId}"></td>
-          <td class="p-2"><input data-f="slot" data-i="${i}" class="w-24 p-1 border rounded" value="${r.slot}"></td>
-          <td class="p-2 text-slate-600">${teamLabel}</td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        standingsBody.appendChild(tr);
-      });
-      standingsBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{standingsRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateStandingsMeta();};
-      });
-      standingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{standingsRows.splice(+btn.dataset.del,1);renderStandingsTable();};
-      });
-      updateStandingsMeta();
-    }
-
-    function parseStandings(text){
-      standingsRows=[];
-      const delim=autoDetectDelimiter(text);
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(delim).map(s=>s.trim());
-        if(!parts[0]) continue;
-        const [groupId, slot=''] = parts;
-        standingsRows.push({groupId, slot});
-      }
-      renderStandingsTable();
-    }
-
-    document.getElementById('standingsFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>parseStandings(r.result);
-      r.readAsText(f);
-    };
-
-    document.getElementById('standingsPasteBtn').onclick=()=>{
-      const pa=document.getElementById('standingsPasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('standingsPasteArea').onblur=e=>parseStandings(e.target.value);
-
-    document.getElementById('standingsAddBtn').onclick=()=>{standingsRows.push({groupId:'',slot:''});renderStandingsTable();};
-
-    document.getElementById('standingsSortBtn').onclick=()=>{
-      standingsRows.sort((a,b)=>{
-        const gDiff=Number(a.groupId||0)-Number(b.groupId||0);
-        if(gDiff!==0) return gDiff;
-        const slotA=a.slot===''?Number.POSITIVE_INFINITY:Number(a.slot);
-        const slotB=b.slot===''?Number.POSITIVE_INFINITY:Number(b.slot);
-        return slotA-slotB;
-      });
-      renderStandingsTable();
-    };
-
-    document.getElementById('standingsExportBtn').onclick=()=>{
-      const blob=new Blob([standingsRows.map(r=>[r.groupId,r.slot].join(',')).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='standings.txt';a.click();
-    };
-
-    document.getElementById('standingsValidateBtn').onclick=()=>{
-      const msgs=[];
-      const seen=new Set();
-      const groupSlots=new Map();
-      standingsRows.forEach((r,i)=>{
-        if(!r.groupId) msgs.push(`Row ${i+1}: Missing group ID`);
-        if(r.slot==='') msgs.push(`Row ${i+1}: Missing slot value`);
-        const slotNum=Number(r.slot);
-        if(r.slot!=='' && Number.isNaN(slotNum)) msgs.push(`Row ${i+1}: Slot is not a number`);
-        const key=`${r.groupId}|${r.slot}`;
-        if(seen.has(key)) msgs.push(`Row ${i+1}: Duplicate group/slot combination (${r.groupId}, ${r.slot})`);
-        seen.add(key);
-        if(r.groupId){
-          if(!groupSlots.has(r.groupId)) groupSlots.set(r.groupId,new Set());
-          if(!Number.isNaN(slotNum)) groupSlots.get(r.groupId).add(slotNum);
+      function renderTreeNode(node){
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pl-4';
+        const row = document.createElement('div');
+        row.className = 'tree-row cursor-pointer transition';
+        if(selectedId && String(node.row.id) === String(selectedId)){
+          row.classList.add('tree-node-active');
         }
-      });
-      groupSlots.forEach((slots,gid)=>{
-        if(!slots.has(0)) msgs.push(`Group ${gid} is missing slot 0`);
-      });
-      document.getElementById('standingsMessages').innerHTML = msgs.length ? msgs.join('<br>') : 'No validation issues.';
-    };
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'tree-toggle';
+        if(node.children.length){
+          const collapsed = treeState.get(node.row.id) === true;
+          toggle.textContent = collapsed ? '+' : '−';
+          toggle.onclick = (ev) => {
+            ev.stopPropagation();
+            treeState.set(node.row.id, !collapsed);
+            renderTree();
+          };
+        } else {
+          toggle.textContent = '•';
+          toggle.disabled = true;
+        }
+        row.appendChild(toggle);
 
-    /* -----------------------
-       Settings Section
-    ----------------------- */
-    let settingRows = [];
-    const settingsBody=document.getElementById('settingsBody');
+        const label = document.createElement('div');
+        label.className = 'flex flex-col';
+        const name = document.createElement('span');
+        name.className = 'text-sm font-medium';
+        name.textContent = node.row.name || node.row.code || '(Unnamed)';
+        const meta = document.createElement('span');
+        meta.className = 'text-xs text-slate-600';
+        meta.textContent = `${levelLabel(node.row.level)} • #${node.row.id || '?'}${node.row.parent ? ` • Parent ${node.row.parent}` : ''}`;
+        label.appendChild(name);
+        label.appendChild(meta);
+        row.appendChild(label);
+        row.onclick = () => selectNode(String(node.row.id));
+        wrapper.appendChild(row);
 
-    function updateSettingsMeta(){
-      document.getElementById('settingsMeta').textContent=`${settingRows.length} setting line${settingRows.length===1?'':'s'} parsed`;
-    }
-
-    function renderSettingsTable(){
-      settingsBody.innerHTML='';
-      settingRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="id" data-i="${i}" class="w-28 p-1 border rounded" value="${r.id ?? ''}"></td>
-          <td class="p-2"><input data-f="key" data-i="${i}" class="w-40 p-1 border rounded" value="${r.key ?? ''}"></td>
-          <td class="p-2"><input data-f="value" data-i="${i}" class="w-48 p-1 border rounded" value="${r.value ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        settingsBody.appendChild(tr);
-      });
-      settingsBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{settingRows[+inp.dataset.i][inp.dataset.f]=inp.value;updateSettingsMeta();};
-      });
-      settingsBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{settingRows.splice(+btn.dataset.del,1);renderSettingsTable();};
-      });
-      updateSettingsMeta();
-    }
-
-    function parseSettings(text){
-      settingRows=[];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(',').map(s=>s.trim());
-        const [id='', key='', value=''] = parts;
-        if(id || key || value) settingRows.push({id, key, value});
+        if(node.children.length){
+          const collapsed = treeState.get(node.row.id) === true;
+          if(!collapsed){
+            const childWrap = document.createElement('div');
+            childWrap.className = 'tree-children';
+            node.children.forEach(child => childWrap.appendChild(renderTreeNode(child)));
+            wrapper.appendChild(childWrap);
+          }
+        }
+        return wrapper;
       }
-      renderSettingsTable();
-    }
 
-    document.getElementById('settingsFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>parseSettings(r.result);
-      r.readAsText(f);
-    };
-
-    document.getElementById('settingsPasteBtn').onclick=()=>{
-      const pa=document.getElementById('settingsPasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('settingsPasteArea').onblur=e=>parseSettings(e.target.value);
-
-    document.getElementById('settingsAddBtn').onclick=()=>{settingRows.push({id:'',key:'',value:''});renderSettingsTable();};
-
-    document.getElementById('settingsExportBtn').onclick=()=>{
-      const blob=new Blob([settingRows.map(r=>[r.id,r.key,r.value].join(',')).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='settings.txt';a.click();
-    };
-
-    document.getElementById('settingsValidateBtn').onclick=()=>{
-      const probs=[];
-      const ids=new Set(rows.map(r=>String(r.id)));
-      settingRows.forEach((r,i)=>{
-        if(!r.id) probs.push(`Row ${i+1}: Missing CompObj ID`);
-        else if(!ids.has(String(r.id))) probs.push(`Row ${i+1}: CompObj ID ${r.id} not found in CompObj table`);
-        if(!r.key) probs.push(`Row ${i+1}: Missing Setting Key`);
-        if(!r.value) probs.push(`Row ${i+1}: Missing Setting Value`);
-      });
-      document.getElementById('settingsMessages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
-    };
-
-    updateSettingsMeta();
-
-    /* -----------------------
-       Schedule Section
-    ----------------------- */
-    let scheduleRows = [];
-    const scheduleBody = document.getElementById('scheduleBody');
-    const scheduleMetaEl = document.getElementById('scheduleMeta');
-    const scheduleMessagesEl = document.getElementById('scheduleMessages');
-
-    function updateScheduleMeta(){
-      if(scheduleMetaEl){
-        scheduleMetaEl.textContent = `${scheduleRows.length} lines parsed`;
+      function selectNode(id){
+        selectedId = id;
+        renderSelectionPanel();
+        renderAllTables();
+        renderTree();
       }
-    }
 
-    function renderScheduleTable(){
-      scheduleBody.innerHTML='';
-      scheduleRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="stage" data-i="${i}" class="w-24 p-1 border rounded" value="${r.stage ?? ''}"></td>
-          <td class="p-2"><input data-f="date" data-i="${i}" class="w-24 p-1 border rounded" value="${r.date ?? ''}"></td>
-          <td class="p-2"><input data-f="round" data-i="${i}" class="w-20 p-1 border rounded" value="${r.round ?? ''}"></td>
-          <td class="p-2"><input data-f="min" data-i="${i}" class="w-24 p-1 border rounded" value="${r.min ?? ''}"></td>
-          <td class="p-2"><input data-f="max" data-i="${i}" class="w-24 p-1 border rounded" value="${r.max ?? ''}"></td>
-          <td class="p-2"><input data-f="time" data-i="${i}" class="w-24 p-1 border rounded" value="${r.time ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        scheduleBody.appendChild(tr);
-      });
-      scheduleBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{scheduleRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
-      });
-      scheduleBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{scheduleRows.splice(+btn.dataset.del,1);renderScheduleTable();};
-      });
-      updateScheduleMeta();
-    }
-
-    function parseSchedule(text){
-      scheduleRows=[];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(',').map(s=>s.trim());
-        while(parts.length<6) parts.push('');
-        const [stage='',date='',round='',min='',max='',time='']=parts;
-        scheduleRows.push({stage,date,round,min,max,time});
+      function getActiveIdSet(){
+        if(!selectedId) return null;
+        const visited = new Set();
+        const visit = (id) => {
+          if(!id || visited.has(id)) return;
+          visited.add(id);
+          const children = childrenByParent.get(id) || [];
+          children.forEach(child => visit(child));
+        };
+        visit(String(selectedId));
+        return visited;
       }
-      renderScheduleTable();
-      if(scheduleMessagesEl){
-        scheduleMessagesEl.textContent='';
+
+      function buildBreadcrumb(id){
+        const chain = [];
+        let current = String(id || '');
+        const guard = new Set();
+        while(current && !guard.has(current)){
+          guard.add(current);
+          const index = compIndexById.get(current);
+          if(index === undefined) break;
+          const row = compRows[index];
+          chain.unshift(`${row.name || row.code || 'Node'} (#${row.id})`);
+          current = String(row.parent || '');
+        }
+        return chain;
       }
-    }
 
-    document.getElementById('scheduleFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const reader=new FileReader();
-      reader.onload=()=>parseSchedule(reader.result);
-      reader.readAsText(f);
-    };
+      function renderSelectionPanel(){
+        const panel = $('selectionPanel');
+        if(!panel) return;
+        panel.innerHTML = '';
+        if(!selectedId){
+          $('selectionBreadcrumb').textContent = 'No node selected.';
+          panel.innerHTML = '<p class="text-sm text-slate-600">Select a node from the tree to edit its properties and view linked records.</p>';
+          return;
+        }
+        const index = compIndexById.get(String(selectedId));
+        if(index === undefined){
+          $('selectionBreadcrumb').textContent = 'Node not found.';
+          panel.innerHTML = '<p class="text-sm text-red-600">The selected node no longer exists.</p>';
+          return;
+        }
+        const row = compRows[index];
+        const breadcrumb = buildBreadcrumb(selectedId);
+        $('selectionBreadcrumb').textContent = breadcrumb.join(' › ');
 
-    document.getElementById('schedulePasteBtn').onclick=()=>{
-      const pa=document.getElementById('schedulePasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('schedulePasteArea').onblur=e=>parseSchedule(e.target.value);
+        const grid = document.createElement('div');
+        grid.className = 'selection-grid';
 
-    document.getElementById('scheduleAddBtn').onclick=()=>{
-      scheduleRows.push({stage:'',date:'',round:'',min:'',max:'',time:''});
-      renderScheduleTable();
-    };
+        const createField = (labelText, field, placeholder='') => {
+          const wrapper = document.createElement('label');
+          wrapper.className = 'flex flex-col gap-1 text-sm';
+          const labelSpan = document.createElement('span');
+          labelSpan.className = 'text-xs uppercase tracking-wide text-slate-600';
+          labelSpan.textContent = labelText;
+          const input = document.createElement('input');
+          input.className = 'table-input';
+          input.value = row[field] ?? '';
+          input.placeholder = placeholder;
+          input.onfocus = () => { input.dataset.prev = input.value; };
+          input.onchange = () => {
+            const value = input.value.trim();
+            const previous = input.dataset.prev || '';
+            if(field === 'id' && previous && previous !== value){
+              const mapping = {};
+              mapping[previous] = value;
+              row[field] = value;
+              applyIdMapping(mapping);
+              return;
+            }
+            row[field] = value;
+            rebuildIdMaps();
+            renderTree();
+            renderAllTables();
+            input.dataset.prev = value;
+            showMessage('CompObj details updated.', 'success');
+          };
+          wrapper.appendChild(labelSpan);
+          wrapper.appendChild(input);
+          return wrapper;
+        };
 
-    document.getElementById('scheduleExportBtn').onclick=()=>{
-      const blob=new Blob([scheduleRows.map(r=>[r.stage,r.date,r.round,r.min,r.max,r.time].join(',')).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='schedule.txt';a.click();
-    };
+        grid.appendChild(createField('ID', 'id'));
+        grid.appendChild(createField('Level', 'level'));
+        grid.appendChild(createField('Code', 'code'));
+        grid.appendChild(createField('Name', 'name'));
+        grid.appendChild(createField('Parent', 'parent'));
+        panel.appendChild(grid);
 
-    document.getElementById('scheduleValidateBtn').onclick=()=>{
-      const probs=[];
-      const stageIds=new Set(rows.map(r=>String(r.id)));
-      const numericFields=[['date','Date ID'],['round','Round #'],['min','Min Games'],['max','Max Games'],['time','Time']];
-      scheduleRows.forEach((r,i)=>{
-        const rowNum=i+1;
-        if(!r.stage) probs.push(`Row ${rowNum}: Missing Stage ID`);
-        else if(!stageIds.has(String(r.stage))) probs.push(`Row ${rowNum}: Stage ID ${r.stage} not found in CompObj table`);
-        numericFields.forEach(([field,label])=>{
-          const val=r[field];
-          if(val==='') probs.push(`Row ${rowNum}: Missing ${label}`);
-          else if(Number.isNaN(Number(val))) probs.push(`Row ${rowNum}: ${label} must be numeric`);
+        const hint = document.createElement('p');
+        hint.className = 'subtle-text mt-3';
+        hint.textContent = 'ID edits cascade across all linked files automatically.';
+        panel.appendChild(hint);
+
+        const actions = document.createElement('div');
+        actions.className = 'flex flex-wrap gap-2 mt-4';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn bg-red-600 text-white hover:bg-red-700';
+        deleteBtn.textContent = 'Delete Node';
+        deleteBtn.onclick = () => {
+          if(!confirm('Delete this CompObj entry?')) return;
+          compRows.splice(index, 1);
+          rebuildIdMaps();
+          selectedId = null;
+          renderSelectionPanel();
+          renderTree();
+          renderAllTables();
+          showMessage('CompObj entry removed.', 'success');
+        };
+        actions.appendChild(deleteBtn);
+
+        const addChildBtn = document.createElement('button');
+        addChildBtn.className = 'btn bg-slate-700 text-white hover:bg-slate-800';
+        addChildBtn.textContent = 'Add Child Node';
+        addChildBtn.onclick = () => {
+          const newRow = { id: '', level: String(Number(row.level || 0) + 1), code: '', name: '', parent: String(row.id || '') };
+          compRows.push(newRow);
+          rebuildIdMaps();
+          renderTree();
+          renderAllTables();
+          showMessage('New child node added. Assign it an ID to complete the link.', 'info');
+        };
+        actions.appendChild(addChildBtn);
+
+        panel.appendChild(actions);
+      }
+      function renderActiveTab(){
+        const buttons = Array.from(document.querySelectorAll('#tabButtons button'));
+        buttons.forEach(btn => {
+          const key = btn.dataset.tab;
+          if(key === activeTab){
+            btn.classList.add('tab-btn-active');
+          } else {
+            btn.classList.remove('tab-btn-active');
+          }
         });
-      });
-      scheduleMessagesEl.innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
-    };
-
-    function applyGlobalIdMapping(mapping){
-      if(!mapping) return;
-      const mappingLookup=new Map();
-      if(mapping instanceof Map){
-        mapping.forEach((newId,oldId)=>{mappingLookup.set(String(oldId), newId);});
-      } else {
-        Object.keys(mapping).forEach(oldId=>{mappingLookup.set(String(oldId), mapping[oldId]);});
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+          panel.classList.toggle('hidden', panel.dataset.tab !== activeTab);
+        });
       }
-      let scheduleChanged=false;
-      scheduleRows.forEach(row=>{
-        const replacement=mappingLookup.get(String(row.stage));
-        if(replacement!==undefined){
-          row.stage=replacement;
-          scheduleChanged=true;
-        }
-      });
-      if(scheduleChanged){
+
+      function initTabs(){
+        const tabContainer = $('tabButtons');
+        const tabs = [
+          { key: 'comp', label: 'CompObj' },
+          { key: 'settings', label: 'Settings' },
+          { key: 'tasks', label: 'Tasks' },
+          { key: 'adv', label: 'Advancements' },
+          { key: 'standings', label: 'Standings' },
+          { key: 'schedule', label: 'Schedule' },
+          { key: 'objectives', label: 'Objectives' },
+          { key: 'weather', label: 'Weather' }
+        ];
+        tabs.forEach(tab => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.dataset.tab = tab.key;
+          button.textContent = tab.label;
+          button.className = 'tab-btn transition';
+          button.onclick = () => {
+            activeTab = tab.key;
+            renderActiveTab();
+          };
+          tabContainer.appendChild(button);
+        });
+        renderActiveTab();
+      }
+
+      function createFilterInfo(shown, total){
+        if(!total) return 'No rows loaded yet.';
+        if(shown === total) return `${total} rows`;
+        return `${shown} shown of ${total} total`;
+      }
+
+      function attachTableInputHandlers(container){
+        container.querySelectorAll('input.table-input').forEach(input => {
+          input.onfocus = () => { input.dataset.prev = input.value; };
+          input.onchange = () => {
+            const type = input.dataset.type;
+            const field = input.dataset.field;
+            const index = Number(input.dataset.index);
+            const value = input.value.trim();
+            const prev = input.dataset.prev || '';
+            if(type === 'comp'){
+              if(field === 'id' && prev && prev !== value){
+                const mapping = {};
+                mapping[prev] = value;
+                compRows[index][field] = value;
+                applyIdMapping(mapping);
+                return;
+              }
+              compRows[index][field] = value;
+              rebuildIdMaps();
+              renderTree();
+              renderSelectionPanel();
+              renderAllTables();
+              showMessage('CompObj row updated.', 'success');
+              return;
+            }
+            if(type === 'settings'){
+              setRows[index][field] = value;
+            } else if(type === 'tasks'){
+              taskRows[index][field] = value;
+            } else if(type === 'adv'){
+              advRows[index][field] = value;
+            } else if(type === 'stand'){
+              standRows[index][field] = value;
+            } else if(type === 'sched'){
+              schedRows[index][field] = value;
+            } else if(type === 'obj'){
+              objectiveRows[index][field] = value;
+            } else if(type === 'weather'){
+              weatherRows[index][field] = value;
+            }
+            input.dataset.prev = value;
+          };
+        });
+      }
+
+      function renderCompTable(){
+        compTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        compRows.forEach((row, index) => {
+          const id = String(row.id || '').trim();
+          const parent = String(row.parent || '').trim();
+          if(!activeSet || activeSet.has(id) || (id && activeSet.has(id)) || (parent && activeSet.has(parent))){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const parentId = String(entry.row.parent || '').trim();
+          const invalidParent = parentId && !compIdSet.has(parentId);
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input" data-type="comp" data-field="id" data-index="${entry.index}" value="${entry.row.id ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="comp" data-field="level" data-index="${entry.index}" value="${entry.row.level ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="comp" data-field="code" data-index="${entry.index}" value="${entry.row.code ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="comp" data-field="name" data-index="${entry.index}" value="${entry.row.name ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input ${invalidParent ? 'bg-rose-100 border-red-500' : ''}" data-type="comp" data-field="parent" data-index="${entry.index}" value="${entry.row.parent ?? ''}" title="${invalidParent ? 'Parent ID not found' : ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-comp="${entry.index}">Delete</button></td>`
+          ].join('');
+          compTableBody.appendChild(tr);
+        });
+        $('compMeta').textContent = createFilterInfo(filtered.length, compRows.length);
+        attachTableInputHandlers(compTableBody);
+        compTableBody.querySelectorAll('button[data-remove-comp]').forEach(btn => {
+          btn.onclick = () => {
+            const idx = Number(btn.dataset.removeComp);
+            compRows.splice(idx, 1);
+            rebuildIdMaps();
+            renderTree();
+            renderSelectionPanel();
+            renderAllTables();
+            showMessage('CompObj row removed.', 'success');
+          };
+        });
+      }
+
+      function renderSettingsTable(){
+        settingsTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        setRows.forEach((row, index) => {
+          const id = String(row.id || '').trim();
+          if(!activeSet || activeSet.has(id)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const invalidId = entry.row.id && !compIdSet.has(String(entry.row.id));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${invalidId ? 'bg-rose-100 border-red-500' : ''}" data-type="settings" data-field="id" data-index="${entry.index}" value="${entry.row.id ?? ''}" title="${invalidId ? 'ID not found in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="settings" data-field="settingKey" data-index="${entry.index}" value="${entry.row.settingKey ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="settings" data-field="value" data-index="${entry.index}" value="${entry.row.value ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-setting="${entry.index}">Delete</button></td>`
+          ].join('');
+          settingsTableBody.appendChild(tr);
+        });
+        $('settingsMeta').textContent = createFilterInfo(filtered.length, setRows.length);
+        attachTableInputHandlers(settingsTableBody);
+        settingsTableBody.querySelectorAll('button[data-remove-setting]').forEach(btn => {
+          btn.onclick = () => {
+            setRows.splice(Number(btn.dataset.removeSetting), 1);
+            renderSettingsTable();
+          };
+        });
+      }
+
+      function renderTasksTable(){
+        tasksTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        taskRows.forEach((row, index) => {
+          const references = [row.trophyId, row.target, row.ref1, row.ref2, row.ref3].map(v => String(v || '').trim());
+          if(!activeSet || references.some(ref => ref && activeSet.has(ref))){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const trophyMissing = entry.row.trophyId && !compIdSet.has(String(entry.row.trophyId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${trophyMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="tasks" data-field="trophyId" data-index="${entry.index}" value="${entry.row.trophyId ?? ''}" title="${trophyMissing ? 'Trophy ID not found in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="phase" data-index="${entry.index}" value="${entry.row.phase ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="command" data-index="${entry.index}" value="${entry.row.command ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="target" data-index="${entry.index}" value="${entry.row.target ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref1" data-index="${entry.index}" value="${entry.row.ref1 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref2" data-index="${entry.index}" value="${entry.row.ref2 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="tasks" data-field="ref3" data-index="${entry.index}" value="${entry.row.ref3 ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-task="${entry.index}">Delete</button></td>`
+          ].join('');
+          tasksTableBody.appendChild(tr);
+        });
+        $('tasksMeta').textContent = createFilterInfo(filtered.length, taskRows.length);
+        attachTableInputHandlers(tasksTableBody);
+        tasksTableBody.querySelectorAll('button[data-remove-task]').forEach(btn => {
+          btn.onclick = () => {
+            taskRows.splice(Number(btn.dataset.removeTask), 1);
+            renderTasksTable();
+          };
+        });
+      }
+      function renderAdvTable(){
+        advTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        advRows.forEach((row, index) => {
+          const from = String(row.fromId || '').trim();
+          const to = String(row.toId || '').trim();
+          if(!activeSet || activeSet.has(from) || activeSet.has(to)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const fromMissing = entry.row.fromId && !compIdSet.has(String(entry.row.fromId));
+          const toMissing = entry.row.toId && !compIdSet.has(String(entry.row.toId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${fromMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="adv" data-field="fromId" data-index="${entry.index}" value="${entry.row.fromId ?? ''}" title="${fromMissing ? 'From group missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="adv" data-field="placement" data-index="${entry.index}" value="${entry.row.placement ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input ${toMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="adv" data-field="toId" data-index="${entry.index}" value="${entry.row.toId ?? ''}" title="${toMissing ? 'Destination group missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="adv" data-field="slot" data-index="${entry.index}" value="${entry.row.slot ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-adv="${entry.index}">Delete</button></td>`
+          ].join('');
+          advTableBody.appendChild(tr);
+        });
+        $('advMeta').textContent = createFilterInfo(filtered.length, advRows.length);
+        attachTableInputHandlers(advTableBody);
+        advTableBody.querySelectorAll('button[data-remove-adv]').forEach(btn => {
+          btn.onclick = () => {
+            advRows.splice(Number(btn.dataset.removeAdv), 1);
+            renderAdvTable();
+          };
+        });
+      }
+
+      function renderStandingsTable(){
+        standTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        standRows.forEach((row, index) => {
+          const groupId = String(row.groupId || '').trim();
+          if(!activeSet || activeSet.has(groupId)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const missing = entry.row.groupId && !compIdSet.has(String(entry.row.groupId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="stand" data-field="groupId" data-index="${entry.index}" value="${entry.row.groupId ?? ''}" title="${missing ? 'Group ID missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="stand" data-field="teamCount" data-index="${entry.index}" value="${entry.row.teamCount ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-stand="${entry.index}">Delete</button></td>`
+          ].join('');
+          standTableBody.appendChild(tr);
+        });
+        $('standMeta').textContent = createFilterInfo(filtered.length, standRows.length);
+        attachTableInputHandlers(standTableBody);
+        standTableBody.querySelectorAll('button[data-remove-stand]').forEach(btn => {
+          btn.onclick = () => {
+            standRows.splice(Number(btn.dataset.removeStand), 1);
+            renderStandingsTable();
+          };
+        });
+      }
+
+      function renderScheduleTable(){
+        schedTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        schedRows.forEach((row, index) => {
+          const stage = String(row.stageId || '').trim();
+          if(!activeSet || activeSet.has(stage)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const stageMissing = entry.row.stageId && !compIdSet.has(String(entry.row.stageId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${stageMissing ? 'bg-rose-100 border-red-500' : ''}" data-type="sched" data-field="stageId" data-index="${entry.index}" value="${entry.row.stageId ?? ''}" title="${stageMissing ? 'Stage ID missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="sched" data-field="dateId" data-index="${entry.index}" value="${entry.row.dateId ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="sched" data-field="matchDay" data-index="${entry.index}" value="${entry.row.matchDay ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="sched" data-field="minGames" data-index="${entry.index}" value="${entry.row.minGames ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="sched" data-field="maxGames" data-index="${entry.index}" value="${entry.row.maxGames ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="sched" data-field="time" data-index="${entry.index}" value="${entry.row.time ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-sched="${entry.index}">Delete</button></td>`
+          ].join('');
+          schedTableBody.appendChild(tr);
+        });
+        $('schedMeta').textContent = createFilterInfo(filtered.length, schedRows.length);
+        attachTableInputHandlers(schedTableBody);
+        schedTableBody.querySelectorAll('button[data-remove-sched]').forEach(btn => {
+          btn.onclick = () => {
+            schedRows.splice(Number(btn.dataset.removeSched), 1);
+            renderScheduleTable();
+          };
+        });
+      }
+
+      function renderObjectivesTable(){
+        objTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        objectiveRows.forEach((row, index) => {
+          const groupId = String(row.groupId || '').trim();
+          if(!activeSet || activeSet.has(groupId)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const missing = entry.row.groupId && !compIdSet.has(String(entry.row.groupId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="obj" data-field="groupId" data-index="${entry.index}" value="${entry.row.groupId ?? ''}" title="${missing ? 'Group ID missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="obj" data-field="objective" data-index="${entry.index}" value="${entry.row.objective ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="obj" data-field="value" data-index="${entry.index}" value="${entry.row.value ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-obj="${entry.index}">Delete</button></td>`
+          ].join('');
+          objTableBody.appendChild(tr);
+        });
+        $('objMeta').textContent = createFilterInfo(filtered.length, objectiveRows.length);
+        attachTableInputHandlers(objTableBody);
+        objTableBody.querySelectorAll('button[data-remove-obj]').forEach(btn => {
+          btn.onclick = () => {
+            objectiveRows.splice(Number(btn.dataset.removeObj), 1);
+            renderObjectivesTable();
+          };
+        });
+      }
+
+      function renderWeatherTable(){
+        weatherTableBody.innerHTML = '';
+        const activeSet = getActiveIdSet();
+        const filtered = [];
+        weatherRows.forEach((row, index) => {
+          const fed = String(row.fedId || '').trim();
+          if(!activeSet || activeSet.has(fed)){
+            filtered.push({ row, index });
+          }
+        });
+        filtered.forEach((entry, displayIndex) => {
+          const tr = document.createElement('tr');
+          if(displayIndex % 2 === 1) tr.className = 'bg-slate-50';
+          const missing = entry.row.fedId && !compIdSet.has(String(entry.row.fedId));
+          tr.innerHTML = [
+            `<td class="p-2 text-xs text-slate-600">${entry.index + 1}</td>`,
+            `<td class="p-1"><input class="table-input ${missing ? 'bg-rose-100 border-red-500' : ''}" data-type="weather" data-field="fedId" data-index="${entry.index}" value="${entry.row.fedId ?? ''}" title="${missing ? 'Federation ID missing in CompObj' : ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="dayId" data-index="${entry.index}" value="${entry.row.dayId ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="weatherType" data-index="${entry.index}" value="${entry.row.weatherType ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param1" data-index="${entry.index}" value="${entry.row.param1 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param2" data-index="${entry.index}" value="${entry.row.param2 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param3" data-index="${entry.index}" value="${entry.row.param3 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="param4" data-index="${entry.index}" value="${entry.row.param4 ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="start" data-index="${entry.index}" value="${entry.row.start ?? ''}"></td>`,
+            `<td class="p-1"><input class="table-input" data-type="weather" data-field="end" data-index="${entry.index}" value="${entry.row.end ?? ''}"></td>`,
+            `<td class="p-2 text-center"><button class="btn bg-red-600 text-white hover:bg-red-700" data-remove-weather="${entry.index}">Delete</button></td>`
+          ].join('');
+          weatherTableBody.appendChild(tr);
+        });
+        $('weatherMeta').textContent = createFilterInfo(filtered.length, weatherRows.length);
+        attachTableInputHandlers(weatherTableBody);
+        weatherTableBody.querySelectorAll('button[data-remove-weather]').forEach(btn => {
+          btn.onclick = () => {
+            weatherRows.splice(Number(btn.dataset.removeWeather), 1);
+            renderWeatherTable();
+          };
+        });
+      }
+
+      function renderAllTables(){
+        renderCompTable();
+        renderSettingsTable();
+        renderTasksTable();
+        renderAdvTable();
+        renderStandingsTable();
         renderScheduleTable();
-        if(scheduleMessagesEl){
-          scheduleMessagesEl.textContent='Schedule updated with new stage references.';
+        renderObjectivesTable();
+        renderWeatherTable();
+      }
+      function parseCompText(text, delimChoice){
+        compRows.length = 0;
+        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
+        compDelimiter = delim;
+        $('compDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(delim).map(p => p.trim());
+          while(parts.length < 5) parts.push('');
+          const [id, level, code, name, parent] = parts;
+          compRows.push({ id, level, code, name, parent });
+        });
+        rebuildIdMaps();
+        renderTree();
+        renderSelectionPanel();
+        renderAllTables();
+        showMessage(`Loaded ${compRows.length} CompObj lines.`, 'success');
+      }
+
+      function parseSettingsText(text){
+        setRows.length = 0;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(',').map(p => p.trim());
+          const [id = '', key = '', value = ''] = parts;
+          if(id || key || value){
+            setRows.push({ id, settingKey: key, value });
+          }
+        });
+        renderSettingsTable();
+        showMessage(`Loaded ${setRows.length} settings rows.`, 'info');
+      }
+
+      function parseTasksText(text, delimChoice){
+        taskRows.length = 0;
+        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
+        taskDelimiter = delim;
+        $('tasksDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(delim).map(p => p.trim());
+          while(parts.length < 7) parts.push('');
+          const [trophyId, phase, command, target, ref1, ref2, ref3] = parts;
+          taskRows.push({ trophyId, phase, command, target, ref1, ref2, ref3 });
+        });
+        renderTasksTable();
+        showMessage(`Loaded ${taskRows.length} task lines.`, 'info');
+      }
+
+      function parseAdvText(text, delimChoice){
+        advRows.length = 0;
+        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
+        advDelimiter = delim;
+        $('advDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(delim).map(p => p.trim());
+          while(parts.length < 4) parts.push('');
+          const [fromId, placement, toId, slot] = parts;
+          advRows.push({ fromId, placement, toId, slot });
+        });
+        renderAdvTable();
+        showMessage(`Loaded ${advRows.length} advancement rows.`, 'info');
+      }
+
+      function parseStandingsText(text, delimChoice){
+        standRows.length = 0;
+        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
+        standDelimiter = delim;
+        $('standDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(delim).map(p => p.trim());
+          while(parts.length < 2) parts.push('');
+          const [groupId, teamCount] = parts;
+          standRows.push({ groupId, teamCount });
+        });
+        renderStandingsTable();
+        showMessage(`Loaded ${standRows.length} standings rows.`, 'info');
+      }
+
+      function parseScheduleText(text){
+        schedRows.length = 0;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(',').map(p => p.trim());
+          while(parts.length < 6) parts.push('');
+          const [stageId, dateId, matchDay, minGames, maxGames, time] = parts;
+          schedRows.push({ stageId, dateId, matchDay, minGames, maxGames, time });
+        });
+        renderScheduleTable();
+        showMessage(`Loaded ${schedRows.length} schedule rows.`, 'info');
+      }
+
+      function parseObjectivesText(text, delimChoice){
+        objectiveRows.length = 0;
+        const delim = delimChoice === 'auto' ? autoDetectDelimiter(text) : delimChoice;
+        objectiveDelimiter = delim;
+        $('objDelimiterSelect').value = delimChoice === 'auto' ? 'auto' : delim;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(delim).map(p => p.trim());
+          while(parts.length < 3) parts.push('');
+          const [groupId, objective, value] = parts;
+          objectiveRows.push({ groupId, objective, value });
+        });
+        renderObjectivesTable();
+        showMessage(`Loaded ${objectiveRows.length} objective rows.`, 'info');
+      }
+
+      function parseWeatherText(text){
+        weatherRows.length = 0;
+        text.split(/\r?\n/).forEach(line => {
+          const trimmed = line.trim();
+          if(!trimmed) return;
+          const parts = trimmed.split(',').map(p => p.trim());
+          while(parts.length < 9) parts.push('');
+          const [fedId, dayId, weatherType, param1, param2, param3, param4, start, end] = parts;
+          weatherRows.push({ fedId, dayId, weatherType, param1, param2, param3, param4, start, end });
+        });
+        renderWeatherTable();
+        showMessage(`Loaded ${weatherRows.length} weather rows.`, 'info');
+      }
+      function applyIdMapping(mapping){
+        if(!mapping) return;
+        const entries = Object.entries(mapping).map(([oldId, newId]) => [String(oldId || '').trim(), String(newId || '').trim()]).filter(([oldId, newId]) => oldId && newId && oldId !== newId);
+        if(!entries.length) return;
+        const map = new Map(entries);
+        let changed = false;
+
+        compRows.forEach(row => {
+          const id = String(row.id || '').trim();
+          const parent = String(row.parent || '').trim();
+          if(map.has(id)){
+            row.id = map.get(id);
+            changed = true;
+          }
+          if(map.has(parent)){
+            row.parent = map.get(parent);
+            changed = true;
+          }
+        });
+
+        advRows.forEach(row => {
+          if(map.has(String(row.fromId || ''))) { row.fromId = map.get(String(row.fromId)); changed = true; }
+          if(map.has(String(row.toId || ''))) { row.toId = map.get(String(row.toId)); changed = true; }
+        });
+
+        taskRows.forEach(row => {
+          ['trophyId', 'target', 'ref1', 'ref2', 'ref3'].forEach(field => {
+            const value = String(row[field] || '').trim();
+            if(map.has(value)){
+              row[field] = map.get(value);
+              changed = true;
+            }
+          });
+        });
+
+        standRows.forEach(row => {
+          const gid = String(row.groupId || '').trim();
+          if(map.has(gid)){
+            row.groupId = map.get(gid);
+            changed = true;
+          }
+        });
+
+        setRows.forEach(row => {
+          const id = String(row.id || '').trim();
+          if(map.has(id)){
+            row.id = map.get(id);
+            changed = true;
+          }
+        });
+
+        schedRows.forEach(row => {
+          const stage = String(row.stageId || '').trim();
+          if(map.has(stage)){
+            row.stageId = map.get(stage);
+            changed = true;
+          }
+        });
+
+        objectiveRows.forEach(row => {
+          const gid = String(row.groupId || '').trim();
+          if(map.has(gid)){
+            row.groupId = map.get(gid);
+            changed = true;
+          }
+        });
+
+        weatherRows.forEach(row => {
+          const fed = String(row.fedId || '').trim();
+          if(map.has(fed)){
+            row.fedId = map.get(fed);
+            changed = true;
+          }
+        });
+
+        if(selectedId && map.has(String(selectedId))){
+          selectedId = map.get(String(selectedId));
+        }
+
+        if(changed){
+          rebuildIdMaps();
+          renderTree();
+          renderSelectionPanel();
+          renderAllTables();
+          showMessage('Linked IDs successfully updated.', 'success');
         }
       }
-    }
-    window.applyGlobalIdMapping=applyGlobalIdMapping;
 
-    updateScheduleMeta();
-
-    /* -----------------------
-       Tasks Section
-    ----------------------- */
-    let taskRows = [];
-    const taskBody = document.getElementById('taskBody');
-
-    function parseTasks(text, delimSel='auto'){
-      taskRows = [];
-      const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts = line.split(delim).map(s=>s.trim());
-        while(parts.length<7) parts.push('');
-        const [trophyLine, phase, taskType, arg1, arg2, arg3, arg4] = parts;
-        taskRows.push({trophyLine, phase, taskType, arg1, arg2, arg3, arg4});
-      }
-      document.getElementById('taskMeta').textContent=`${taskRows.length} task lines parsed`;
-      renderTaskTable();
-    }
-
-    function renderTaskTable(){
-      taskBody.innerHTML='';
-      taskRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="trophyLine" data-i="${i}" class="w-24 p-1 border rounded" value="${r.trophyLine}"></td>
-          <td class="p-2"><input data-f="phase" data-i="${i}" class="w-24 p-1 border rounded" value="${r.phase}"></td>
-          <td class="p-2"><input data-f="taskType" data-i="${i}" class="w-40 p-1 border rounded" value="${r.taskType}"></td>
-          <td class="p-2"><input data-f="arg1" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg1}"></td>
-          <td class="p-2"><input data-f="arg2" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg2}"></td>
-          <td class="p-2"><input data-f="arg3" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg3}"></td>
-          <td class="p-2"><input data-f="arg4" data-i="${i}" class="w-24 p-1 border rounded" value="${r.arg4}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        taskBody.appendChild(tr);
-      });
-      taskBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{taskRows[+inp.dataset.i][inp.dataset.f]=inp.value;};
-      });
-      taskBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{taskRows.splice(+btn.dataset.del,1);renderTaskTable();};
-      });
-    }
-
-    document.getElementById('taskFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>parseTasks(r.result, document.getElementById('taskDelimiter').value);
-      r.readAsText(f);
-    };
-
-    document.getElementById('taskPasteBtn').onclick=()=>{
-      const pa=document.getElementById('taskPasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('taskPasteArea').onblur=e=>parseTasks(e.target.value, document.getElementById('taskDelimiter').value);
-
-    document.getElementById('taskAddBtn').onclick=()=>{taskRows.push({trophyLine:'',phase:'',taskType:'',arg1:'',arg2:'',arg3:'',arg4:''});renderTaskTable();};
-
-    document.getElementById('taskSortBtn').onclick=()=>{
-      taskRows.sort((a,b)=>{
-        const diff=Number(a.trophyLine||0)-Number(b.trophyLine||0);
-        if(diff!==0) return diff;
-        return a.phase.localeCompare(b.phase);
-      });
-      renderTaskTable();
-    };
-
-    document.getElementById('taskExportBtn').onclick=()=>{
-      const delimSel=document.getElementById('taskDelimiter').value;
-      const delim = delimSel==='auto' ? ',' : delimSel;
-      const blob=new Blob([taskRows.map(r=>[r.trophyLine,r.phase,r.taskType,r.arg1,r.arg2,r.arg3,r.arg4].join(delim)).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tasks.txt';a.click();
-    };
-
-    document.getElementById('taskValidateBtn').onclick=()=>{
-      const probs=[];
-      taskRows.forEach((r,i)=>{
-        if(!r.trophyLine) probs.push(`Line ${i+1}: Missing trophy line`);
-        if(!r.phase) probs.push(`Line ${i+1}: Missing phase (start/end)`);
-        if(!r.taskType) probs.push(`Line ${i+1}: Missing task type`);
-      });
-      document.getElementById('taskMessages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
-    };
-
-    /* -----------------------
-       Weather Section
-    ----------------------- */
-    const weatherBody = document.getElementById('weatherBody');
-
-    function updateWeatherMeta(){
-      const count = weatherRows.length;
-      document.getElementById('weatherMeta').textContent = `${count} weather line${count===1?'':'s'} parsed`;
-    }
-
-    function renderWeatherTable(){
-      if(!weatherBody) return;
-      weatherBody.innerHTML='';
-      weatherRows.forEach((r,i)=>{
-        const tr=document.createElement('tr');
-        tr.className=i%2?'bg-white':'bg-slate-50';
-        tr.innerHTML=`
-          <td class="p-2">${i+1}</td>
-          <td class="p-2"><input data-f="fed" data-i="${i}" class="w-28 p-1 border rounded" value="${r.fed ?? ''}"></td>
-          <td class="p-2"><input data-f="day" data-i="${i}" class="w-20 p-1 border rounded" value="${r.day ?? ''}"></td>
-          <td class="p-2"><input data-f="type" data-i="${i}" class="w-24 p-1 border rounded" value="${r.type ?? ''}"></td>
-          <td class="p-2"><input data-f="p1" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p1 ?? ''}"></td>
-          <td class="p-2"><input data-f="p2" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p2 ?? ''}"></td>
-          <td class="p-2"><input data-f="p3" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p3 ?? ''}"></td>
-          <td class="p-2"><input data-f="p4" data-i="${i}" class="w-20 p-1 border rounded" value="${r.p4 ?? ''}"></td>
-          <td class="p-2"><input data-f="start" data-i="${i}" class="w-24 p-1 border rounded" value="${r.start ?? ''}"></td>
-          <td class="p-2"><input data-f="end" data-i="${i}" class="w-24 p-1 border rounded" value="${r.end ?? ''}"></td>
-          <td class="p-2"><button data-del="${i}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
-        weatherBody.appendChild(tr);
-      });
-      weatherBody.querySelectorAll('input').forEach(inp=>{
-        inp.onchange=()=>{ weatherRows[+inp.dataset.i][inp.dataset.f]=inp.value; };
-      });
-      weatherBody.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.onclick=()=>{ weatherRows.splice(+btn.dataset.del,1); renderWeatherTable(); };
-      });
-      updateWeatherMeta();
-    }
-
-    function parseWeather(text){
-      weatherRows=[];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(',').map(s=>s.trim());
-        while(parts.length<9) parts.push('');
-        const [fed='', day='', type='', p1='', p2='', p3='', p4='', start='', end=''] = parts;
-        weatherRows.push({fed, day, type, p1, p2, p3, p4, start, end});
-      }
-      renderWeatherTable();
-    }
-
-    document.getElementById('weatherFileInput').onchange=e=>{
-      const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>parseWeather(r.result);
-      r.readAsText(f);
-    };
-
-    document.getElementById('weatherPasteBtn').onclick=()=>{
-      const pa=document.getElementById('weatherPasteArea');
-      pa.classList.toggle('hidden');
-      if(!pa.classList.contains('hidden')) pa.focus();
-    };
-    document.getElementById('weatherPasteArea').onblur=e=>parseWeather(e.target.value);
-
-    document.getElementById('weatherAddBtn').onclick=()=>{
-      weatherRows.push({fed:'',day:'',type:'',p1:'',p2:'',p3:'',p4:'',start:'',end:''});
-      renderWeatherTable();
-    };
-
-    document.getElementById('weatherExportBtn').onclick=()=>{
-      const blob=new Blob([weatherRows.map(r=>[r.fed,r.day,r.type,r.p1,r.p2,r.p3,r.p4,r.start,r.end].join(',')).join('\n')],{type:'text/plain'});
-      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='weather.txt';a.click();
-    };
-
-    document.getElementById('weatherValidateBtn').onclick=()=>{
-      const messages=[];
-      const ids=new Set(rows.map(r=>String(r.id)));
-      const numericFields=[['day','Day ID'],['type','Weather Type'],['p1','Param1'],['p2','Param2'],['p3','Param3'],['p4','Param4'],['start','Start Time'],['end','End Time']];
-      weatherRows.forEach((r,i)=>{
-        if(r.fed && !ids.has(String(r.fed))) messages.push(`Row ${i+1}: Federation ID ${r.fed} not found in CompObj table`);
-        numericFields.forEach(([field,label])=>{
-          const value=r[field];
-          if(value!=='' && Number.isNaN(Number(value))) messages.push(`Row ${i+1}: ${label} must be numeric`);
+      function rebaseCompIds(startId){
+        const start = Number(startId);
+        if(!Number.isFinite(start)){
+          showMessage('Rebase cancelled — invalid starting ID.', 'error');
+          return;
+        }
+        const mapping = {};
+        let next = start;
+        compRows.forEach(row => {
+          const current = String(row.id || '').trim();
+          if(!current) return;
+          const newId = String(next++);
+          if(current !== newId){
+            mapping[current] = newId;
+          }
         });
+        if(Object.keys(mapping).length){
+          applyIdMapping(mapping);
+        } else {
+          showMessage('No ID changes were required.', 'info');
+        }
+      }
+      function compRowsToText(){
+        const delim = compDelimiter || ',';
+        return compRows.map(r => [r.id ?? '', r.level ?? '', r.code ?? '', r.name ?? '', r.parent ?? ''].join(delim)).join('\n');
+      }
+
+      function settingsToText(){
+        return setRows.map(r => [r.id ?? '', r.settingKey ?? '', r.value ?? ''].join(',')).join('\n');
+      }
+
+      function tasksToText(){
+        const delim = taskDelimiter || ',';
+        return taskRows.map(r => [r.trophyId ?? '', r.phase ?? '', r.command ?? '', r.target ?? '', r.ref1 ?? '', r.ref2 ?? '', r.ref3 ?? ''].join(delim)).join('\n');
+      }
+
+      function advToText(){
+        const delim = advDelimiter || ',';
+        return advRows.map(r => [r.fromId ?? '', r.placement ?? '', r.toId ?? '', r.slot ?? ''].join(delim)).join('\n');
+      }
+
+      function standingsToText(){
+        const delim = standDelimiter || ',';
+        return standRows.map(r => [r.groupId ?? '', r.teamCount ?? ''].join(delim)).join('\n');
+      }
+
+      function scheduleToText(){
+        return schedRows.map(r => [r.stageId ?? '', r.dateId ?? '', r.matchDay ?? '', r.minGames ?? '', r.maxGames ?? '', r.time ?? ''].join(',')).join('\n');
+      }
+
+      function objectivesToText(){
+        const delim = objectiveDelimiter || ',';
+        return objectiveRows.map(r => [r.groupId ?? '', r.objective ?? '', r.value ?? ''].join(delim)).join('\n');
+      }
+
+      function weatherToText(){
+        return weatherRows.map(r => [r.fedId ?? '', r.dayId ?? '', r.weatherType ?? '', r.param1 ?? '', r.param2 ?? '', r.param3 ?? '', r.param4 ?? '', r.start ?? '', r.end ?? ''].join(',')).join('\n');
+      }
+
+      const CRC32_TABLE = new Uint32Array(256).map((_, n) => {
+        let c = n;
+        for(let k = 0; k < 8; k++){
+          c = ((c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1));
+        }
+        return c >>> 0;
       });
-      document.getElementById('weatherMessages').innerHTML = messages.length ? messages.join('<br>') : 'No validation issues.';
-    };
 
-    updateWeatherMeta();
+      function crc32(bytes){
+        let crc = 0 ^ (-1);
+        for(let i = 0; i < bytes.length; i++){
+          const y = (crc ^ bytes[i]) & 0xff;
+          crc = (crc >>> 8) ^ CRC32_TABLE[y];
+        }
+        return (crc ^ (-1)) >>> 0;
+      }
 
-    /* Theme */
-    document.getElementById('themeSelect').onchange=()=>{
-      const v=document.getElementById('themeSelect').value;
-      if(v==='dark'){document.body.classList.add('bg-slate-900','text-slate-100');}
-      else{document.body.classList.remove('bg-slate-900','text-slate-100');}
-    };
+      function createZip(files){
+        const encoder = new TextEncoder();
+        const fileRecords = [];
+        const chunks = [];
+        let offset = 0;
+        files.forEach(file => {
+          const nameBytes = encoder.encode(file.name);
+          const dataBytes = encoder.encode(file.content);
+          const crc = crc32(dataBytes);
+          const localHeader = new Uint8Array(30 + nameBytes.length);
+          const localView = new DataView(localHeader.buffer);
+          let p = 0;
+          localView.setUint32(p, 0x04034b50, true); p += 4;
+          localView.setUint16(p, 20, true); p += 2;
+          localView.setUint16(p, 0, true); p += 2;
+          localView.setUint16(p, 0, true); p += 2;
+          localView.setUint16(p, 0, true); p += 2;
+          localView.setUint16(p, 0, true); p += 2;
+          localView.setUint32(p, crc, true); p += 4;
+          localView.setUint32(p, dataBytes.length, true); p += 4;
+          localView.setUint32(p, dataBytes.length, true); p += 4;
+          localView.setUint16(p, nameBytes.length, true); p += 2;
+          localView.setUint16(p, 0, true); p += 2;
+          localHeader.set(nameBytes, 30);
+          chunks.push(localHeader);
+          chunks.push(dataBytes);
+          fileRecords.push({ nameBytes, dataBytes, crc, offset });
+          offset += localHeader.length + dataBytes.length;
+        });
 
+        const centralChunks = [];
+        let centralSize = 0;
+        fileRecords.forEach(record => {
+          const centralHeader = new Uint8Array(46 + record.nameBytes.length);
+          const view = new DataView(centralHeader.buffer);
+          let p = 0;
+          view.setUint32(p, 0x02014b50, true); p += 4;
+          view.setUint16(p, 20, true); p += 2;
+          view.setUint16(p, 20, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint32(p, record.crc, true); p += 4;
+          view.setUint32(p, record.dataBytes.length, true); p += 4;
+          view.setUint32(p, record.dataBytes.length, true); p += 4;
+          view.setUint16(p, record.nameBytes.length, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint16(p, 0, true); p += 2;
+          view.setUint32(p, 0, true); p += 4;
+          view.setUint32(p, record.offset, true); p += 4;
+          centralHeader.set(record.nameBytes, 46);
+          centralChunks.push(centralHeader);
+          centralSize += centralHeader.length;
+          record.offset += 0; // keep reference for final calculation
+        });
+
+        const centralOffset = offset;
+        const totalSize = offset + centralSize + 22;
+        const zipBuffer = new Uint8Array(totalSize);
+        let cursor = 0;
+        chunks.forEach(chunk => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
+        centralChunks.forEach(chunk => { zipBuffer.set(chunk, cursor); cursor += chunk.length; });
+
+        const end = new DataView(zipBuffer.buffer, cursor, 22);
+        end.setUint32(0, 0x06054b50, true);
+        end.setUint16(4, 0, true);
+        end.setUint16(6, 0, true);
+        end.setUint16(8, fileRecords.length, true);
+        end.setUint16(10, fileRecords.length, true);
+        end.setUint32(12, centralSize, true);
+        end.setUint32(16, centralOffset, true);
+        end.setUint16(20, 0, true);
+
+        return new Blob([zipBuffer], { type: 'application/zip' });
+      }
+
+      function exportAllFiles(){
+        const files = [
+          { name: 'compobj.txt', content: compRowsToText() },
+          { name: 'advancement.txt', content: advToText() },
+          { name: 'tasks.txt', content: tasksToText() },
+          { name: 'standings.txt', content: standingsToText() },
+          { name: 'settings.txt', content: settingsToText() },
+          { name: 'schedule.txt', content: scheduleToText() },
+          { name: 'objectives.txt', content: objectivesToText() },
+          { name: 'weather.txt', content: weatherToText() }
+        ];
+        const zip = createZip(files);
+        downloadBlob('competition_editor_export.zip', zip);
+        showMessage('All files exported to ZIP archive.', 'success');
+      }
+      function validateComp(){
+        const problems = [];
+        const seen = new Set();
+        compRows.forEach((row, index) => {
+          const id = String(row.id || '').trim();
+          if(!id) problems.push(`CompObj line ${index + 1}: Missing ID`);
+          if(id && seen.has(id)) problems.push(`CompObj line ${index + 1}: Duplicate ID ${id}`);
+          seen.add(id);
+          const parent = String(row.parent || '').trim();
+          if(parent && !seen.has(parent) && !compIdSet.has(parent)){
+            problems.push(`CompObj line ${index + 1}: Parent ${parent} not found`);
+          }
+        });
+        return problems;
+      }
+
+      function validateAdv(){
+        const problems = [];
+        advRows.forEach((row, index) => {
+          if(row.fromId && !compIdSet.has(String(row.fromId))) problems.push(`Advancement line ${index + 1}: From group ${row.fromId} missing`);
+          if(row.toId && !compIdSet.has(String(row.toId))) problems.push(`Advancement line ${index + 1}: To group ${row.toId} missing`);
+          if(!row.fromId || !row.toId) problems.push(`Advancement line ${index + 1}: Missing source or destination`);
+        });
+        return problems;
+      }
+
+      function validateTasks(){
+        const problems = [];
+        const numericPattern = /^\d+$/;
+        taskRows.forEach((row, index) => {
+          if(!row.trophyId) problems.push(`Task line ${index + 1}: Missing Trophy ID`);
+          if(row.trophyId && !compIdSet.has(String(row.trophyId))) problems.push(`Task line ${index + 1}: Trophy ${row.trophyId} missing in CompObj`);
+          if(!row.phase) problems.push(`Task line ${index + 1}: Missing phase`);
+          if(!row.command) problems.push(`Task line ${index + 1}: Missing command`);
+          ['target', 'ref1', 'ref2', 'ref3'].forEach(field => {
+            const value = row[field];
+            if(value && numericPattern.test(value) && !compIdSet.has(String(value))){
+              problems.push(`Task line ${index + 1}: Reference ${value} not found in CompObj`);
+            }
+          });
+        });
+        return problems;
+      }
+
+      function validateSettings(){
+        const problems = [];
+        setRows.forEach((row, index) => {
+          if(!row.id) problems.push(`Settings line ${index + 1}: Missing CompObj ID`);
+          if(row.id && !compIdSet.has(String(row.id))) problems.push(`Settings line ${index + 1}: ID ${row.id} missing in CompObj`);
+          if(!row.settingKey) problems.push(`Settings line ${index + 1}: Missing setting key`);
+          if(row.value === undefined || row.value === '') problems.push(`Settings line ${index + 1}: Missing value`);
+        });
+        return problems;
+      }
+
+      function validateStandings(){
+        const problems = [];
+        standRows.forEach((row, index) => {
+          if(!row.groupId) problems.push(`Standings line ${index + 1}: Missing Group ID`);
+          if(row.groupId && !compIdSet.has(String(row.groupId))) problems.push(`Standings line ${index + 1}: Group ${row.groupId} missing in CompObj`);
+          if(row.teamCount === undefined || row.teamCount === '') problems.push(`Standings line ${index + 1}: Missing team count`);
+        });
+        return problems;
+      }
+
+      function validateSchedule(){
+        const problems = [];
+        schedRows.forEach((row, index) => {
+          if(!row.stageId) problems.push(`Schedule line ${index + 1}: Missing stage ID`);
+          if(row.stageId && !compIdSet.has(String(row.stageId))) problems.push(`Schedule line ${index + 1}: Stage ${row.stageId} missing in CompObj`);
+          ['dateId', 'matchDay', 'minGames', 'maxGames', 'time'].forEach(field => {
+            if(row[field] === undefined || row[field] === '') problems.push(`Schedule line ${index + 1}: Missing ${field}`);
+          });
+        });
+        return problems;
+      }
+
+      function validateObjectives(){
+        const problems = [];
+        objectiveRows.forEach((row, index) => {
+          if(!row.groupId) problems.push(`Objectives line ${index + 1}: Missing Group ID`);
+          if(row.groupId && !compIdSet.has(String(row.groupId))) problems.push(`Objectives line ${index + 1}: Group ${row.groupId} missing in CompObj`);
+          if(!row.objective) problems.push(`Objectives line ${index + 1}: Missing objective type`);
+        });
+        return problems;
+      }
+
+      function validateWeather(){
+        const problems = [];
+        weatherRows.forEach((row, index) => {
+          if(row.fedId && !compIdSet.has(String(row.fedId))) problems.push(`Weather line ${index + 1}: Federation ${row.fedId} missing in CompObj`);
+          ['dayId', 'weatherType', 'param1', 'param2', 'param3', 'param4', 'start', 'end'].forEach(field => {
+            const value = row[field];
+            if(value !== '' && value !== undefined && value !== null && Number.isNaN(Number(value))){
+              problems.push(`Weather line ${index + 1}: ${field} should be numeric`);
+            }
+          });
+        });
+        return problems;
+      }
+
+      function validateAll(){
+        const allProblems = [
+          ...validateComp(),
+          ...validateSettings(),
+          ...validateTasks(),
+          ...validateAdv(),
+          ...validateStandings(),
+          ...validateSchedule(),
+          ...validateObjectives(),
+          ...validateWeather()
+        ];
+        if(allProblems.length){
+          $('validationSummary').innerHTML = allProblems.map(msg => `<div class="text-red-600">• ${msg}</div>`).join('');
+          showMessage('Validation found issues. Review the summary below.', 'error');
+        } else {
+          $('validationSummary').innerHTML = '<div class="text-emerald-600">All linked files passed validation.</div>';
+          showMessage('Validation successful — no issues detected.', 'success');
+        }
+      }
+      function toggleTextarea(id){
+        const el = $(id);
+        if(!el) return;
+        el.classList.toggle('hidden');
+        if(!el.classList.contains('hidden')) el.focus();
+      }
+
+      function bindFileInput(id, handler){
+        const input = $(id);
+        if(!input) return;
+        input.onchange = (event) => {
+          const file = event.target.files && event.target.files[0];
+          if(!file) return;
+          const reader = new FileReader();
+          reader.onload = () => handler(reader.result || '');
+          reader.readAsText(file);
+        };
+      }
+
+      function setupEventHandlers(){
+        bindFileInput('compFileInput', text => parseCompText(text, $('compDelimiterSelect').value));
+        bindFileInput('settingsFileInput', parseSettingsText);
+        bindFileInput('tasksFileInput', text => parseTasksText(text, $('tasksDelimiterSelect').value));
+        bindFileInput('advFileInput', text => parseAdvText(text, $('advDelimiterSelect').value));
+        bindFileInput('standFileInput', text => parseStandingsText(text, $('standDelimiterSelect').value));
+        bindFileInput('schedFileInput', parseScheduleText);
+        bindFileInput('objFileInput', text => parseObjectivesText(text, $('objDelimiterSelect').value));
+        bindFileInput('weatherFileInput', parseWeatherText);
+
+        $('compPasteBtn').onclick = () => toggleTextarea('compPasteArea');
+        $('settingsPasteBtn').onclick = () => toggleTextarea('settingsPasteArea');
+        $('tasksPasteBtn').onclick = () => toggleTextarea('tasksPasteArea');
+        $('advPasteBtn').onclick = () => toggleTextarea('advPasteArea');
+        $('standPasteBtn').onclick = () => toggleTextarea('standPasteArea');
+        $('schedPasteBtn').onclick = () => toggleTextarea('schedPasteArea');
+        $('objPasteBtn').onclick = () => toggleTextarea('objPasteArea');
+        $('weatherPasteBtn').onclick = () => toggleTextarea('weatherPasteArea');
+
+        $('compPasteArea').onblur = (event) => parseCompText(event.target.value, $('compDelimiterSelect').value);
+        $('settingsPasteArea').onblur = (event) => parseSettingsText(event.target.value);
+        $('tasksPasteArea').onblur = (event) => parseTasksText(event.target.value, $('tasksDelimiterSelect').value);
+        $('advPasteArea').onblur = (event) => parseAdvText(event.target.value, $('advDelimiterSelect').value);
+        $('standPasteArea').onblur = (event) => parseStandingsText(event.target.value, $('standDelimiterSelect').value);
+        $('schedPasteArea').onblur = (event) => parseScheduleText(event.target.value);
+        $('objPasteArea').onblur = (event) => parseObjectivesText(event.target.value, $('objDelimiterSelect').value);
+        $('weatherPasteArea').onblur = (event) => parseWeatherText(event.target.value);
+
+        $('compAddBtn').onclick = () => {
+          const parent = selectedId ? String(selectedId) : '';
+          const level = selectedId ? String(Number(compRows[compIndexById.get(selectedId)]?.level || 0) + 1) : '';
+          compRows.push({ id: '', level, code: '', name: '', parent });
+          rebuildIdMaps();
+          renderTree();
+          renderSelectionPanel();
+          renderAllTables();
+        };
+        $('compExportBtn').onclick = () => downloadText('compobj.txt', compRowsToText());
+        $('compValidateBtn').onclick = () => {
+          const probs = validateComp();
+          $('compMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('settingsAddBtn').onclick = () => { setRows.push({ id: selectedId || '', settingKey: '', value: '' }); renderSettingsTable(); };
+        $('settingsExportBtn').onclick = () => downloadText('settings.txt', settingsToText());
+        $('settingsValidateBtn').onclick = () => {
+          const probs = validateSettings();
+          $('settingsMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('tasksAddBtn').onclick = () => { taskRows.push({ trophyId: selectedId || '', phase: '', command: '', target: '', ref1: '', ref2: '', ref3: '' }); renderTasksTable(); };
+        $('tasksExportBtn').onclick = () => downloadText('tasks.txt', tasksToText());
+        $('tasksValidateBtn').onclick = () => {
+          const probs = validateTasks();
+          $('tasksMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('advAddBtn').onclick = () => { advRows.push({ fromId: selectedId || '', placement: '', toId: '', slot: '' }); renderAdvTable(); };
+        $('advExportBtn').onclick = () => downloadText('advancement.txt', advToText());
+        $('advValidateBtn').onclick = () => {
+          const probs = validateAdv();
+          $('advMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('standAddBtn').onclick = () => { standRows.push({ groupId: selectedId || '', teamCount: '' }); renderStandingsTable(); };
+        $('standExportBtn').onclick = () => downloadText('standings.txt', standingsToText());
+        $('standValidateBtn').onclick = () => {
+          const probs = validateStandings();
+          $('standMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('schedAddBtn').onclick = () => { schedRows.push({ stageId: selectedId || '', dateId: '', matchDay: '', minGames: '', maxGames: '', time: '' }); renderScheduleTable(); };
+        $('schedExportBtn').onclick = () => downloadText('schedule.txt', scheduleToText());
+        $('schedValidateBtn').onclick = () => {
+          const probs = validateSchedule();
+          $('schedMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('objAddBtn').onclick = () => { objectiveRows.push({ groupId: selectedId || '', objective: '', value: '' }); renderObjectivesTable(); };
+        $('objExportBtn').onclick = () => downloadText('objectives.txt', objectivesToText());
+        $('objValidateBtn').onclick = () => {
+          const probs = validateObjectives();
+          $('objMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('weatherAddBtn').onclick = () => { weatherRows.push({ fedId: selectedId || '', dayId: '', weatherType: '', param1: '', param2: '', param3: '', param4: '', start: '', end: '' }); renderWeatherTable(); };
+        $('weatherExportBtn').onclick = () => downloadText('weather.txt', weatherToText());
+        $('weatherValidateBtn').onclick = () => {
+          const probs = validateWeather();
+          $('weatherMessages').innerHTML = probs.length ? probs.map(p => `<div class="text-red-600">${p}</div>`).join('') : '<span class="text-emerald-600">No issues found.</span>';
+        };
+
+        $('exportAllBtn').onclick = exportAllFiles;
+        $('validateAllBtn').onclick = validateAll;
+        $('rebaseBtn').onclick = () => {
+          const start = prompt('Rebase CompObj IDs starting from:', '1000');
+          if(start !== null) rebaseCompIds(start);
+        };
+        $('rebuildBtn').onclick = () => {
+          rebuildIdMaps();
+          renderTree();
+          renderSelectionPanel();
+          renderAllTables();
+          showMessage('Tree rebuilt from current CompObj data.', 'info');
+        };
+        $('clearSelectionBtn').onclick = () => {
+          selectedId = null;
+          renderTree();
+          renderSelectionPanel();
+          renderAllTables();
+        };
+
+        $('themeToggle').onclick = () => {
+          document.body.classList.toggle('dark');
+          $('themeToggle').textContent = document.body.classList.contains('dark') ? 'Toggle Light' : 'Toggle Dark';
+        };
+      }
+
+      function init(){
+        initTabs();
+        rebuildIdMaps();
+        renderTree();
+        renderSelectionPanel();
+        renderAllTables();
+        setupEventHandlers();
+        showMessage('Load CompObj data to get started.', 'info');
+      }
+
+      window.rebuildIdMaps = rebuildIdMaps;
+      window.renderAllTables = renderAllTables;
+      window.exportAllFiles = exportAllFiles;
+      window.validateAll = validateAll;
+
+      init();
+    })();
   </script>
 </body>
 </html>
