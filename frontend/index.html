@@ -3,347 +3,761 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Football Competition Modding Editor</title>
+    <title>Competition Object Tree Editor</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(15, 23, 42, 0.7);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(100, 116, 139, 0.6);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(148, 163, 184, 0.8);
+      }
+      .tree-connector {
+        position: relative;
+      }
+      .tree-connector::before {
+        content: '';
+        position: absolute;
+        left: -1.25rem;
+        top: 0.75rem;
+        width: 1rem;
+        height: 1px;
+        background-color: rgba(148, 163, 184, 0.25);
+      }
+      .tree-connector::after {
+        content: '';
+        position: absolute;
+        left: -1.25rem;
+        top: -0.5rem;
+        width: 1px;
+        height: calc(100% + 0.75rem);
+        background-color: rgba(148, 163, 184, 0.2);
+      }
+      .tree-root > li:first-child .tree-connector::after {
+        top: 0.75rem;
+      }
+      .tree-root > li:last-child .tree-connector::after {
+        height: 0.75rem;
+      }
+      .tree-root > li:only-child .tree-connector::before,
+      .tree-root > li:only-child .tree-connector::after {
+        display: none;
+      }
+    </style>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen">
-    <div class="max-w-6xl mx-auto py-10 px-4 space-y-8">
-      <header class="space-y-2">
-        <h1 class="text-3xl font-semibold">Football Competition Modding Editor</h1>
-        <p class="text-slate-300">
-          Load the eight database files, inspect the tree, run validations, and export
-          updated files. The backend enforces formatting rules and cross-file references.
-        </p>
-      </header>
-
-      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 space-y-4">
-        <h2 class="text-xl font-medium">1. Load Files</h2>
-        <p class="text-slate-300">
-          Select the <code>.txt</code> files required by the game. The tool normalises the
-          filenames, so any casing is accepted.
-        </p>
-        <input id="file-input" type="file" multiple class="block w-full text-sm" />
-        <button
-          id="parse-button"
-          class="px-4 py-2 bg-emerald-500 text-black rounded-md font-semibold hover:bg-emerald-400 disabled:opacity-40"
-        >
-          Parse Files
-        </button>
-        <p id="parse-status" class="text-sm text-slate-400"></p>
-      </section>
-
-      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 space-y-4">
-        <h2 class="text-xl font-medium">2. Validation</h2>
-        <div class="flex gap-3">
-          <button
-            id="validate-button"
-            class="px-4 py-2 bg-sky-500 text-black rounded-md font-semibold hover:bg-sky-400 disabled:opacity-40"
-          >
-            Run Validation
-          </button>
-          <button
-            id="autofix-button"
-            class="px-4 py-2 bg-amber-500 text-black rounded-md font-semibold hover:bg-amber-400 disabled:opacity-40"
-          >
-            Auto Fix Hygiene
-          </button>
-        </div>
-        <div>
-          <h3 class="font-semibold mb-2">Issues</h3>
-          <ul id="issue-list" class="space-y-2 text-sm"></ul>
-        </div>
-      </section>
-
-      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 space-y-4">
-        <h2 class="text-xl font-medium">3. Tree</h2>
-        <p class="text-slate-300">Select a node to inspect its metadata.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="flex flex-col min-h-screen">
+      <header class="border-b border-slate-900/60 bg-slate-900/70 backdrop-blur-lg">
+        <div class="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <ul id="tree" class="text-sm space-y-1"></ul>
+            <h1 class="text-2xl font-semibold tracking-tight">Competition Object Tree Editor</h1>
+            <p class="text-sm text-slate-300">
+              Visualise and edit <code>compobj.txt</code> directly from the database. Every change persists to the backend file.
+            </p>
           </div>
-          <div id="detail" class="text-sm text-slate-200"></div>
+          <div class="flex flex-wrap gap-2">
+            <button id="load-file" class="rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-sky-400">
+              Load File
+            </button>
+            <button id="save-file" class="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400">
+              Save File
+            </button>
+            <button id="validate-file" class="rounded-md bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-400">
+              Validate
+            </button>
+            <button id="compare-file" class="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-indigo-400">
+              Compare
+            </button>
+            <button id="add-competition" class="rounded-md bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-fuchsia-400">
+              Add New Competition
+            </button>
+          </div>
         </div>
-      </section>
-
-      <section class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 space-y-4">
-        <h2 class="text-xl font-medium">4. Export</h2>
-        <button
-          id="export-button"
-          class="px-4 py-2 bg-purple-500 text-black rounded-md font-semibold hover:bg-purple-400 disabled:opacity-40"
-        >
-          Download Zip
-        </button>
-        <p class="text-slate-300 text-sm">
-          Export returns a <code>.zip</code> with the eight files preserved in plain-text
-          format without BOMs or trailing whitespace modifications.
-        </p>
-      </section>
+      </header>
+      <main class="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-4 px-6 py-6">
+        <div id="status" class="rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-300"></div>
+        <div class="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[2.2fr,1.1fr,1.2fr]">
+          <section class="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60">
+            <header class="border-b border-slate-800 px-5 py-4">
+              <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 class="text-lg font-semibold">Competition Tree</h2>
+                  <p class="text-xs uppercase tracking-wide text-slate-400">Browse and select nodes</p>
+                </div>
+                <label class="relative flex items-center">
+                  <span class="absolute left-3 text-slate-400">🔍</span>
+                  <input
+                    id="tree-search"
+                    type="text"
+                    placeholder="Filter by code or name"
+                    class="w-full rounded-md border border-slate-700 bg-slate-950/70 px-9 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-500 focus:outline-none"
+                  />
+                </label>
+              </div>
+            </header>
+            <div class="flex-1 overflow-hidden">
+              <div id="tree-scroll" class="h-full overflow-y-auto px-5 py-4">
+                <ul id="tree" class="tree-root space-y-2 text-sm"></ul>
+              </div>
+            </div>
+          </section>
+          <section class="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60">
+            <header class="border-b border-slate-800 px-5 py-4">
+              <h2 class="text-lg font-semibold">Validation &amp; Comparison</h2>
+              <p class="text-xs uppercase tracking-wide text-slate-400">Review problems and differences</p>
+            </header>
+            <div class="flex-1 space-y-6 overflow-y-auto px-5 py-4 text-sm">
+              <div>
+                <h3 class="font-semibold text-slate-200">Validation Issues</h3>
+                <ul id="validation-list" class="mt-3 space-y-3"></ul>
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-200">File Differences</h3>
+                <ul id="difference-list" class="mt-3 space-y-3"></ul>
+              </div>
+            </div>
+          </section>
+          <section class="flex flex-col rounded-xl border border-slate-800 bg-slate-900/60">
+            <header class="border-b border-slate-800 px-5 py-4">
+              <h2 class="text-lg font-semibold">Node Details</h2>
+              <p class="text-xs uppercase tracking-wide text-slate-400">Inspect &amp; edit the selected item</p>
+            </header>
+            <div class="flex-1 overflow-y-auto px-5 py-4 text-sm" id="detail-panel">
+              <p class="text-slate-400">Select a node from the tree to edit its properties.</p>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
-
     <script>
-      const API_BASE = (() => {
-        const { protocol, hostname, port } = window.location;
-        const isHttp = protocol === 'http:' || protocol === 'https:';
-        if (isHttp) {
-          const isLocalHost = hostname === 'localhost' || hostname === '127.0.0.1';
-          if (!isLocalHost || port === '' || port === '3000') {
-            return '';
-          }
-          return `http://${hostname}:3000`;
-        }
-        return 'http://localhost:3000';
-      })();
-
-      function buildUrl(path) {
-        if (!path.startsWith('/')) {
-          path = `/${path}`;
-        }
-        return `${API_BASE}${path}`;
-      }
-
-      async function safeFetch(path, options) {
-        const url = buildUrl(path);
-        try {
-          const response = await fetch(url, options);
-          return { response, url };
-        } catch (error) {
-          if (error && error.name === 'TypeError') {
-            throw new Error(`Unable to reach backend at ${url}. Please ensure the server is running.`);
-          }
-          throw error;
-        }
-      }
-
-      async function fetchJson(path, options) {
-        const { response, url } = await safeFetch(path, options);
-        const data = await response.json();
-        return { response, url, data };
-      }
-
+      const API_BASE = '';
       const state = {
-        files: {},
-        model: null,
-        issues: [],
+        nodes: [],
+        nodesById: new Map(),
+        roots: [],
+        selectedId: null,
+        expanded: new Set(),
+        validation: new Map(),
+        differences: [],
+        filter: '',
+        lastSavedContent: '',
       };
 
-      function readFiles(input) {
-        const fileList = input.files;
-        if (!fileList || !fileList.length) {
-          return Promise.resolve({});
-        }
-        const promises = Array.from(fileList).map(file =>
-          file.text().then(text => [file.name, text])
-        );
-        return Promise.all(promises).then(entries => Object.fromEntries(entries));
+      const statusEl = document.getElementById('status');
+      const treeEl = document.getElementById('tree');
+      const validationListEl = document.getElementById('validation-list');
+      const differenceListEl = document.getElementById('difference-list');
+      const detailPanelEl = document.getElementById('detail-panel');
+      const searchInput = document.getElementById('tree-search');
+
+      function setStatus(message, tone = 'info') {
+        const palette = {
+          info: 'text-sky-300',
+          success: 'text-emerald-300',
+          warning: 'text-amber-300',
+          error: 'text-rose-300',
+        };
+        statusEl.className = `rounded-lg border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm ${palette[tone] || palette.info}`;
+        statusEl.textContent = message;
       }
 
-      function renderTree(model) {
-        const treeRoot = document.getElementById('tree');
-        treeRoot.innerHTML = '';
-        if (!model) {
-          return;
-        }
-        const nodesByParent = new Map();
-        model.compobj.entries.forEach(entry => {
-          const parent = entry.parentId || 0;
-          if (!nodesByParent.has(parent)) {
-            nodesByParent.set(parent, []);
-          }
-          nodesByParent.get(parent).push(entry);
+      function parseCompobj(content) {
+        const lines = content.split(/\r?\n/).filter(line => line.trim().length > 0);
+        const nodes = lines.map((line, index) => {
+          const parts = line.split(',');
+          const [id, level, code = '', name = '', parent = ''] = parts;
+          return {
+            id: Number(id),
+            level: Number(level),
+            code,
+            name,
+            parent: parent === undefined ? NaN : Number(parent),
+            raw: line,
+            lineNumber: index + 1,
+            order: index,
+            children: [],
+          };
         });
-        const fragment = document.createDocumentFragment();
-
-        function createNode(entry, depth) {
-          const li = document.createElement('li');
-          li.className = 'flex flex-col border border-slate-800 rounded-lg px-3 py-2 bg-slate-950/60 hover:bg-slate-900 transition';
-          li.style.marginLeft = `${depth * 12}px`;
-          li.innerHTML = `
-            <div class="flex justify-between items-center">
-              <span class="font-semibold">${entry.code || '(no code)'} · ${entry.name || '(no name)'}</span>
-              <span class="text-xs text-slate-400">ID ${entry.id} · L${entry.level}</span>
-            </div>
-          `;
-          li.addEventListener('click', event => {
-            event.stopPropagation();
-            renderDetail(entry);
-          });
-          fragment.appendChild(li);
-          const children = nodesByParent.get(entry.id) || [];
-          children.forEach(child => createNode(child, depth + 1));
-        }
-
-        (nodesByParent.get(0) || []).forEach(rootEntry => createNode(rootEntry, 0));
-        treeRoot.appendChild(fragment);
+        return nodes;
       }
 
-      function renderDetail(entry) {
-        const detail = document.getElementById('detail');
-        if (!entry) {
-          detail.textContent = '';
+      function rebuildStructure() {
+        state.nodesById = new Map();
+        state.nodes.forEach(node => {
+          node.children = [];
+          state.nodesById.set(node.id, node);
+        });
+        state.roots = [];
+        state.nodes.forEach((node, index) => {
+          node.order = index;
+          node.lineNumber = index + 1;
+          const parent = state.nodesById.get(node.parent);
+          if (parent && parent !== node) {
+            parent.children.push(node);
+          } else {
+            state.roots.push(node);
+          }
+        });
+        if (state.expanded.size === 0) {
+          state.roots.forEach(root => state.expanded.add(root.id));
+        }
+      }
+
+      function buildRaw(node) {
+        const parts = [node.id, node.level, node.code, node.name, node.parent];
+        node.raw = parts.join(',');
+      }
+
+      function renderTree() {
+        treeEl.innerHTML = '';
+        const query = state.filter.trim().toLowerCase();
+        const autoExpand = new Set();
+        const filterVisibility = new Map();
+        const visited = new Set();
+
+        function shouldInclude(node) {
+          if (!query) {
+            return true;
+          }
+          if (filterVisibility.has(node.id)) {
+            return filterVisibility.get(node.id);
+          }
+          if (visited.has(node.id)) {
+            return true;
+          }
+          visited.add(node.id);
+          const text = `${node.code} ${node.name}`.toLowerCase();
+          const selfMatch = text.includes(query);
+          let childMatch = false;
+          node.children.forEach(child => {
+            if (shouldInclude(child)) {
+              childMatch = true;
+            }
+          });
+          const result = selfMatch || childMatch;
+          if (result) {
+            autoExpand.add(node.id);
+          }
+          filterVisibility.set(node.id, result);
+          visited.delete(node.id);
+          return result;
+        }
+
+        const rootsToRender = state.roots.filter(root => shouldInclude(root));
+        if (query) {
+          rootsToRender.forEach(node => autoExpand.add(node.id));
+          autoExpand.forEach(id => state.expanded.add(id));
+        }
+
+        const frag = document.createDocumentFragment();
+
+        function createNode(node, depth) {
+          const children = node.children || [];
+          const hasChildren = children.length > 0;
+          const isExpanded = state.expanded.has(node.id);
+          const visibleChildren = query ? children.filter(child => shouldInclude(child)) : children;
+          const highestIssue = state.validation.get(node.id);
+          const severity = highestIssue ? highestIssue.type : 'none';
+          const tone =
+            severity === 'error'
+              ? 'border-rose-500/60 bg-rose-500/10'
+              : severity === 'warning'
+              ? 'border-amber-500/60 bg-amber-500/10'
+              : 'border-slate-800 bg-slate-950/60';
+          const indicator =
+            severity === 'error'
+              ? '🔴'
+              : severity === 'warning'
+              ? '🟡'
+              : '⚪️';
+
+          const li = document.createElement('li');
+          li.className = `rounded-xl border ${tone}`;
+          const wrapper = document.createElement('div');
+          wrapper.className = `${depth > 0 ? 'tree-connector ' : ''}flex items-stretch gap-3 px-4 py-3`;
+          wrapper.style.marginLeft = depth === 0 ? '0px' : '1.5rem';
+
+          const caret = document.createElement('button');
+          caret.type = 'button';
+          caret.className = `mt-1 flex h-6 w-6 flex-none items-center justify-center rounded-md border border-slate-700 bg-slate-900/70 text-xs transition ${
+            hasChildren ? 'hover:border-sky-500 hover:text-sky-300' : 'opacity-30 cursor-default'
+          }`;
+          caret.textContent = hasChildren ? (isExpanded ? '−' : '+') : '·';
+          if (hasChildren) {
+            caret.addEventListener('click', event => {
+              event.stopPropagation();
+              if (state.expanded.has(node.id)) {
+                state.expanded.delete(node.id);
+              } else {
+                state.expanded.add(node.id);
+              }
+              renderTree();
+            });
+          }
+
+          const content = document.createElement('button');
+          content.type = 'button';
+          content.className = `flex flex-1 flex-col rounded-lg border border-transparent px-3 py-2 text-left transition ${
+            state.selectedId === node.id ? 'bg-sky-500/20 border-sky-500/50 shadow-lg shadow-sky-500/10' : 'hover:bg-slate-800/70'
+          }`;
+          content.innerHTML = `
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-semibold tracking-wide text-slate-100">${node.code || '<span class="text-slate-500">(blank code)</span>'}</span>
+              <span class="text-xs text-slate-400">ID ${node.id} · L${node.level}</span>
+            </div>
+            <div class="text-xs text-slate-300">${node.name || '<span class="italic text-slate-500">(no name)</span>'}</div>
+          `;
+          content.addEventListener('click', () => {
+            state.selectedId = node.id;
+            renderTree();
+            renderDetail();
+          });
+
+          const badge = document.createElement('span');
+          badge.className = `flex h-6 w-6 flex-none items-center justify-center rounded-md border border-slate-700 bg-slate-900/60 text-xs`;
+          badge.textContent = indicator;
+
+          wrapper.appendChild(caret);
+          wrapper.appendChild(content);
+          wrapper.appendChild(badge);
+
+          li.appendChild(wrapper);
+
+          if (hasChildren && (isExpanded || query)) {
+            const childList = document.createElement('ul');
+            childList.className = 'mt-2 space-y-2';
+            (query ? visibleChildren : children).forEach(child => {
+              if (!query || shouldInclude(child)) {
+                childList.appendChild(createNode(child, depth + 1));
+              }
+            });
+            li.appendChild(childList);
+          }
+
+          return li;
+        }
+
+        rootsToRender.forEach(root => {
+          frag.appendChild(createNode(root, 0));
+        });
+
+        if (!rootsToRender.length) {
+          const empty = document.createElement('li');
+          empty.className = 'rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-6 text-center text-sm text-slate-400';
+          empty.textContent = query ? 'No nodes match your filter.' : 'Tree is empty. Load the file to begin.';
+          treeEl.appendChild(empty);
           return;
         }
-        detail.innerHTML = `
-          <div class="space-y-2">
-            <h3 class="text-lg font-semibold">Node ${entry.id}</h3>
-            <dl class="grid grid-cols-2 gap-2">
-              <dt class="text-slate-400">Level</dt>
-              <dd>${entry.level}</dd>
-              <dt class="text-slate-400">Code</dt>
-              <dd>${entry.code || '<em>blank</em>'}</dd>
-              <dt class="text-slate-400">Name</dt>
-              <dd>${entry.name || '<em>blank</em>'}</dd>
-              <dt class="text-slate-400">Parent ID</dt>
-              <dd>${entry.parentId || 0}</dd>
-              <dt class="text-slate-400">Line</dt>
-              <dd>${entry.lineNumber}</dd>
-            </dl>
-            <p class="text-xs text-slate-400">Raw: <code>${entry.raw}</code></p>
-          </div>
-        `;
+
+        treeEl.appendChild(frag);
       }
 
-      function renderIssues(issues) {
-        const list = document.getElementById('issue-list');
-        list.innerHTML = '';
+      function renderValidationList() {
+        validationListEl.innerHTML = '';
+        const issues = Array.from(state.validation.values()).flatMap(entry => entry.messages);
         if (!issues.length) {
           const li = document.createElement('li');
-          li.textContent = 'No issues detected.';
-          li.className = 'text-emerald-400';
-          list.appendChild(li);
+          li.className = 'rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-slate-300';
+          li.textContent = 'No validation issues loaded.';
+          validationListEl.appendChild(li);
           return;
         }
-        issues.forEach(issue => {
-          const li = document.createElement('li');
-          const tone = issue.severity === 'error' ? 'text-rose-400' : 'text-amber-300';
-          li.className = `border border-slate-800 rounded-md px-3 py-2 bg-slate-950/60 ${tone}`;
-          li.innerHTML = `
-            <div class="font-semibold">${issue.severity.toUpperCase()} · ${issue.code}</div>
-            <div>${issue.message}</div>
-            <div class="text-xs text-slate-500">${issue.file} · line ${issue.line}</div>
-          `;
-          list.appendChild(li);
-        });
-      }
-
-      function setLoading(button, loading) {
-        button.disabled = loading;
-        button.textContent = loading ? 'Working…' : button.dataset.label;
-      }
-
-      document.querySelectorAll('button').forEach(button => {
-        button.dataset.label = button.textContent;
-      });
-
-      document.getElementById('parse-button').addEventListener('click', async () => {
-        const input = document.getElementById('file-input');
-        const status = document.getElementById('parse-status');
-        status.textContent = '';
-        const localFiles = await readFiles(input);
-        if (!Object.keys(localFiles).length) {
-          status.textContent = 'Select the eight required files before parsing.';
-          return;
-        }
-        state.files = localFiles;
-        setLoading(document.getElementById('parse-button'), true);
-        try {
-          const { data } = await fetchJson('/parse', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: localFiles }),
+        issues
+          .sort((a, b) => (a.type === b.type ? a.line - b.line : a.type === 'error' ? -1 : 1))
+          .forEach(issue => {
+            const li = document.createElement('li');
+            const tone = issue.type === 'error' ? 'border-rose-500/40 bg-rose-500/10 text-rose-100' : 'border-amber-500/40 bg-amber-500/10 text-amber-100';
+            li.className = `rounded-lg border px-4 py-3 text-sm ${tone}`;
+            li.innerHTML = `
+              <div class="font-semibold uppercase tracking-wide">${issue.type === 'error' ? 'Error' : 'Warning'} · ID ${issue.id}</div>
+              <div class="mt-1 text-slate-100">${issue.message}</div>
+              <div class="mt-1 text-xs text-slate-200/70">Line ${issue.line}</div>
+            `;
+            validationListEl.appendChild(li);
           });
-          if (!data.ok) {
-            throw new Error(data.error || 'Unable to parse files.');
+      }
+
+      function renderDifferences() {
+        differenceListEl.innerHTML = '';
+        if (!state.differences.length) {
+          const li = document.createElement('li');
+          li.className = 'rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-slate-300';
+          li.textContent = 'No comparison results yet.';
+          differenceListEl.appendChild(li);
+          return;
+        }
+        state.differences
+          .sort((a, b) => a.id - b.id)
+          .forEach(diff => {
+            const tone =
+              diff.type === 'changed'
+                ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-100'
+                : diff.type === 'added'
+                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100'
+                : 'border-rose-500/40 bg-rose-500/10 text-rose-100';
+            const li = document.createElement('li');
+            li.className = `rounded-lg border px-4 py-3 text-sm ${tone}`;
+            li.innerHTML = `
+              <div class="font-semibold uppercase tracking-wide">${diff.type.toUpperCase()} · ID ${diff.id}</div>
+              ${diff.baseline ? `<div class="mt-1 text-xs">Baseline: <code class="break-all">${diff.baseline}</code></div>` : ''}
+              ${diff.current ? `<div class="mt-1 text-xs">Current: <code class="break-all">${diff.current}</code></div>` : ''}
+            `;
+            differenceListEl.appendChild(li);
+          });
+      }
+
+      function renderDetail() {
+        const node = state.nodesById.get(state.selectedId);
+        if (!node) {
+          detailPanelEl.innerHTML = '<p class="text-slate-400">Select a node from the tree to edit its properties.</p>';
+          return;
+        }
+        const severity = state.validation.get(node.id);
+        const issueList = severity ? severity.messages : [];
+        detailPanelEl.innerHTML = `
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-xl font-semibold text-slate-100">Node ${node.id}</h3>
+              <p class="text-xs uppercase tracking-wide text-slate-400">Line ${node.lineNumber}</p>
+            </div>
+            <div class="space-y-3">
+              <label class="flex flex-col gap-2 text-sm">
+                <span class="text-slate-300">Level</span>
+                <input type="number" id="detail-level" class="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none" value="${node.level}" />
+              </label>
+              <label class="flex flex-col gap-2 text-sm">
+                <span class="text-slate-300">Code</span>
+                <input type="text" id="detail-code" class="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none" value="${node.code}" />
+              </label>
+              <label class="flex flex-col gap-2 text-sm">
+                <span class="text-slate-300">Name</span>
+                <input type="text" id="detail-name" class="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none" value="${node.name}" />
+              </label>
+              <label class="flex flex-col gap-2 text-sm">
+                <span class="text-slate-300">Parent ID</span>
+                <input type="number" id="detail-parent" class="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-slate-100 focus:border-sky-500 focus:outline-none" value="${node.parent}" />
+              </label>
+            </div>
+            <div class="space-y-1 text-xs text-slate-400">
+              <div>Raw: <code class="break-all">${node.raw}</code></div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <button id="detail-save" class="rounded-md bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-emerald-400">Save Changes</button>
+              <button id="detail-add-child" class="rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-sky-400">Add Child</button>
+              <button id="detail-delete" class="rounded-md bg-rose-500 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-rose-400">Delete Node</button>
+            </div>
+            ${issueList && issueList.length
+              ? `<div class="space-y-2 rounded-lg border ${
+                  severity.type === 'error' ? 'border-rose-500/40 bg-rose-500/10' : 'border-amber-500/40 bg-amber-500/10'
+                } px-4 py-3 text-xs text-slate-100">
+                  <div class="font-semibold uppercase tracking-wide">Issues</div>
+                  <ul class="space-y-1">
+                    ${issueList
+                      .map(issue => `<li>• ${issue.message} (line ${issue.line})</li>`)
+                      .join('')}
+                  </ul>
+                </div>`
+              : ''}
+          </div>
+        `;
+        document.getElementById('detail-save').addEventListener('click', saveDetailChanges);
+        document.getElementById('detail-add-child').addEventListener('click', addChildFromDetail);
+        document.getElementById('detail-delete').addEventListener('click', deleteSelectedNode);
+      }
+
+      async function loadFile() {
+        setStatus('Loading compobj.txt…', 'info');
+        try {
+          const response = await fetch(`${API_BASE}/api/file/compobj.txt`);
+          if (!response.ok) {
+            throw new Error('Failed to load compobj.txt');
           }
-          state.model = data.model;
-          renderTree(state.model);
-          renderDetail(null);
-          status.textContent = 'Files parsed successfully.';
+          let data;
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            throw new Error('Received an invalid response while loading compobj.txt');
+          }
+          if (!data.ok) {
+            throw new Error(data.error || 'Failed to load compobj.txt');
+          }
+          state.nodes = parseCompobj(data.content);
+          state.expanded = new Set();
+          rebuildStructure();
+          state.lastSavedContent = data.content;
+          state.validation = new Map();
+          state.differences = [];
+          state.selectedId = null;
+          setStatus('compobj.txt loaded successfully.', 'success');
+          renderTree();
+          renderValidationList();
+          renderDifferences();
+          renderDetail();
         } catch (error) {
           console.error(error);
-          status.textContent = error.message;
-        } finally {
-          setLoading(document.getElementById('parse-button'), false);
+          setStatus(error.message, 'error');
         }
-      });
+      }
 
-      document.getElementById('validate-button').addEventListener('click', async () => {
-        const button = document.getElementById('validate-button');
-        if (!Object.keys(state.files).length) {
-          renderIssues([{ severity: 'error', code: 'NO_FILES', message: 'Load files first.', file: 'N/A', line: 0 }]);
+      async function saveFile() {
+        if (!state.nodes.length) {
+          setStatus('Nothing to save. Load the file first.', 'warning');
           return;
         }
-        setLoading(button, true);
+        const payload = state.nodes.map(node => node.raw).join('\n');
         try {
-          const { response, data } = await fetchJson('/validate', {
+          setStatus('Saving changes…', 'info');
+          const response = await fetch(`${API_BASE}/api/file/compobj.txt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: state.files }),
+            body: JSON.stringify({ content: payload }),
           });
-          if (!response.ok) {
-            throw new Error(data.error || 'Validation failed.');
+          let data = {};
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            throw new Error('Received an invalid response while saving compobj.txt');
           }
-          state.issues = data.issues || [];
-          renderIssues(state.issues);
+          if (!response.ok || !data.ok) {
+            throw new Error(data.error || 'Failed to save file');
+          }
+          state.lastSavedContent = payload;
+          setStatus('File saved successfully.', 'success');
         } catch (error) {
-          renderIssues([{ severity: 'error', code: 'REQUEST_FAILED', message: error.message, file: 'N/A', line: 0 }]);
-        } finally {
-          setLoading(button, false);
+          console.error(error);
+          setStatus(error.message, 'error');
         }
-      });
+      }
 
-      document.getElementById('autofix-button').addEventListener('click', async () => {
-        const button = document.getElementById('autofix-button');
-        if (!Object.keys(state.files).length) {
-          alert('Load files before requesting auto-fix.');
+      function saveDetailChanges() {
+        const node = state.nodesById.get(state.selectedId);
+        if (!node) return;
+        const levelInput = document.getElementById('detail-level');
+        const codeInput = document.getElementById('detail-code');
+        const nameInput = document.getElementById('detail-name');
+        const parentInput = document.getElementById('detail-parent');
+        node.level = Number(levelInput.value);
+        node.code = codeInput.value.trim();
+        node.name = nameInput.value;
+        node.parent = Number(parentInput.value);
+        buildRaw(node);
+        rebuildStructure();
+        renderTree();
+        renderDetail();
+        saveFile();
+      }
+
+      function findMaxId() {
+        return state.nodes.reduce((max, node) => Math.max(max, Number.isFinite(node.id) ? node.id : max), 0);
+      }
+
+      function generateChildCode(parent) {
+        const siblings = parent.children || [];
+        const prefix = parent.code.trim().startsWith('C') ? 'S' : parent.code.trim().startsWith('S') ? 'G' : 'N';
+        let maxNumber = 0;
+        siblings.forEach(sibling => {
+          if (typeof sibling.code === 'string' && sibling.code.startsWith(prefix)) {
+            const maybeNumber = Number(sibling.code.slice(prefix.length));
+            if (Number.isFinite(maybeNumber)) {
+              maxNumber = Math.max(maxNumber, maybeNumber);
+            }
+          }
+        });
+        const nextNumber = maxNumber + 1;
+        return `${prefix}${nextNumber}`;
+      }
+
+      function insertAfterParentSubtree(parent, newNode) {
+        const parentIndex = state.nodes.findIndex(n => n.id === parent.id);
+        if (parentIndex === -1) {
+          state.nodes.push(newNode);
           return;
         }
-        setLoading(button, true);
+        let insertIndex = parentIndex + 1;
+        for (let i = parentIndex + 1; i < state.nodes.length; i += 1) {
+          const node = state.nodes[i];
+          if (node.level <= parent.level) {
+            insertIndex = i;
+            break;
+          }
+          insertIndex = i + 1;
+        }
+        state.nodes.splice(insertIndex, 0, newNode);
+      }
+
+      function addChildFromDetail() {
+        const parent = state.nodesById.get(state.selectedId);
+        if (!parent) return;
+        const newId = findMaxId() + 1;
+        const level = parent.level + 1;
+        const code = generateChildCode(parent);
+        const name = '';
+        const parentId = parent.id;
+        const raw = [newId, level, code, name, parentId].join(',');
+        const newNode = {
+          id: newId,
+          level,
+          code,
+          name,
+          parent: parentId,
+          raw,
+          lineNumber: state.nodes.length + 1,
+          order: state.nodes.length,
+          children: [],
+        };
+        insertAfterParentSubtree(parent, newNode);
+        buildRaw(newNode);
+        rebuildStructure();
+        state.expanded.add(parent.id);
+        state.expanded.add(newId);
+        state.selectedId = newId;
+        renderTree();
+        renderDetail();
+        saveFile();
+      }
+
+      function deleteSelectedNode() {
+        const node = state.nodesById.get(state.selectedId);
+        if (!node) return;
+        if (!confirm(`Delete node ${node.id} and all of its children?`)) {
+          return;
+        }
+        const idsToRemove = new Set();
+        (function markForRemoval(target) {
+          idsToRemove.add(target.id);
+          (target.children || []).forEach(child => markForRemoval(child));
+        })(node);
+        state.nodes = state.nodes.filter(item => !idsToRemove.has(item.id));
+        idsToRemove.forEach(id => state.expanded.delete(id));
+        state.selectedId = null;
+        rebuildStructure();
+        renderTree();
+        renderDetail();
+        saveFile();
+      }
+
+      async function validateFile() {
+        if (!state.nodes.length) {
+          setStatus('Load the file before running validation.', 'warning');
+          return;
+        }
+        setStatus('Running validation…', 'info');
         try {
-          const { data } = await fetchJson('/autofix', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: state.files }),
+          const response = await fetch(`${API_BASE}/api/validate/compobj`);
+          if (!response.ok) {
+            throw new Error('Validation failed to run');
+          }
+          const issues = await response.json();
+          if (!Array.isArray(issues)) {
+            throw new Error('Unexpected validation response');
+          }
+          const map = new Map();
+          const severityRank = { warning: 1, error: 2 };
+          issues.forEach(issue => {
+            const existing = map.get(issue.id);
+            const entry = existing || { type: 'none', messages: [] };
+            entry.messages.push(issue);
+            const severity = issue.type === 'error' ? 'error' : 'warning';
+            if (!existing || severityRank[severity] > severityRank[existing.type] || existing.type === 'none') {
+              entry.type = severity;
+            }
+            map.set(issue.id, entry);
           });
+          state.validation = map;
+          renderTree();
+          renderValidationList();
+          setStatus('Validation results loaded.', 'success');
+        } catch (error) {
+          console.error(error);
+          setStatus(error.message, 'error');
+        }
+      }
+
+      async function compareFile() {
+        if (!state.nodes.length) {
+          setStatus('Load the file before comparing.', 'warning');
+          return;
+        }
+        setStatus('Comparing against default file…', 'info');
+        try {
+          const response = await fetch(`${API_BASE}/api/compare/compobj`);
+          if (!response.ok) {
+            throw new Error('Compare request failed');
+          }
+          let data;
+          try {
+            data = await response.json();
+          } catch (parseError) {
+            throw new Error('Received an invalid response while comparing files');
+          }
           if (!data.ok) {
-            throw new Error(data.error || 'Auto-fix failed.');
+            throw new Error(data.error || 'Compare request failed');
           }
-          state.files = data.files;
-          alert('Auto-fix applied. Re-run validation to review the updated issues.');
+          state.differences = Array.isArray(data.differences) ? data.differences : [];
+          renderDifferences();
+          setStatus('Comparison complete.', 'success');
         } catch (error) {
-          alert(error.message);
-        } finally {
-          setLoading(button, false);
+          console.error(error);
+          setStatus(error.message, 'error');
         }
-      });
+      }
 
-      document.getElementById('export-button').addEventListener('click', async () => {
-        if (!Object.keys(state.files).length) {
-          alert('Load files before exporting.');
+      function addNewCompetition() {
+        if (!state.nodes.length) {
+          setStatus('Load the file before adding new competitions.', 'warning');
           return;
         }
-        try {
-          const { response } = await safeFetch('/export', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ files: state.files }),
-          });
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(data.error || 'Export failed.');
-          }
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'mod-export.zip';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        } catch (error) {
-          alert(error.message);
+        const rootParent = state.nodes.find(node => node.level === 0) || state.roots[0];
+        const parentId = rootParent ? rootParent.id : -1;
+        const parentLevel = rootParent ? rootParent.level : 0;
+        const newId = findMaxId() + 1;
+        const level = parentLevel + 1;
+        const code = `C${newId}`;
+        const name = `NewCompetition_${newId}`;
+        const raw = [newId, level, code, name, parentId].join(',');
+        const newNode = {
+          id: newId,
+          level,
+          code,
+          name,
+          parent: parentId,
+          raw,
+          lineNumber: state.nodes.length + 1,
+          order: state.nodes.length,
+          children: [],
+        };
+        state.nodes.push(newNode);
+        buildRaw(newNode);
+        rebuildStructure();
+        if (parentId !== -1) {
+          state.expanded.add(parentId);
         }
+        state.expanded.add(newId);
+        state.selectedId = newId;
+        renderTree();
+        renderDetail();
+        saveFile();
+      }
+
+      document.getElementById('load-file').addEventListener('click', loadFile);
+      document.getElementById('save-file').addEventListener('click', saveFile);
+      document.getElementById('validate-file').addEventListener('click', validateFile);
+      document.getElementById('compare-file').addEventListener('click', compareFile);
+      document.getElementById('add-competition').addEventListener('click', addNewCompetition);
+      searchInput.addEventListener('input', event => {
+        state.filter = event.target.value;
+        renderTree();
       });
+
+      setStatus('Click “Load File” to fetch compobj.txt.', 'info');
+      loadFile();
     </script>
   </body>
 </html>
