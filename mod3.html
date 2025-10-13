@@ -1065,7 +1065,7 @@
         tr.className = `border-b border-slate-100 dark:border-slate-700 cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-slate-700/60 ${highlightClass || baseTint}`;
         if(isSelected) tr.classList.add('level-selected');
         tr.innerHTML = `
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.id ?? ''}"></td>
           <td class="p-2"><input data-f="level" data-i="${rowIndex}" class="w-12 p-1 border rounded" value="${r.level ?? ''}"></td>
           <td class="p-2"><input data-f="code" data-i="${rowIndex}" class="w-32 p-1 border rounded" value="${r.code ?? ''}"></td>
@@ -1342,7 +1342,7 @@
         const tr=document.createElement('tr');
         tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="fromId" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.fromId}"></td>
           <td class="p-2"><input data-f="qualifier" data-i="${rowIndex}" class="w-16 p-1 border rounded" value="${r.qualifier}"></td>
           <td class="p-2"><input data-f="toId" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.toId}"></td>
@@ -1451,7 +1451,7 @@
         const slotNum=r.slot===''?NaN:Number(r.slot);
         const teamLabel=Number.isFinite(slotNum)?`Team ${slotNum+1}`:'';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="groupId" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.groupId}"></td>
           <td class="p-2"><input data-f="slot" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.slot}"></td>
           <td class="p-2 text-slate-600">${teamLabel}</td>
@@ -1577,7 +1577,7 @@
         const tr=document.createElement('tr');
         tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.id ?? ''}"></td>
           <td class="p-2"><input data-f="key" data-i="${rowIndex}" class="w-40 p-1 border rounded" value="${r.key ?? ''}"></td>
           <td class="p-2"><input data-f="value" data-i="${rowIndex}" class="w-48 p-1 border rounded" value="${r.value ?? ''}"></td>
@@ -1690,7 +1690,7 @@
         const tr=document.createElement('tr');
         tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="stage" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.stage ?? ''}"></td>
           <td class="p-2"><input data-f="date" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.date ?? ''}"></td>
           <td class="p-2"><input data-f="round" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.round ?? ''}"></td>
@@ -1968,7 +1968,7 @@
         const tr=document.createElement('tr');
         tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="trophyLine" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.trophyLine}"></td>
           <td class="p-2"><input data-f="phase" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.phase}"></td>
           <td class="p-2"><input data-f="taskType" data-i="${rowIndex}" class="w-40 p-1 border rounded" value="${r.taskType}"></td>
@@ -2072,7 +2072,7 @@
         const tr=document.createElement('tr');
         tr.className=pos%2?'bg-white':'bg-slate-50';
         tr.innerHTML=`
-          <td class="p-2">${rowIndex+1}</td>
+          <td class="p-2">${pos+1}</td>
           <td class="p-2"><input data-f="fed" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.fed ?? ''}"></td>
           <td class="p-2"><input data-f="day" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.day ?? ''}"></td>
           <td class="p-2"><input data-f="type" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.type ?? ''}"></td>
