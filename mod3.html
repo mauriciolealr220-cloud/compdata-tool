@@ -9,6 +9,22 @@
     :root { color-scheme: light dark; }
     .row-dirty { outline: 2px dashed rgb(251 191 36 / 0.7); }
     .sticky-th { position: sticky; top: 0; z-index: 10; }
+    .level-comp { background-color: rgba(16, 185, 129, 0.18); }
+    .level-stage { background-color: rgba(14, 165, 233, 0.18); }
+    .level-group { background-color: rgba(251, 191, 36, 0.2); }
+    .level-selected { outline: 2px solid rgba(79, 70, 229, 0.6); outline-offset: -2px; }
+    #rowEditorModal.hidden { display: none; }
+    #rowEditorModal { position: fixed; inset: 0; background-color: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 50; }
+    #rowEditorModal .modal-card { max-width: 32rem; width: 100%; }
+    @media (max-width: 640px) {
+      #rowEditorModal { align-items: flex-end; }
+      #rowEditorModal .modal-card { border-radius: 1.25rem 1.25rem 0 0; }
+    }
+    @media (prefers-color-scheme: dark) {
+      .level-comp { background-color: rgba(16, 185, 129, 0.35); }
+      .level-stage { background-color: rgba(14, 165, 233, 0.35); }
+      .level-group { background-color: rgba(251, 191, 36, 0.35); }
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-900 p-6">
@@ -90,13 +106,32 @@
         </table>
       </div>
 
-      <div class="mt-4 flex gap-2">
+      <div class="mt-4 flex flex-wrap gap-2">
         <button id="addLineBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Line</button>
+        <button id="addStageBtn" class="px-3 py-2 bg-emerald-600 text-white rounded">+ Add Stage</button>
+        <button id="addGroupBtn" class="px-3 py-2 bg-sky-600 text-white rounded">+ Add Group</button>
         <button id="sortByIdBtn" class="px-3 py-2 bg-slate-500 text-white rounded">Sort by ID</button>
         <button id="validateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
       </div>
 
       <div id="messages" class="mt-3 text-sm"></div>
+
+      <div class="mt-4 grid gap-4 lg:grid-cols-[3fr,2fr]">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-slate-700">Hierarchy Preview</h3>
+            <span class="text-xs text-slate-500">Level colors: <span class="inline-flex items-center gap-1"><span class="inline-block h-3 w-3 rounded-sm" style="background-color: rgba(16,185,129,0.6);"></span>Comp</span> · <span class="inline-flex items-center gap-1"><span class="inline-block h-3 w-3 rounded-sm" style="background-color: rgba(14,165,233,0.6);"></span>Stage</span> · <span class="inline-flex items-center gap-1"><span class="inline-block h-3 w-3 rounded-sm" style="background-color: rgba(251,191,36,0.6);"></span>Group</span></span>
+          </div>
+          <div id="hierarchyPreview" class="text-sm bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded p-3 max-h-80 overflow-auto"></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-slate-700">Advancement Relationships</h3>
+            <span class="text-xs text-slate-500">Read-only</span>
+          </div>
+          <div id="relationshipsViewer" class="text-sm bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-700 rounded p-3 max-h-80 overflow-auto text-slate-700 dark:text-slate-200">Load a competition file to preview relationships.</div>
+        </div>
+      </div>
     </section>
 
     <!-- ===================== -->
@@ -363,6 +398,63 @@
 
   </div>
 
+  <!-- Row Editor Modal -->
+  <div id="rowEditorModal" class="hidden">
+    <div class="modal-card bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="text-lg font-semibold">Line Editor</h3>
+          <p class="text-xs text-slate-500">Update the selected line without regenerating other entries.</p>
+        </div>
+        <button id="rowEditorClose" class="text-slate-500 hover:text-slate-700 dark:hover:text-slate-200" aria-label="Close editor">✕</button>
+      </div>
+
+      <div class="grid gap-3">
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Line Type
+          <select id="rowTypeSelect" class="mt-1 w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded">
+            <option value="competition">Competition (Level 3)</option>
+            <option value="stage">Stage (Level 4)</option>
+            <option value="group">Group (Level 5)</option>
+          </select>
+        </label>
+        <label id="stageSubtypeWrapper" class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Stage subtype
+          <select id="stageSubtypeSelect" class="mt-1 w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded">
+            <option value="LEAGUE">League</option>
+            <option value="GROUP">Group</option>
+            <option value="PLAYOFF">Playoff</option>
+            <option value="SEMI_FINAL">Semi-Final</option>
+            <option value="FINAL">Final</option>
+            <option value="custom">Custom (keep code)</option>
+          </select>
+        </label>
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Code
+          <input id="rowCodeInput" type="text" class="mt-1 w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded" />
+        </label>
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Name
+          <input id="rowNameInput" type="text" class="mt-1 w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded" />
+        </label>
+        <label class="text-sm font-medium text-slate-600 dark:text-slate-300">
+          Parent ID
+          <input id="rowParentInput" type="text" class="mt-1 w-full p-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded" />
+        </label>
+      </div>
+
+      <div>
+        <h4 class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">Advancement Relationships</h4>
+        <div id="modalRelationships" class="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-2 max-h-32 overflow-auto text-slate-600 dark:text-slate-200"></div>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button id="rowEditorCancel" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-200">Cancel</button>
+        <button id="rowEditorSave" class="px-3 py-2 rounded bg-indigo-600 text-white">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===================== -->
   <!-- JavaScript -->
   <!-- ===================== -->
@@ -391,12 +483,105 @@
     const tbody = document.getElementById('tbody');
     const competitionSelect = document.getElementById('competitionSelect');
     const competitionSummary = document.getElementById('competitionSummary');
+    const messagesEl = document.getElementById('messages');
+    const hierarchyPreview = document.getElementById('hierarchyPreview');
+    const relationshipsViewer = document.getElementById('relationshipsViewer');
+    const modalRelationships = document.getElementById('modalRelationships');
+    const rowEditorModal = document.getElementById('rowEditorModal');
+    const rowTypeSelect = document.getElementById('rowTypeSelect');
+    const stageSubtypeWrapper = document.getElementById('stageSubtypeWrapper');
+    const stageSubtypeSelect = document.getElementById('stageSubtypeSelect');
+    const rowCodeInput = document.getElementById('rowCodeInput');
+    const rowNameInput = document.getElementById('rowNameInput');
+    const rowParentInput = document.getElementById('rowParentInput');
+    const rowEditorSave = document.getElementById('rowEditorSave');
+    const rowEditorCancel = document.getElementById('rowEditorCancel');
+    const rowEditorClose = document.getElementById('rowEditorClose');
+
+    let selectedRowIndex = -1;
+    const stageSubtypeTokens = [
+      {value:'LEAGUE', label:'League'},
+      {value:'GROUP', label:'Group'},
+      {value:'PLAYOFF', label:'Playoff'},
+      {value:'SEMI_FINAL', label:'Semi-Final'},
+      {value:'FINAL', label:'Final'}
+    ];
 
     let weatherRows = [];
     let weatherRawLines = [];
 
     function normalizeId(value){
       return String(value ?? '').trim();
+    }
+
+    function normalizeIdUpper(value){
+      return normalizeId(value).toUpperCase();
+    }
+
+    function escapeHtml(value){
+      return String(value ?? '').replace(/[&<>"']/g, ch=>({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      })[ch] || ch);
+    }
+
+    function getRowTypeFromLevel(level){
+      const norm = normalizeId(level);
+      if(norm==='3') return 'competition';
+      if(norm==='4') return 'stage';
+      if(norm==='5') return 'group';
+      return 'unknown';
+    }
+
+    function getLevelFromType(type){
+      if(type==='competition') return '3';
+      if(type==='stage') return '4';
+      if(type==='group') return '5';
+      return '';
+    }
+
+    function levelClassFromType(type){
+      if(type==='competition') return 'level-comp';
+      if(type==='stage') return 'level-stage';
+      if(type==='group') return 'level-group';
+      return '';
+    }
+
+    function typeDotClass(type){
+      if(type==='competition') return 'bg-emerald-500';
+      if(type==='stage') return 'bg-sky-500';
+      if(type==='group') return 'bg-amber-500';
+      return 'bg-slate-400';
+    }
+
+    function deriveStageSubtype(code){
+      const upper = normalizeIdUpper(code);
+      const match = stageSubtypeTokens.find(opt=>upper.startsWith(opt.value));
+      return match ? match.value : 'custom';
+    }
+
+    function mergeStageSubtypeWithCode(subtype, currentCode){
+      if(subtype==='custom') return currentCode;
+      const suffixMatch = /_(\d+)$/i.exec(normalizeId(currentCode));
+      const suffix = suffixMatch ? `_${suffixMatch[1]}` : '';
+      return `${subtype}${suffix}`;
+    }
+
+    function ensureStageSubtypeVisibility(type){
+      if(!stageSubtypeWrapper) return;
+      stageSubtypeWrapper.classList.toggle('hidden', type!=='stage');
+    }
+
+    function describeRowLabel(row){
+      const type = getRowTypeFromLevel(row?.level);
+      const idLabel = escapeHtml(row?.id || '?');
+      const nameLabel = escapeHtml(row?.name || '(no name)');
+      const code = row?.code ? ` <span class="text-slate-400 dark:text-slate-500">[${escapeHtml(row.code)}]</span>` : '';
+      const typeLabel = type==='unknown' ? `Level ${escapeHtml(row?.level || '?')}` : type.charAt(0).toUpperCase() + type.slice(1);
+      return `<span class="font-medium">${typeLabel}</span> <span class="text-slate-500 dark:text-slate-400">#${idLabel}</span> — ${nameLabel}${code}`;
     }
 
     function rowMatchesScope(row, keys){
@@ -411,6 +596,335 @@
         if(rowMatchesScope(row, keys)) indexes.push(idx);
       });
       return indexes;
+    }
+
+    function buildRelationshipHtml(rowId){
+      const normalized = normalizeId(rowId);
+      if(!normalized){
+        return '<p class="text-slate-500 dark:text-slate-300">Select a row to inspect relationships.</p>';
+      }
+
+      const outgoing = [];
+      const incoming = [];
+      advRows.forEach((row, idx)=>{
+        const fromId = normalizeId(row.fromId);
+        const toId = normalizeId(row.toId);
+        const qualifier = row.qualifier ? ` · ${escapeHtml(row.qualifier)}` : '';
+        const slot = row.slot ? ` · slot ${escapeHtml(row.slot)}` : '';
+        if(fromId === normalized){
+          outgoing.push(`Adv #${idx+1}: → ${escapeHtml(row.toId || '?')}${qualifier}${slot}`);
+        }
+        if(toId === normalized){
+          incoming.push(`Adv #${idx+1}: ← ${escapeHtml(row.fromId || '?')}${qualifier}${slot}`);
+        }
+      });
+
+      const standings = [];
+      standingsRows.forEach((row, idx)=>{
+        if(normalizeId(row.groupId) === normalized){
+          const slotLabel = row.slot === '' ? 'slot ?' : `slot ${escapeHtml(row.slot)}`;
+          standings.push(`Standings #${idx+1}: ${slotLabel}`);
+        }
+      });
+
+      const settingsLinks = [];
+      settingRows.forEach((row, idx)=>{
+        if(normalizeId(row.id) === normalized){
+          const key = escapeHtml(row.key ?? '');
+          const value = escapeHtml(row.value ?? '');
+          settingsLinks.push(`Setting #${idx+1}: ${key}${value ? ` = ${value}` : ''}`);
+        }
+      });
+
+      const scheduleLinks = [];
+      scheduleRows.forEach((row, idx)=>{
+        if(normalizeId(row.stage) === normalized){
+          const round = row.round ? ` · Round ${escapeHtml(row.round)}` : '';
+          const date = row.date ? ` · Date ${escapeHtml(row.date)}` : '';
+          const time = row.time ? ` · Time ${escapeHtml(row.time)}` : '';
+          scheduleLinks.push(`Schedule #${idx+1}${round}${date}${time}`);
+        }
+      });
+
+      const taskLinks = [];
+      const taskFields = ['trophyLine','arg1','arg2','arg3','arg4'];
+      taskRows.forEach((row, idx)=>{
+        const matches = taskFields.filter(field=>normalizeId(row[field]) === normalized);
+        if(matches.length){
+          const roleLabel = matches.map(field=>field==='trophyLine'?'Trophy Line':field.toUpperCase()).join(', ');
+          taskLinks.push(`Task #${idx+1}: ${escapeHtml(row.taskType ?? '')} (${escapeHtml(roleLabel)})`);
+        }
+      });
+
+      const sections = [];
+      const renderSection = (title, items)=>{
+        if(!items.length) return '';
+        return `<div class="mb-2"><div class="font-medium text-slate-600 dark:text-slate-300">${title}</div><ul class="list-disc list-inside text-slate-600 dark:text-slate-200 space-y-0.5">${items.map(item=>`<li>${item}</li>`).join('')}</ul></div>`;
+      };
+      sections.push(renderSection('Outgoing advancement', outgoing));
+      sections.push(renderSection('Incoming advancement', incoming));
+      sections.push(renderSection('Standings slots', standings));
+      sections.push(renderSection('Settings', settingsLinks));
+      sections.push(renderSection('Schedule rows', scheduleLinks));
+      sections.push(renderSection('Tasks', taskLinks));
+
+      const content = sections.filter(Boolean).join('');
+      if(!content){
+        return `<p class="text-slate-500 dark:text-slate-300">No linked lines reference ID ${escapeHtml(normalized)}.</p>`;
+      }
+      return content;
+    }
+
+    function updateRelationshipPanels(rowId){
+      const html = buildRelationshipHtml(rowId);
+      if(relationshipsViewer){
+        relationshipsViewer.innerHTML = html;
+      }
+      if(modalRelationships){
+        modalRelationships.innerHTML = html;
+      }
+    }
+
+    function renderHierarchyPreview(){
+      if(!hierarchyPreview) return;
+      const indexes = getVisibleIndexes(rows, ['id','parent']);
+      if(!indexes.length){
+        hierarchyPreview.innerHTML = '<p class="text-slate-500 dark:text-slate-300">Load a competition file to view its hierarchy.</p>';
+        return;
+      }
+
+      const nodes = indexes.map(index=>({index, row: rows[index]}));
+      const idToNode = new Map();
+      nodes.forEach(node=>{
+        const id = normalizeId(node.row.id);
+        if(id) idToNode.set(id, node);
+      });
+
+      const parentToChildren = new Map();
+      nodes.forEach(node=>{
+        const parentId = normalizeId(node.row.parent);
+        if(!parentToChildren.has(parentId)) parentToChildren.set(parentId, []);
+        parentToChildren.get(parentId).push(node);
+      });
+
+      parentToChildren.forEach(children=>{
+        children.sort((a,b)=>{
+          const levelDiff = (Number(a.row.level) || 0) - (Number(b.row.level) || 0);
+          if(levelDiff !== 0) return levelDiff;
+          const nameDiff = (a.row.name || '').localeCompare(b.row.name || '', undefined, {numeric:true, sensitivity:'base'});
+          if(nameDiff !== 0) return nameDiff;
+          return normalizeId(a.row.id).localeCompare(normalizeId(b.row.id), undefined, {numeric:true, sensitivity:'base'});
+        });
+      });
+
+      const roots = [];
+      nodes.forEach(node=>{
+        const parentId = normalizeId(node.row.parent);
+        if(!parentId || !idToNode.has(parentId)){
+          roots.push(node);
+        }
+      });
+      if(!roots.length){
+        nodes.forEach(node=>{
+          if(getRowTypeFromLevel(node.row.level) === 'competition'){
+            roots.push(node);
+          }
+        });
+      }
+
+      if(!roots.length){
+        hierarchyPreview.innerHTML = '<p class="text-slate-500 dark:text-slate-300">No hierarchical data available.</p>';
+        return;
+      }
+
+      const visited = new Set();
+      const rootList = document.createElement('ul');
+      rootList.className = 'space-y-1 text-slate-700 dark:text-slate-200 text-sm';
+
+      function renderNode(node, container){
+        const nodeId = normalizeId(node.row.id) || `__${node.index}`;
+        if(visited.has(nodeId)) return;
+        visited.add(nodeId);
+        const li = document.createElement('li');
+        const wrapper = document.createElement('div');
+        const type = getRowTypeFromLevel(node.row.level);
+        const isSelected = node.index === selectedRowIndex;
+        wrapper.className = `flex items-center gap-2 ${isSelected ? 'text-indigo-600 dark:text-indigo-300 font-semibold' : ''}`;
+        const dot = document.createElement('span');
+        dot.className = `inline-block h-2.5 w-2.5 rounded-full ${typeDotClass(type)}`;
+        wrapper.appendChild(dot);
+        const label = document.createElement('span');
+        label.innerHTML = describeRowLabel(node.row);
+        wrapper.appendChild(label);
+        li.appendChild(wrapper);
+
+        const children = parentToChildren.get(normalizeId(node.row.id)) || [];
+        if(children.length){
+          const ul = document.createElement('ul');
+          ul.className = 'ml-4 border-l border-slate-200 dark:border-slate-700 pl-3 space-y-1 mt-1';
+          children.forEach(child=>renderNode(child, ul));
+          li.appendChild(ul);
+        }
+        container.appendChild(li);
+      }
+
+      roots.forEach(root=>renderNode(root, rootList));
+      hierarchyPreview.innerHTML = '';
+      hierarchyPreview.appendChild(rootList);
+    }
+
+    function getRowIndexById(id){
+      const target = normalizeId(id);
+      if(!target) return -1;
+      for(let i=0;i<rows.length;i+=1){
+        if(normalizeId(rows[i].id) === target) return i;
+      }
+      return -1;
+    }
+
+    function setSelectedRow(index, {openEditor=false} = {}){
+      selectedRowIndex = index;
+      renderTable();
+      if(openEditor && index>=0 && index<rows.length){
+        openRowEditor(index);
+      } else if(index<0){
+        updateRelationshipPanels();
+        closeRowEditor();
+      }
+    }
+
+    function selectRowById(id, options={}){
+      const index = getRowIndexById(id);
+      if(index>=0){
+        setSelectedRow(index, options);
+      }
+    }
+
+    function closeRowEditor(){
+      if(rowEditorModal && !rowEditorModal.classList.contains('hidden')){
+        rowEditorModal.classList.add('hidden');
+      }
+    }
+
+    function openRowEditor(index){
+      if(!rowEditorModal) return;
+      const row = rows[index];
+      if(!row){
+        closeRowEditor();
+        return;
+      }
+      const rowType = getRowTypeFromLevel(row.level);
+      if(rowTypeSelect){
+        const validTypes = ['competition','stage','group'];
+        rowTypeSelect.value = validTypes.includes(rowType) ? rowType : 'competition';
+      }
+      ensureStageSubtypeVisibility(rowTypeSelect ? rowTypeSelect.value : 'competition');
+      if(stageSubtypeSelect){
+        stageSubtypeSelect.value = rowType === 'stage' ? deriveStageSubtype(row.code ?? '') : 'custom';
+      }
+      if(rowCodeInput) rowCodeInput.value = row.code ?? '';
+      if(rowNameInput) rowNameInput.value = row.name ?? '';
+      if(rowParentInput) rowParentInput.value = row.parent ?? '';
+      rowEditorModal.classList.remove('hidden');
+      updateRelationshipPanels(row.id);
+    }
+
+    function setMessage(text){
+      if(!messagesEl) return;
+      messagesEl.textContent = text || '';
+    }
+
+    function generateNextId(){
+      const usedIds = new Set();
+      let maxNumeric = 0;
+      rows.forEach(row=>{
+        const norm = normalizeId(row.id);
+        if(!norm) return;
+        usedIds.add(norm);
+        const num = Number(norm);
+        if(Number.isFinite(num) && num > maxNumeric){
+          maxNumeric = num;
+        }
+      });
+      let candidate = maxNumeric + 1;
+      if(candidate < 1) candidate = 1;
+      while(usedIds.has(String(candidate))){
+        candidate += 1;
+      }
+      return String(candidate);
+    }
+
+    function countSiblings(parentId, level){
+      const normParent = normalizeId(parentId);
+      const levelNorm = normalizeId(level);
+      let count = 0;
+      rows.forEach(row=>{
+        if(normalizeId(row.parent) === normParent && normalizeId(row.level) === levelNorm){
+          count += 1;
+        }
+      });
+      return count;
+    }
+
+    function determineCompetitionContext(){
+      if(selectedRowIndex>=0){
+        const selected = rows[selectedRowIndex];
+        const type = getRowTypeFromLevel(selected?.level);
+        if(type === 'competition') return normalizeId(selected.id);
+        if(type === 'stage') return normalizeId(selected.parent);
+        if(type === 'group'){
+          const stageIdx = getRowIndexById(selected.parent);
+          if(stageIdx>=0){
+            const stageRow = rows[stageIdx];
+            if(getRowTypeFromLevel(stageRow.level) === 'stage'){
+              return normalizeId(stageRow.parent);
+            }
+          }
+        }
+      }
+      if(activeCompetitionId) return normalizeId(activeCompetitionId);
+      const firstComp = rows.find(row=>getRowTypeFromLevel(row.level) === 'competition');
+      return firstComp ? normalizeId(firstComp.id) : '';
+    }
+
+    function determineStageContext(){
+      if(selectedRowIndex>=0){
+        const selected = rows[selectedRowIndex];
+        const type = getRowTypeFromLevel(selected?.level);
+        if(type === 'stage') return normalizeId(selected.id);
+        if(type === 'group') return normalizeId(selected.parent);
+      }
+      const compId = determineCompetitionContext();
+      if(compId){
+        const stageRow = rows.find(row=>normalizeId(row.parent) === compId && getRowTypeFromLevel(row.level) === 'stage');
+        if(stageRow) return normalizeId(stageRow.id);
+      }
+      return '';
+    }
+
+    function createStageRow(parentId){
+      const siblingCount = countSiblings(parentId, '4') + 1;
+      const suffix = String(siblingCount).padStart(2,'0');
+      const defaultSubtype = stageSubtypeTokens[0]?.value || 'LEAGUE';
+      return {
+        id: generateNextId(),
+        level: '4',
+        code: `${defaultSubtype}_${suffix}`,
+        name: `New Stage ${siblingCount}`,
+        parent: normalizeId(parentId)
+      };
+    }
+
+    function createGroupRow(stageId){
+      const siblingCount = countSiblings(stageId, '5') + 1;
+      const suffix = String(siblingCount).padStart(2,'0');
+      return {
+        id: generateNextId(),
+        level: '5',
+        code: `GROUP_${suffix}`,
+        name: `Group ${siblingCount}`,
+        parent: normalizeId(stageId)
+      };
     }
 
     function serializeCompRow(row){
@@ -530,19 +1044,34 @@
       const indexes = getVisibleIndexes(rows, ['id','parent']);
       indexes.forEach((rowIndex,pos)=>{
         const r = rows[rowIndex];
+        const rowType = getRowTypeFromLevel(r.level);
+        const highlightClass = levelClassFromType(rowType);
+        const isSelected = rowIndex === selectedRowIndex;
+        const baseTint = pos%2 ? 'bg-white dark:bg-slate-800/40' : 'bg-slate-50 dark:bg-slate-800/60';
         const tr = document.createElement('tr');
-        tr.className = pos%2? 'bg-white':'bg-slate-50';
+        tr.dataset.index = rowIndex;
+        tr.dataset.level = normalizeId(r.level);
+        tr.className = `border-b border-slate-100 dark:border-slate-700 cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-slate-700/60 ${highlightClass || baseTint}`;
+        if(isSelected) tr.classList.add('level-selected');
         tr.innerHTML = `
           <td class="p-2">${rowIndex+1}</td>
-          <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.id}"></td>
-          <td class="p-2"><input data-f="level" data-i="${rowIndex}" class="w-12 p-1 border rounded" value="${r.level}"></td>
-          <td class="p-2"><input data-f="code" data-i="${rowIndex}" class="w-32 p-1 border rounded" value="${r.code}"></td>
-          <td class="p-2"><input data-f="name" data-i="${rowIndex}" class="w-56 p-1 border rounded" value="${r.name}"></td>
-          <td class="p-2"><input data-f="parent" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.parent}"></td>
+          <td class="p-2"><input data-f="id" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.id ?? ''}"></td>
+          <td class="p-2"><input data-f="level" data-i="${rowIndex}" class="w-12 p-1 border rounded" value="${r.level ?? ''}"></td>
+          <td class="p-2"><input data-f="code" data-i="${rowIndex}" class="w-32 p-1 border rounded" value="${r.code ?? ''}"></td>
+          <td class="p-2"><input data-f="name" data-i="${rowIndex}" class="w-56 p-1 border rounded" value="${r.name ?? ''}"></td>
+          <td class="p-2"><input data-f="parent" data-i="${rowIndex}" class="w-24 p-1 border rounded" value="${r.parent ?? ''}"></td>
           <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
         tbody.appendChild(tr);
+
+        tr.addEventListener('click', evt=>{
+          if(evt.target.closest('button')) return;
+          if(evt.target.tagName === 'INPUT' || evt.target.closest('input')) return;
+          setSelectedRow(rowIndex, { openEditor: true });
+        });
       });
+
       tbody.querySelectorAll('input').forEach(inp=>{
+        inp.addEventListener('click', evt=>evt.stopPropagation());
         inp.onfocus = ()=>{ inp.dataset.prev = inp.value; };
         inp.onchange = ()=>{
           const rowIndex = +inp.dataset.i;
@@ -565,28 +1094,42 @@
             refreshCompetitionOptions();
           }
           inp.dataset.prev = newValue;
-          if(field !== 'id'){
-            if(activeCompetitionId){
-              recomputeActiveScope();
-              updateCompetitionSummary();
-              renderAdvTable();
-              renderStandingsTable();
-              renderSettingsTable();
-              renderScheduleTable();
-              renderTaskTable();
-              renderWeatherTable();
-            }
+          if(field === 'level' || field === 'id'){
+            renderTable();
+          } else {
+            renderHierarchyPreview();
+            updateRelationshipPanels(rows[selectedRowIndex]?.id);
+          }
+          if(activeCompetitionId){
+            recomputeActiveScope();
+            updateCompetitionSummary();
+            renderAdvTable();
+            renderStandingsTable();
+            renderSettingsTable();
+            renderScheduleTable();
+            renderTaskTable();
+            renderWeatherTable();
           }
         };
       });
       tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.addEventListener('click', evt=>evt.stopPropagation());
         btn.onclick = ()=>{
           const idx = +btn.dataset.del;
           rows.splice(idx,1);
           compRawLines.splice(idx,1);
+          if(selectedRowIndex === idx){
+            closeRowEditor();
+            selectedRowIndex = -1;
+          } else if(selectedRowIndex > idx){
+            selectedRowIndex -= 1;
+          }
           refreshCompetitionOptions();
         };
       });
+
+      renderHierarchyPreview();
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     document.getElementById('fileInput').onchange = e=>{
@@ -607,7 +1150,37 @@
       const newRow = {id:'',level:'',code:'',name:'',parent:''};
       rows.push(newRow);
       compRawLines.push(serializeCompRow(newRow));
+      setMessage('Blank line added. Use the editor to configure it.');
       refreshCompetitionOptions();
+      setSelectedRow(rows.length-1, { openEditor: true });
+    };
+
+    document.getElementById('addStageBtn').onclick = ()=>{
+      const compId = determineCompetitionContext();
+      if(!compId){
+        setMessage('Select or activate a competition before adding a stage.');
+        return;
+      }
+      const newRow = createStageRow(compId);
+      rows.push(newRow);
+      compRawLines.push(serializeCompRow(newRow));
+      setMessage(`Stage ${newRow.name} added under competition ${compId}.`);
+      refreshCompetitionOptions();
+      selectRowById(newRow.id, { openEditor: true });
+    };
+
+    document.getElementById('addGroupBtn').onclick = ()=>{
+      const stageId = determineStageContext();
+      if(!stageId){
+        setMessage('Select a stage before adding a group.');
+        return;
+      }
+      const newRow = createGroupRow(stageId);
+      rows.push(newRow);
+      compRawLines.push(serializeCompRow(newRow));
+      setMessage(`Group ${newRow.name} added under stage ${stageId}.`);
+      refreshCompetitionOptions();
+      selectRowById(newRow.id, { openEditor: true });
     };
 
     document.getElementById('exportBtn').onclick = ()=>{
@@ -636,10 +1209,14 @@
     };
 
     document.getElementById('sortByIdBtn').onclick = ()=>{
+      const selectedId = (selectedRowIndex>=0 && rows[selectedRowIndex]) ? normalizeId(rows[selectedRowIndex].id) : '';
       const combined = rows.map((row,idx)=>({row, raw: compRawLines[idx]}));
       combined.sort((a,b)=>Number(a.row.id||0)-Number(b.row.id||0));
       rows = combined.map(item=>item.row);
       compRawLines = combined.map(item=>item.raw);
+      if(selectedId){
+        selectedRowIndex = getRowIndexById(selectedId);
+      }
       refreshCompetitionOptions();
     };
 
@@ -652,6 +1229,70 @@
       });
       document.getElementById('messages').innerHTML = probs.length ? probs.join('<br>') : 'No validation issues.';
     };
+
+    if(rowEditorCancel) rowEditorCancel.onclick = ()=>closeRowEditor();
+    if(rowEditorClose) rowEditorClose.onclick = ()=>closeRowEditor();
+    if(rowEditorModal){
+      rowEditorModal.addEventListener('click', evt=>{
+        if(evt.target === rowEditorModal) closeRowEditor();
+      });
+    }
+    document.addEventListener('keydown', evt=>{
+      if(evt.key === 'Escape') closeRowEditor();
+    });
+
+    if(rowTypeSelect){
+      rowTypeSelect.onchange = ()=>{
+        const type = rowTypeSelect.value;
+        ensureStageSubtypeVisibility(type);
+        if(type === 'stage' && stageSubtypeSelect){
+          if(stageSubtypeSelect.value === 'custom'){
+            stageSubtypeSelect.value = stageSubtypeTokens[0]?.value || 'LEAGUE';
+            rowCodeInput.value = mergeStageSubtypeWithCode(stageSubtypeSelect.value, rowCodeInput.value);
+          }
+        } else if(stageSubtypeSelect){
+          stageSubtypeSelect.value = 'custom';
+        }
+      };
+    }
+
+    if(stageSubtypeSelect){
+      stageSubtypeSelect.onchange = ()=>{
+        if(stageSubtypeSelect.value === 'custom') return;
+        rowCodeInput.value = mergeStageSubtypeWithCode(stageSubtypeSelect.value, rowCodeInput.value);
+      };
+    }
+
+    if(rowEditorSave){
+      rowEditorSave.onclick = ()=>{
+        if(selectedRowIndex < 0 || selectedRowIndex >= rows.length){
+          closeRowEditor();
+          return;
+        }
+        const row = rows[selectedRowIndex];
+        if(!row){
+          closeRowEditor();
+          return;
+        }
+        const type = rowTypeSelect ? rowTypeSelect.value : getRowTypeFromLevel(row.level);
+        row.level = getLevelFromType(type) || row.level;
+        const codeInputValue = rowCodeInput ? rowCodeInput.value : row.code;
+        if(type === 'stage' && stageSubtypeSelect){
+          const subtypeValue = stageSubtypeSelect.value;
+          row.code = subtypeValue === 'custom' ? codeInputValue : mergeStageSubtypeWithCode(subtypeValue, codeInputValue);
+        } else {
+          row.code = codeInputValue;
+        }
+        if(rowNameInput) row.name = rowNameInput.value;
+        if(rowParentInput) row.parent = rowParentInput.value;
+        updateCompRawLine(selectedRowIndex);
+        refreshCompetitionOptions();
+        setMessage(`Line ${row.id || selectedRowIndex+1} updated.`);
+        closeRowEditor();
+      };
+    }
+
+    ensureStageSubtypeVisibility(rowTypeSelect ? rowTypeSelect.value : 'competition');
 
     /* -----------------------
        Advancement Section
@@ -713,6 +1354,7 @@
           renderAdvTable();
         };
       });
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     document.getElementById('advFileInput').onchange=e=>{
@@ -822,6 +1464,7 @@
         };
       });
       updateStandingsMeta();
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     function parseStandings(text){
@@ -947,6 +1590,7 @@
         };
       });
       updateSettingsMeta();
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     function parseSettings(text){
@@ -1061,6 +1705,7 @@
         };
       });
       updateScheduleMeta();
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     function parseSchedule(text){
@@ -1338,6 +1983,7 @@
           renderTaskTable();
         };
       });
+      updateRelationshipPanels(rows[selectedRowIndex]?.id);
     }
 
     document.getElementById('taskFileInput').onchange=e=>{
