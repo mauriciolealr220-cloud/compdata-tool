@@ -396,6 +396,114 @@
       <div id="weatherMessages" class="mt-3 text-sm"></div>
     </section>
 
+    <!-- ===================== -->
+    <!-- Objectives Editor -->
+    <!-- ===================== -->
+    <section id="objectivesEditor" class="mt-10">
+      <h2 class="text-xl font-bold mb-2">Objectives Editor</h2>
+      <p class="text-sm text-slate-600 mb-3">
+        Manage team or group objectives listed in <code>objectives.txt</code> as
+        <code>TargetID,ObjectiveCode,IsPrimary</code> lines.
+      </p>
+
+      <div class="mb-3 flex flex-wrap items-center gap-2">
+        <input id="objectivesFileInput" type="file" accept=".txt" class="p-2 bg-white rounded border">
+        <button id="objectivesPasteBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">Paste/Text</button>
+        <button id="objectivesAddBtn" class="px-3 py-2 bg-slate-700 text-white rounded">+ Add Objective</button>
+        <button id="objectivesExportBtn" class="px-3 py-2 bg-green-600 text-white rounded">Export</button>
+        <button id="objectivesValidateBtn" class="px-3 py-2 bg-red-600 text-white rounded">Validate</button>
+      </div>
+
+      <textarea id="objectivesPasteArea" class="w-full h-24 p-2 border rounded hidden" placeholder="Paste objective lines here... (TargetID,ObjectiveCode,IsPrimary)"></textarea>
+      <div id="objectivesMeta" class="text-sm text-slate-600 mb-2"></div>
+
+      <div class="overflow-x-auto border rounded">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2">#</th>
+              <th class="p-2">Target ID</th>
+              <th class="p-2">Objective Code</th>
+              <th class="p-2">Primary?</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="objectivesBody"></tbody>
+        </table>
+      </div>
+
+      <div id="objectivesMessages" class="mt-3 text-sm"></div>
+    </section>
+
+    <!-- ===================== -->
+    <!-- Validation & Repair -->
+    <!-- ===================== -->
+    <section id="validatorSection" class="mt-10">
+      <div class="flex items-start justify-between flex-wrap gap-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold">Validation &amp; Repair Center</h2>
+          <p class="text-sm text-slate-600">
+            Validate syntax, structure, and cross-file references across all competition data files before exporting.
+          </p>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input id="autoRepairToggle" type="checkbox" class="h-4 w-4">
+          Auto repair simple issues after validation
+        </label>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <label class="text-sm font-medium text-slate-700">
+          Load default baseline folder
+          <input id="baselineInput" type="file" webkitdirectory multiple class="block mt-1 text-sm" />
+        </label>
+        <span id="baselineStatus" class="text-sm text-slate-600"></span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <button id="runValidationBtn" class="px-3 py-2 bg-red-600 text-white rounded">Run Validation</button>
+        <button id="applyAllFixesBtn" class="px-3 py-2 bg-blue-600 text-white rounded" disabled>Apply All Fixes</button>
+        <button id="exportValidatedBtn" class="px-3 py-2 bg-green-600 text-white rounded" disabled>Export Validated Files</button>
+        <button id="viewDifferencesBtn" class="px-3 py-2 bg-amber-500 text-white rounded" disabled>View Differences</button>
+        <span id="validationStatus" class="text-sm text-slate-600"></span>
+      </div>
+
+      <div class="overflow-x-auto border rounded mb-4">
+        <table class="min-w-full table-auto text-sm">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="p-2 text-left">File</th>
+              <th class="p-2 text-left">Errors</th>
+              <th class="p-2 text-left">Warnings</th>
+              <th class="p-2 text-left">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="validationSummaryBody"></tbody>
+        </table>
+      </div>
+
+      <div class="grid gap-4 lg:grid-cols-2">
+        <div class="border rounded p-3 bg-white dark:bg-slate-900/70">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-2">Issues</h3>
+          <div id="validationLog" class="text-sm max-h-72 overflow-auto space-y-2"></div>
+        </div>
+        <div class="border rounded p-3 bg-white dark:bg-slate-900/70">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-200 mb-2">Auto-fix Suggestions</h3>
+          <div id="fixList" class="text-sm max-h-72 overflow-auto space-y-2"></div>
+        </div>
+      </div>
+
+      <div id="diffViewer" class="mt-4 border rounded p-3 bg-white dark:bg-slate-900/70 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-semibold text-slate-700 dark:text-slate-200">Baseline Differences</h3>
+          <button id="closeDiffBtn" class="text-sm text-slate-500 hover:text-slate-700">Close</button>
+        </div>
+        <div id="diffOutput" class="text-sm max-h-80 overflow-auto space-y-1"></div>
+      </div>
+
+      <div id="changelogStatus" class="mt-3 text-xs text-slate-500"></div>
+    </section>
+
   </div>
 
   <!-- Row Editor Modal -->
@@ -498,6 +606,26 @@
     const rowEditorCancel = document.getElementById('rowEditorCancel');
     const rowEditorClose = document.getElementById('rowEditorClose');
 
+    const objectivesBody = document.getElementById('objectivesBody');
+    const objectivesMeta = document.getElementById('objectivesMeta');
+    const objectivesMessages = document.getElementById('objectivesMessages');
+
+    const validationSummaryBody = document.getElementById('validationSummaryBody');
+    const validationLog = document.getElementById('validationLog');
+    const fixList = document.getElementById('fixList');
+    const diffViewer = document.getElementById('diffViewer');
+    const diffOutput = document.getElementById('diffOutput');
+    const closeDiffBtn = document.getElementById('closeDiffBtn');
+    const baselineInput = document.getElementById('baselineInput');
+    const baselineStatus = document.getElementById('baselineStatus');
+    const runValidationBtn = document.getElementById('runValidationBtn');
+    const applyAllFixesBtn = document.getElementById('applyAllFixesBtn');
+    const exportValidatedBtn = document.getElementById('exportValidatedBtn');
+    const viewDifferencesBtn = document.getElementById('viewDifferencesBtn');
+    const validationStatus = document.getElementById('validationStatus');
+    const autoRepairToggle = document.getElementById('autoRepairToggle');
+    const changelogStatus = document.getElementById('changelogStatus');
+
     let selectedRowIndex = -1;
     const stageSubtypeTokens = [
       {value:'LEAGUE', label:'League'},
@@ -509,6 +637,21 @@
 
     let weatherRows = [];
     let weatherRawLines = [];
+
+    let objectiveRows = [];
+    let objectiveRawLines = [];
+
+    const validationState = {
+      issues: [],
+      suggestions: [],
+      diffs: [],
+      baseline: new Map(),
+      changelog: [],
+      validatedOutputs: new Map(),
+      autoRepairEnabled: false,
+      runningAutoRepair: false,
+      lastRan: null
+    };
 
     function normalizeId(value){
       return String(value ?? '').trim();
@@ -1038,13 +1181,15 @@
       compRawLines = [];
       const delim = (delimSel==='auto') ? autoDetectDelimiter(text) : delimSel;
       compDelimiter = delim;
-      const lines = text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for (const line of lines) {
-        const parts = line.split(delim).map(p=>p.trim());
+      const rawLines = text.split(/\r?\n/);
+      for (const rawLine of rawLines) {
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts = rawLine.split(delim);
         while (parts.length < 5) parts.push('');
-        const [id, level, code, name, parent] = parts;
+        const trimmed = parts.map(p=>p.trim());
+        const [id, level, code, name, parent] = trimmed;
         rows.push({ id, level, code, name, parent });
-        compRawLines.push(line);
+        compRawLines.push(rawLine);
       }
       document.getElementById('meta').textContent = `${rows.length} lines parsed`;
       refreshCompetitionOptions();
@@ -1324,11 +1469,14 @@
     function parseAdv(text){
       advRows = [];
       advRawLines = [];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const [fromId, qualifier, toId, slot] = line.split(',').map(s=>s.trim());
+      const rawLines=text.split(/\r?\n/);
+      for(const rawLine of rawLines){
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts = rawLine.split(',');
+        while(parts.length<4) parts.push('');
+        const [fromId, qualifier, toId, slot] = parts.map(s=>s.trim());
         advRows.push({fromId,qualifier,toId,slot});
-        advRawLines.push(line);
+        advRawLines.push(rawLine);
       }
       document.getElementById('advMeta').textContent=`${advRows.length} advancement lines parsed`;
       renderAdvTable();
@@ -1483,13 +1631,16 @@
       standingsRawLines=[];
       const delim=autoDetectDelimiter(text);
       standingsDelimiter=delim;
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(delim).map(s=>s.trim());
-        if(!parts[0]) continue;
-        const [groupId, slot=''] = parts;
+      const rawLines=text.split(/\r?\n/);
+      for(const rawLine of rawLines){
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts=rawLine.split(delim);
+        if(!parts.length) continue;
+        const trimmedParts = parts.map(s=>s.trim());
+        if(!trimmedParts[0]) continue;
+        const [groupId, slot=''] = trimmedParts;
         standingsRows.push({groupId, slot});
-        standingsRawLines.push(line);
+        standingsRawLines.push(rawLine);
       }
       renderStandingsTable();
     }
@@ -1569,6 +1720,15 @@
       document.getElementById('settingsMeta').textContent=`${settingRows.length} setting line${settingRows.length===1?'':'s'} parsed`;
     }
 
+    function serializeSettingRow(row){
+      return [row.id ?? '', row.key ?? '', row.value ?? ''].join(',');
+    }
+
+    function updateSettingsRawLine(index){
+      if(index<0 || index>=settingsRawLines.length) return;
+      settingsRawLines[index] = serializeSettingRow(settingRows[index] ?? {});
+    }
+
     function renderSettingsTable(){
       settingsBody.innerHTML='';
       const indexes = getVisibleIndexes(settingRows, ['id']);
@@ -1588,7 +1748,7 @@
         inp.onchange=()=>{
           const idx = +inp.dataset.i;
           settingRows[idx][inp.dataset.f]=inp.value;
-          settingsRawLines[idx] = [settingRows[idx].id ?? '', settingRows[idx].key ?? '', settingRows[idx].value ?? ''].join(',');
+          updateSettingsRawLine(idx);
           updateSettingsMeta();
         };
       });
@@ -1607,13 +1767,16 @@
     function parseSettings(text){
       settingRows=[];
       settingsRawLines=[];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(',').map(s=>s.trim());
-        const [id='', key='', value=''] = parts;
+      const rawLines=text.split(/\r?\n/);
+      for(const rawLine of rawLines){
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts=rawLine.split(',');
+        while(parts.length<3) parts.push('');
+        const trimmedParts = parts.map(s=>s.trim());
+        const [id='', key='', value=''] = trimmedParts;
         if(id || key || value){
           settingRows.push({id, key, value});
-          settingsRawLines.push(line);
+          settingsRawLines.push(rawLine);
         }
       }
       renderSettingsTable();
@@ -1634,8 +1797,9 @@
     document.getElementById('settingsPasteArea').onblur=e=>parseSettings(e.target.value);
 
     document.getElementById('settingsAddBtn').onclick=()=>{
-      settingRows.push({id:'',key:'',value:''});
-      settingsRawLines.push(',,');
+      const newRow={id:'',key:'',value:''};
+      settingRows.push(newRow);
+      settingsRawLines.push(serializeSettingRow(newRow));
       renderSettingsTable();
     };
 
@@ -2106,13 +2270,15 @@
     function parseWeather(text){
       weatherRows=[];
       weatherRawLines=[];
-      const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-      for(const line of lines){
-        const parts=line.split(',').map(s=>s.trim());
+      const rawLines=text.split(/\r?\n/);
+      for(const rawLine of rawLines){
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts=rawLine.split(',');
         while(parts.length<9) parts.push('');
-        const [fed='', day='', type='', p1='', p2='', p3='', p4='', start='', end=''] = parts;
+        const trimmedParts = parts.map(s=>s.trim());
+        const [fed='', day='', type='', p1='', p2='', p3='', p4='', start='', end=''] = trimmedParts;
         weatherRows.push({fed, day, type, p1, p2, p3, p4, start, end});
-        weatherRawLines.push(line);
+        weatherRawLines.push(rawLine);
       }
       renderWeatherTable();
     }
@@ -2157,6 +2323,794 @@
     };
 
     updateWeatherMeta();
+
+    /* -----------------------
+       Objectives Section
+    ----------------------- */
+
+    function updateObjectivesMeta(){
+      if(!objectivesMeta) return;
+      const count = objectiveRows.length;
+      objectivesMeta.textContent = `${count} objective line${count===1?'':'s'} parsed`;
+    }
+
+    function serializeObjectiveRow(row){
+      return [row.targetId ?? '', row.objective ?? '', row.primary ?? ''].join(',');
+    }
+
+    function updateObjectivesRawLine(index){
+      if(index<0 || index>=objectiveRawLines.length) return;
+      objectiveRawLines[index] = serializeObjectiveRow(objectiveRows[index] ?? {});
+    }
+
+    function renderObjectivesTable(){
+      if(!objectivesBody) return;
+      objectivesBody.innerHTML='';
+      const indexes = getVisibleIndexes(objectiveRows, ['targetId']);
+      indexes.forEach((rowIndex,pos)=>{
+        const r = objectiveRows[rowIndex];
+        const tr=document.createElement('tr');
+        tr.className = pos%2?'bg-white':'bg-slate-50';
+        tr.innerHTML=`
+          <td class="p-2">${pos+1}</td>
+          <td class="p-2"><input data-f="targetId" data-i="${rowIndex}" class="w-28 p-1 border rounded" value="${r.targetId ?? ''}"></td>
+          <td class="p-2"><input data-f="objective" data-i="${rowIndex}" class="w-48 p-1 border rounded" value="${r.objective ?? ''}"></td>
+          <td class="p-2"><input data-f="primary" data-i="${rowIndex}" class="w-20 p-1 border rounded" value="${r.primary ?? ''}"></td>
+          <td class="p-2"><button data-del="${rowIndex}" class="px-2 py-1 bg-red-500 text-white rounded">Del</button></td>`;
+        objectivesBody.appendChild(tr);
+      });
+      objectivesBody.querySelectorAll('input').forEach(inp=>{
+        inp.onchange=()=>{
+          const idx = +inp.dataset.i;
+          objectiveRows[idx][inp.dataset.f] = inp.value;
+          updateObjectivesRawLine(idx);
+          updateObjectivesMeta();
+        };
+      });
+      objectivesBody.querySelectorAll('button[data-del]').forEach(btn=>{
+        btn.onclick=()=>{
+          const idx = +btn.dataset.del;
+          objectiveRows.splice(idx,1);
+          objectiveRawLines.splice(idx,1);
+          renderObjectivesTable();
+        };
+      });
+      updateObjectivesMeta();
+    }
+
+    function parseObjectives(text){
+      objectiveRows=[];
+      objectiveRawLines=[];
+      const rawLines=text.split(/\r?\n/);
+      for(const rawLine of rawLines){
+        if(!rawLine || !rawLine.trim()) continue;
+        const parts=rawLine.split(',');
+        while(parts.length<3) parts.push('');
+        const [targetId='', objective='', primary=''] = parts.map(s=>s.trim());
+        objectiveRows.push({targetId, objective, primary});
+        objectiveRawLines.push(rawLine);
+      }
+      renderObjectivesTable();
+    }
+
+    const objectivesFileInputEl = document.getElementById('objectivesFileInput');
+    if(objectivesFileInputEl){
+      objectivesFileInputEl.onchange=e=>{
+        const f=e.target.files?.[0];
+        if(!f) return;
+        const r=new FileReader();
+        r.onload=()=>parseObjectives(r.result);
+        r.readAsText(f);
+      };
+    }
+
+    const objectivesPasteBtn = document.getElementById('objectivesPasteBtn');
+    if(objectivesPasteBtn){
+      objectivesPasteBtn.onclick=()=>{
+        const pa=document.getElementById('objectivesPasteArea');
+        pa.classList.toggle('hidden');
+        if(!pa.classList.contains('hidden')) pa.focus();
+      };
+    }
+
+    const objectivesPasteArea = document.getElementById('objectivesPasteArea');
+    if(objectivesPasteArea){
+      objectivesPasteArea.onblur=e=>parseObjectives(e.target.value || '');
+    }
+
+    const objectivesAddBtn = document.getElementById('objectivesAddBtn');
+    if(objectivesAddBtn){
+      objectivesAddBtn.onclick=()=>{
+        const newRow={targetId:'',objective:'',primary:'0'};
+        objectiveRows.push(newRow);
+        objectiveRawLines.push(serializeObjectiveRow(newRow));
+        renderObjectivesTable();
+      };
+    }
+
+    const objectivesExportBtn = document.getElementById('objectivesExportBtn');
+    if(objectivesExportBtn){
+      objectivesExportBtn.onclick=()=>{
+        const blob=new Blob([objectiveRawLines.join('\n')],{type:'text/plain'});
+        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='objectives.txt';a.click();
+      };
+    }
+
+    const objectivesValidateBtn = document.getElementById('objectivesValidateBtn');
+    if(objectivesValidateBtn){
+      objectivesValidateBtn.onclick=()=>{
+        const messages=[];
+        const ids=new Set(rows.map(r=>normalizeId(r.id)));
+        objectiveRows.forEach((r,i)=>{
+          if(!normalizeId(r.targetId)) messages.push(`Row ${i+1}: Missing target ID`);
+          if(r.targetId && !ids.has(normalizeId(r.targetId)) && normalizeId(r.targetId)!=='0'){
+            messages.push(`Row ${i+1}: Target ID ${r.targetId} not found in CompObj table`);
+          }
+          if(!normalizeId(r.objective)) messages.push(`Row ${i+1}: Missing objective code`);
+          if(r.primary!=='' && !/^(0|1)$/i.test(String(r.primary).trim())) messages.push(`Row ${i+1}: Primary flag must be 0 or 1`);
+        });
+        if(objectivesMessages){
+          objectivesMessages.innerHTML = messages.length ? messages.join('<br>') : 'No validation issues.';
+        }
+      };
+    }
+
+    updateObjectivesMeta();
+
+    /* -----------------------
+       Validation & Repair
+    ----------------------- */
+
+    const REFERENCE_ALLOWLIST = new Set(['0', 'GLOBAL', 'DEFAULT', 'NONE', '']);
+
+    function toFileKey(name){
+      return String(name || '').toLowerCase().replace(/\.txt$/,'');
+    }
+
+    function getFileAdapters(){
+      return {
+        compobj: {
+          key: 'compobj',
+          label: 'compobj.txt',
+          exportName: 'compobj',
+          expectedColumns: 5,
+          columnNames: ['ID','Level','Code','Name','Parent'],
+          fields: ['id','level','code','name','parent'],
+          allowEmptyColumns: new Set([4]),
+          numericColumns: new Set([0,1]),
+          delimiter: ()=>compDelimiter || ',',
+          getRawLines: ()=>compRawLines,
+          getRows: ()=>rows,
+          updateField: (index, field, value)=>{
+            if(!rows[index]) return;
+            rows[index][field] = value;
+            updateCompRawLine(index);
+          },
+          serializeAll: ()=>rows.map(serializeCompRow).join('\n')
+        },
+        advancement: {
+          key: 'advancement',
+          label: 'advancement.txt',
+          exportName: 'advancement',
+          expectedColumns: 4,
+          columnNames: ['From Group','Qualifier','To Group','Slot'],
+          fields: ['fromId','qualifier','toId','slot'],
+          allowEmptyColumns: new Set([1,3]),
+          numericColumns: new Set([3]),
+          delimiter: () => ',',
+          getRawLines: ()=>advRawLines,
+          getRows: ()=>advRows,
+          updateField: (index, field, value)=>{
+            if(!advRows[index]) return;
+            advRows[index][field] = value;
+            updateAdvRawLine(index);
+          },
+          serializeAll: ()=>advRows.map(serializeAdvRow).join('\n')
+        },
+        standings: {
+          key: 'standings',
+          label: 'standings.txt',
+          exportName: 'standings',
+          expectedColumns: 2,
+          columnNames: ['Group','Slot'],
+          fields: ['groupId','slot'],
+          allowEmptyColumns: new Set([]),
+          numericColumns: new Set([1]),
+          delimiter: ()=>standingsDelimiter || ',',
+          getRawLines: ()=>standingsRawLines,
+          getRows: ()=>standingsRows,
+          updateField: (index, field, value)=>{
+            if(!standingsRows[index]) return;
+            standingsRows[index][field] = value;
+            updateStandingsRawLine(index);
+          },
+          serializeAll: ()=>standingsRows.map(serializeStandingsRow).join('\n')
+        },
+        settings: {
+          key: 'settings',
+          label: 'settings.txt',
+          exportName: 'settings',
+          expectedColumns: 3,
+          columnNames: ['ID','Key','Value'],
+          fields: ['id','key','value'],
+          allowEmptyColumns: new Set([2]),
+          numericColumns: new Set([]),
+          delimiter: ()=>',',
+          getRawLines: ()=>settingsRawLines,
+          getRows: ()=>settingRows,
+          updateField: (index, field, value)=>{
+            if(!settingRows[index]) return;
+            settingRows[index][field] = value;
+            updateSettingsRawLine(index);
+          },
+          serializeAll: ()=>settingRows.map(serializeSettingRow).join('\n')
+        },
+        weather: {
+          key: 'weather',
+          label: 'weather.txt',
+          exportName: 'weather',
+          expectedColumns: 9,
+          columnNames: ['Federation','Day','Type','Param1','Param2','Param3','Param4','Start','End'],
+          fields: ['fed','day','type','p1','p2','p3','p4','start','end'],
+          allowEmptyColumns: new Set([]),
+          numericColumns: new Set([0,1,2,3,4,5,6,7,8]),
+          delimiter: ()=>',',
+          getRawLines: ()=>weatherRawLines,
+          getRows: ()=>weatherRows,
+          updateField: (index, field, value)=>{
+            if(!weatherRows[index]) return;
+            weatherRows[index][field] = value;
+            updateWeatherRawLine(index);
+          },
+          serializeAll: ()=>weatherRows.map(serializeWeatherRow).join('\n')
+        },
+        objectives: {
+          key: 'objectives',
+          label: 'objectives.txt',
+          exportName: 'objectives',
+          expectedColumns: 3,
+          columnNames: ['Target','Objective','Primary'],
+          fields: ['targetId','objective','primary'],
+          allowEmptyColumns: new Set([2]),
+          numericColumns: new Set([]),
+          delimiter: ()=>',',
+          getRawLines: ()=>objectiveRawLines,
+          getRows: ()=>objectiveRows,
+          updateField: (index, field, value)=>{
+            if(!objectiveRows[index]) return;
+            objectiveRows[index][field] = value;
+            updateObjectivesRawLine(index);
+          },
+          serializeAll: ()=>objectiveRows.map(serializeObjectiveRow).join('\n')
+        }
+      };
+    }
+
+    function splitWithDelimiter(line, delimiter){
+      if(delimiter === '\\t') return String(line ?? '').split('\t');
+      return String(line ?? '').split(delimiter);
+    }
+
+    function pushIssue(list, fileKey, fileLabel, category, severity, message, lineNumber){
+      list.push({
+        id: `${fileKey}-${category}-${lineNumber}-${list.length}`,
+        fileKey,
+        fileLabel,
+        category,
+        severity,
+        message,
+        line: lineNumber
+      });
+    }
+
+    function recordChangelog(entries){
+      if(!entries || !entries.length) return;
+      const timestamp = new Date().toISOString();
+      entries.forEach(entry=>{
+        validationState.changelog.push({...entry, timestamp});
+      });
+      updateChangelogStatus();
+    }
+
+    function updateChangelogStatus(){
+      if(!changelogStatus) return;
+      if(!validationState.changelog.length){
+        changelogStatus.textContent = 'No fixes applied yet.';
+        return;
+      }
+      const last = validationState.changelog[validationState.changelog.length-1];
+      changelogStatus.textContent = `${validationState.changelog.length} change${validationState.changelog.length===1?'':'s'} recorded. Last update ${new Date(last.timestamp).toLocaleString()}`;
+    }
+
+    function queueFix(fileKey, fileLabel, description, applyFn, options={}){
+      const suggestion = {
+        id: `${fileKey}-fix-${Math.random().toString(36).slice(2)}`,
+        fileKey,
+        fileLabel,
+        description,
+        line: options.line ?? null,
+        columnName: options.columnName ?? '',
+        auto: options.auto !== false,
+        category: options.category || 'Format',
+        apply: applyFn,
+        applied: false
+      };
+      validationState.suggestions.push(suggestion);
+    }
+
+    function applySuggestion(suggestion, {skipConfirm=false}={}){
+      if(!suggestion || suggestion.applied) return false;
+      if(!skipConfirm){
+        const confirmation = confirm(`Apply fix: ${suggestion.description}?`);
+        if(!confirmation) return false;
+      }
+      const result = suggestion.apply?.();
+      if(result && Array.isArray(result) && result.length){
+        recordChangelog(result);
+      }
+      suggestion.applied = true;
+      return true;
+    }
+
+    function applyAllFixes({auto=false, skipConfirmPerItem=false}={}){
+      let applied = false;
+      validationState.suggestions.forEach(suggestion=>{
+        if(suggestion.applied) return;
+        if(auto && suggestion.auto){
+          const didApply = applySuggestion(suggestion, {skipConfirm:true});
+          applied = applied || didApply;
+        } else if(!auto){
+          const didApply = applySuggestion(suggestion, {skipConfirm:skipConfirmPerItem});
+          applied = applied || didApply;
+        }
+      });
+      return applied;
+    }
+
+    function downloadBlob(blob, filename){
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download=filename;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    }
+
+    function renderValidationSummary(){
+      if(!validationSummaryBody) return;
+      const adapters = getFileAdapters();
+      const summaryMap = new Map();
+      Object.values(adapters).forEach(adapter=>{
+        summaryMap.set(adapter.key, {
+          fileLabel: adapter.label,
+          errors: 0,
+          warnings: 0,
+          notes: []
+        });
+      });
+
+      validationState.issues.forEach(issue=>{
+        if(!summaryMap.has(issue.fileKey)){
+          summaryMap.set(issue.fileKey, {fileLabel: issue.fileLabel, errors:0, warnings:0, notes: []});
+        }
+        const bucket = summaryMap.get(issue.fileKey);
+        if(issue.severity === 'error') bucket.errors += 1;
+        else bucket.warnings += 1;
+      });
+
+      const diffCounts = new Map();
+      validationState.diffs.forEach(diff=>{
+        if(!diffCounts.has(diff.fileKey)) diffCounts.set(diff.fileKey,0);
+        diffCounts.set(diff.fileKey, diffCounts.get(diff.fileKey)+1);
+      });
+
+      const suggestionCounts = new Map();
+      validationState.suggestions.forEach(suggestion=>{
+        if(suggestion.applied) return;
+        if(!suggestionCounts.has(suggestion.fileKey)) suggestionCounts.set(suggestion.fileKey,0);
+        suggestionCounts.set(suggestion.fileKey, suggestionCounts.get(suggestion.fileKey)+1);
+      });
+
+      summaryMap.forEach((bucket,key)=>{
+        if(diffCounts.has(key)) bucket.notes.push(`${diffCounts.get(key)} baseline diff${diffCounts.get(key)===1?'':'s'}`);
+        if(suggestionCounts.has(key)) bucket.notes.push(`${suggestionCounts.get(key)} fix${suggestionCounts.get(key)===1?'':'es'} ready`);
+      });
+
+      const rowsData = Array.from(summaryMap.entries()).map(([key, bucket])=>({key, ...bucket}));
+      rowsData.sort((a,b)=>a.fileLabel.localeCompare(b.fileLabel));
+
+      validationSummaryBody.innerHTML='';
+      const fragment=document.createDocumentFragment();
+      rowsData.forEach(row=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td class="p-2 font-medium">${escapeHtml(row.fileLabel)}</td>
+          <td class="p-2 text-red-600">${row.errors}</td>
+          <td class="p-2 text-amber-500">${row.warnings}</td>
+          <td class="p-2 text-slate-600">${row.notes.length ? escapeHtml(row.notes.join('; ')) : '—'}</td>`;
+        fragment.appendChild(tr);
+      });
+      validationSummaryBody.appendChild(fragment);
+    }
+
+    function renderValidationLog(){
+      if(!validationLog) return;
+      validationLog.innerHTML='';
+      if(!validationState.issues.length){
+        validationLog.innerHTML='<p class="text-slate-500">No validation issues detected.</p>';
+        return;
+      }
+      const fragment=document.createDocumentFragment();
+      validationState.issues.forEach(issue=>{
+        const div=document.createElement('div');
+        div.className = `border-l-4 pl-2 ${issue.severity==='error' ? 'border-red-500 text-red-600' : 'border-amber-400 text-amber-600'}`;
+        const lineInfo = issue.line ? `Line ${issue.line}` : 'Line —';
+        div.innerHTML = `<div class="font-semibold">${escapeHtml(issue.category)}</div><div class="text-xs text-slate-500">${escapeHtml(issue.fileLabel)} · ${lineInfo}</div><div>${escapeHtml(issue.message)}</div>`;
+        fragment.appendChild(div);
+      });
+      validationLog.appendChild(fragment);
+    }
+
+    function renderFixList(){
+      if(!fixList) return;
+      fixList.innerHTML='';
+      const pending = validationState.suggestions.filter(s=>!s.applied);
+      if(!pending.length){
+        fixList.innerHTML='<p class="text-slate-500">No auto-fix suggestions available.</p>';
+        return;
+      }
+      const fragment=document.createDocumentFragment();
+      pending.forEach(suggestion=>{
+        const wrapper=document.createElement('div');
+        wrapper.className='border border-slate-200 dark:border-slate-700 rounded p-2';
+        const lineInfo = suggestion.line ? `Line ${suggestion.line}` : 'Line —';
+        wrapper.innerHTML=`<div class="font-medium">${escapeHtml(suggestion.description)}</div><div class="text-xs text-slate-500 mt-1">${escapeHtml(suggestion.fileLabel)} · ${lineInfo}${suggestion.auto?' · auto':' · manual'}</div>`;
+        const btn=document.createElement('button');
+        btn.className='mt-2 px-2 py-1 bg-blue-600 text-white rounded';
+        btn.textContent='Apply Fix';
+        btn.onclick=()=>{
+          if(applySuggestion(suggestion)){ runValidation(true); }
+        };
+        wrapper.appendChild(btn);
+        fragment.appendChild(wrapper);
+      });
+      fixList.appendChild(fragment);
+    }
+
+    function renderDiffs(){
+      if(!diffOutput) return;
+      diffOutput.innerHTML='';
+      if(!validationState.diffs.length){
+        diffOutput.innerHTML='<p class="text-slate-500">No differences detected against the loaded baseline.</p>';
+        return;
+      }
+      const fragment=document.createDocumentFragment();
+      validationState.diffs.forEach(diff=>{
+        const div=document.createElement('div');
+        div.className='border-l-4 border-amber-400 pl-2 text-slate-700 dark:text-slate-200';
+        const lineInfo = diff.line ? `Line ${diff.line}` : 'Line —';
+        div.innerHTML=`<div class="font-semibold">${escapeHtml(diff.fileLabel)} · ${lineInfo}</div><div class="text-xs text-slate-500">Baseline: ${escapeHtml(diff.baseline)}</div><div class="text-xs text-slate-500">Current: ${escapeHtml(diff.current)}</div>`;
+        fragment.appendChild(div);
+      });
+      diffOutput.appendChild(fragment);
+    }
+
+    function updateValidationControls(){
+      const hasPendingFixes = validationState.suggestions.some(s=>!s.applied);
+      if(applyAllFixesBtn) applyAllFixesBtn.disabled = !hasPendingFixes;
+      const hasErrors = validationState.issues.some(issue=>issue.severity==='error');
+      if(exportValidatedBtn) exportValidatedBtn.disabled = hasErrors;
+      if(viewDifferencesBtn) viewDifferencesBtn.disabled = !validationState.diffs.length;
+      if(validationStatus){
+        if(!validationState.issues.length){
+          validationStatus.textContent = 'No issues detected.';
+        } else {
+          const errors = validationState.issues.filter(i=>i.severity==='error').length;
+          const warnings = validationState.issues.filter(i=>i.severity!=='error').length;
+          validationStatus.textContent = `${errors} error${errors===1?'':'s'}, ${warnings} warning${warnings===1?'':'s'} found.`;
+        }
+      }
+    }
+
+    function buildDiffs(adapters){
+      const diffs=[];
+      validationState.baseline.forEach((baselineEntry, key)=>{
+        const adapter = adapters[key];
+        if(!adapter) return;
+        const currentLines = adapter.getRawLines().map(line=>String(line ?? ''));
+        const baselineLines = baselineEntry.lines;
+        const max = Math.max(currentLines.length, baselineLines.length);
+        for(let i=0;i<max;i+=1){
+          const baselineLine = baselineLines[i] ?? '';
+          const currentLine = currentLines[i] ?? '';
+          if(baselineLine === currentLine) continue;
+          diffs.push({
+            fileKey: key,
+            fileLabel: adapter.label,
+            line: i+1,
+            baseline: baselineLine,
+            current: currentLine
+          });
+        }
+      });
+      return diffs;
+    }
+
+    function runValidation(autoTriggered=false){
+      const adapters = getFileAdapters();
+      validationState.issues = [];
+      validationState.suggestions = [];
+      validationState.validatedOutputs = new Map();
+
+      const compAdapter = adapters.compobj;
+      const compRowsRef = compAdapter ? compAdapter.getRows() : [];
+      const compIndexMap = new Map();
+      const compIdCounts = new Map();
+      compRowsRef.forEach((row, index)=>{
+        const id = normalizeId(row?.id);
+        if(!id) return;
+        if(!compIndexMap.has(id)) compIndexMap.set(id, {row, index});
+        compIdCounts.set(id, (compIdCounts.get(id) || 0) + 1);
+      });
+
+      Object.values(adapters).forEach(adapter=>{
+        const rawLines = adapter.getRawLines();
+        const delimiter = adapter.delimiter();
+        const columnNames = adapter.columnNames;
+        const allowEmpty = adapter.allowEmptyColumns || new Set();
+        const numericColumns = adapter.numericColumns || new Set();
+        const fields = adapter.fields;
+
+        rawLines.forEach((rawLine, index)=>{
+          if(!rawLine && rawLine !== '') return;
+          const lineNumber = index + 1;
+          const segments = splitWithDelimiter(rawLine, delimiter);
+          if(segments.length !== adapter.expectedColumns){
+            pushIssue(validationState.issues, adapter.key, adapter.label, 'Syntax Error', 'error', `Expected ${adapter.expectedColumns} columns but found ${segments.length}.`, lineNumber);
+          }
+          if(rawLine.includes(`${delimiter}${delimiter}`)){
+            pushIssue(validationState.issues, adapter.key, adapter.label, 'Syntax Error', 'error', 'Detected double delimiter with missing field.', lineNumber);
+          }
+          const trimmed = segments.map(seg=>seg.trim());
+          trimmed.forEach((value, colIndex)=>{
+            const colName = columnNames[colIndex] || `Column ${colIndex+1}`;
+            const original = segments[colIndex] ?? '';
+            if(original !== value){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Format Error', 'warning', `${colName} contains leading or trailing whitespace.`, lineNumber);
+              const fieldKey = fields[colIndex];
+              queueFix(adapter.key, adapter.label, `Trim whitespace for ${colName}`, ()=>{
+                const before = adapter.getRows()[index]?.[fieldKey] ?? original;
+                adapter.updateField(index, fieldKey, value);
+                return [{file: adapter.label, line: lineNumber, field: colName, before, after: value, description: `Trimmed ${colName}`}];
+              }, {line: lineNumber, columnName: colName, auto: true});
+            }
+            if(!value && !allowEmpty.has(colIndex)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Syntax Error', 'error', `${colName} is required.`, lineNumber);
+            }
+            if(value && numericColumns.has(colIndex) && Number.isNaN(Number(value))){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Syntax Error', 'error', `${colName} must be a valid number.`, lineNumber);
+            }
+          });
+
+          if(adapter.key === 'compobj'){
+            const level = trimmed[1];
+            const code = trimmed[2];
+            const parent = trimmed[4];
+            const rowData = compRowsRef[index];
+            if(level && !['3','4','5'].includes(level)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Structure Error', 'error', `Invalid level value "${level}".`, lineNumber);
+            }
+            if(level === '4'){
+              if(!normalizeId(parent)){
+                pushIssue(validationState.issues, adapter.key, adapter.label, 'Structure Error', 'error', 'Stage rows require a parent competition ID.', lineNumber);
+              } else if(compIndexMap.has(normalizeId(parent))){
+                const parentLevel = normalizeId(compIndexMap.get(normalizeId(parent)).row.level);
+                if(parentLevel !== '3'){
+                  pushIssue(validationState.issues, adapter.key, adapter.label, 'Structure Error', 'error', `Stage parent ${parent} should be level 3 (competition) but is level ${parentLevel || '?'}.`, lineNumber);
+                }
+              }
+              if(code && !/^((LEAGUE|GROUP|PLAYOFF|SEMI_FINAL|FINAL|STAGE|ROUND))_/i.test(code)){
+                pushIssue(validationState.issues, adapter.key, adapter.label, 'Format Error', 'warning', `Stage code "${code}" does not follow expected prefix (LEAGUE_, GROUP_, PLAYOFF_, SEMI_FINAL_, FINAL_, STAGE_, ROUND_).`, lineNumber);
+                queueFix(adapter.key, adapter.label, `Normalize stage code for line ${lineNumber}`, ()=>{
+                  const before = rowData?.code ?? code;
+                  const suffixMatch = /(\d+)$/.exec(String(code));
+                  const suffix = suffixMatch ? suffixMatch[0] : String(lineNumber).padStart(2,'0');
+                  const newCode = `LEAGUE_${suffix}`;
+                  adapter.updateField(index, 'code', newCode);
+                  return [{file: adapter.label, line: lineNumber, field: 'Code', before, after: newCode, description: 'Normalized stage code'}];
+                }, {line: lineNumber, columnName: 'Code', auto: true});
+              }
+            }
+            if(level === '5'){
+              if(!normalizeId(parent)){
+                pushIssue(validationState.issues, adapter.key, adapter.label, 'Structure Error', 'error', 'Group rows require a parent stage ID.', lineNumber);
+              } else if(compIndexMap.has(normalizeId(parent))){
+                const parentLevel = normalizeId(compIndexMap.get(normalizeId(parent)).row.level);
+                if(parentLevel !== '4'){
+                  pushIssue(validationState.issues, adapter.key, adapter.label, 'Structure Error', 'error', `Group parent ${parent} should be level 4 (stage) but is level ${parentLevel || '?'}.`, lineNumber);
+                }
+              }
+            }
+            if(level === '3' && code && !/^FCE_/i.test(code)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Format Error', 'warning', `Competition code "${code}" is missing the FCE_ prefix.`, lineNumber);
+              queueFix(adapter.key, adapter.label, `Add FCE_ prefix for competition code on line ${lineNumber}`, ()=>{
+                const before = rowData?.code ?? code;
+                const newCode = `FCE_${normalizeIdUpper(code)}`;
+                adapter.updateField(index, 'code', newCode);
+                return [{file: adapter.label, line: lineNumber, field: 'Code', before, after: newCode, description: 'Added FCE_ prefix'}];
+              }, {line: lineNumber, columnName: 'Code', auto: true});
+            }
+          }
+
+          if(adapter.key === 'weather'){
+            const fed = trimmed[0];
+            if(fed && !REFERENCE_ALLOWLIST.has(normalizeId(fed)) && !compIndexMap.has(normalizeId(fed))){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Reference Error', 'error', `Federation ID ${fed} not found in CompObj.`, lineNumber);
+            }
+          }
+        });
+
+        const sanitized = adapter.serializeAll();
+        validationState.validatedOutputs.set(adapter.key, sanitized);
+      });
+
+      compIdCounts.forEach((count, id)=>{
+        if(count>1){
+          const details = compIndexMap.get(id);
+          const lineNumber = (details?.index ?? 0) + 1;
+          pushIssue(validationState.issues, 'compobj', 'compobj.txt', 'Structure Error', 'error', `Duplicate ID ${id} appears ${count} times.`, lineNumber);
+        }
+      });
+
+      // Reference validation across files
+      const compIds = new Set(Array.from(compIndexMap.keys()));
+      const adaptersArray = Object.values(adapters);
+      adaptersArray.forEach(adapter=>{
+        if(adapter.key==='compobj') return;
+        const rawLines = adapter.getRawLines();
+        rawLines.forEach((rawLine,index)=>{
+          const trimmed = splitWithDelimiter(rawLine, adapter.delimiter()).map(v=>v.trim());
+          const lineNumber = index+1;
+          if(adapter.key==='advancement'){
+            const fromId = normalizeId(trimmed[0]);
+            const toId = normalizeId(trimmed[2]);
+            if(fromId && !compIds.has(fromId)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Reference Error', 'error', `From Group ID ${trimmed[0]} not found in CompObj.`, lineNumber);
+            }
+            if(toId && !compIds.has(toId)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Reference Error', 'error', `To Group ID ${trimmed[2]} not found in CompObj.`, lineNumber);
+            }
+          }
+          if(adapter.key==='settings'){
+            const settingId = normalizeId(trimmed[0]);
+            if(settingId && !REFERENCE_ALLOWLIST.has(settingId) && !compIds.has(settingId)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Reference Error', 'warning', `Setting ID ${trimmed[0]} is not present in CompObj.`, lineNumber);
+            }
+          }
+          if(adapter.key==='objectives'){
+            const targetId = normalizeId(trimmed[0]);
+            if(targetId && !REFERENCE_ALLOWLIST.has(targetId) && !compIds.has(targetId)){
+              pushIssue(validationState.issues, adapter.key, adapter.label, 'Reference Error', 'error', `Objective target ${trimmed[0]} not present in CompObj.`, lineNumber);
+            }
+          }
+        });
+      });
+
+      validationState.diffs = buildDiffs(adapters);
+      renderValidationSummary();
+      renderValidationLog();
+      renderFixList();
+      updateValidationControls();
+      if(validationState.autoRepairEnabled && !autoTriggered && !validationState.runningAutoRepair){
+        validationState.runningAutoRepair = true;
+        const applied = applyAllFixes({auto:true});
+        validationState.runningAutoRepair = false;
+        if(applied){
+          runValidation(true);
+          return;
+        }
+      }
+      validationState.lastRan = new Date();
+    }
+
+    async function loadBaselineFiles(fileList){
+      validationState.baseline.clear();
+      if(!fileList || !fileList.length){
+        if(baselineStatus) baselineStatus.textContent='No baseline loaded.';
+        return;
+      }
+      const files = Array.from(fileList);
+      const entries = await Promise.all(files.filter(f=>/\.txt$/i.test(f.name)).map(async file=>{
+        const text = await file.text();
+        const key = toFileKey(file.name);
+        const lines = text.split(/\r?\n/).filter(line=>line.trim());
+        return {key, name: file.name, lines};
+      }));
+      entries.forEach(entry=>{
+        if(!entry.key) return;
+        validationState.baseline.set(entry.key, {name: entry.name, lines: entry.lines});
+      });
+      if(baselineStatus) baselineStatus.textContent = `Baseline loaded (${validationState.baseline.size} files).`;
+    }
+
+    function exportValidatedFiles(){
+      const adapters = getFileAdapters();
+      Object.values(adapters).forEach(adapter=>{
+        const text = adapter.serializeAll();
+        const filename = `${adapter.exportName || adapter.key}_validated.txt`;
+        downloadBlob(new Blob([text],{type:'text/plain'}), filename);
+      });
+      if(validationState.changelog.length){
+        const changelogBlob = new Blob([JSON.stringify(validationState.changelog, null, 2)],{type:'application/json'});
+        downloadBlob(changelogBlob, 'validation-changelog.json');
+      }
+    }
+
+    if(baselineInput){
+      baselineInput.onchange=e=>{
+        loadBaselineFiles(e.target.files || []);
+      };
+    }
+
+    if(runValidationBtn){
+      runValidationBtn.onclick=()=>{
+        runValidation();
+      };
+    }
+
+    if(applyAllFixesBtn){
+      applyAllFixesBtn.onclick=()=>{
+        if(!validationState.suggestions.some(s=>!s.applied)) return;
+        const confirmed = confirm('Apply all available fixes?');
+        if(!confirmed) return;
+        const applied = applyAllFixes({skipConfirmPerItem:true});
+        if(applied) runValidation(true);
+      };
+    }
+
+    if(exportValidatedBtn){
+      exportValidatedBtn.onclick=()=>{
+        if(validationState.issues.some(issue=>issue.severity==='error')){
+          alert('Resolve all errors before exporting validated files.');
+          return;
+        }
+        exportValidatedFiles();
+      };
+    }
+
+    if(viewDifferencesBtn){
+      viewDifferencesBtn.onclick=()=>{
+        renderDiffs();
+        diffViewer?.classList.remove('hidden');
+      };
+    }
+
+    if(closeDiffBtn){
+      closeDiffBtn.onclick=()=>{
+        diffViewer?.classList.add('hidden');
+      };
+    }
+
+    if(autoRepairToggle){
+      autoRepairToggle.onchange=()=>{
+        if(autoRepairToggle.checked){
+          const confirmed = confirm('Auto repair mode will automatically apply safe fixes after each validation run. Continue?');
+          if(!confirmed){
+            autoRepairToggle.checked=false;
+            validationState.autoRepairEnabled=false;
+            return;
+          }
+          validationState.autoRepairEnabled=true;
+        } else {
+          validationState.autoRepairEnabled=false;
+        }
+      };
+    }
+
+    updateValidationSummary();
+    renderValidationLog();
+    renderFixList();
+    updateValidationControls();
+    updateChangelogStatus();
 
     /* Theme */
     document.getElementById('themeSelect').onchange=()=>{
