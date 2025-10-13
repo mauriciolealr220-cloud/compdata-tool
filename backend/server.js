@@ -2,6 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { parseFiles, FILE_KEYS } = require('./lib/parser');
 const { validateAll } = require('./lib/validator');
 const { autoFix } = require('./lib/autofix');
@@ -10,6 +11,9 @@ const { createZip } = require('./lib/exporter');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+const frontendDir = path.resolve(__dirname, '..', 'frontend');
+app.use(express.static(frontendDir));
 
 function normaliseFiles(payload) {
   if (!payload || typeof payload !== 'object') {
@@ -79,6 +83,10 @@ app.post('/applyEdit', (req, res) => {
 
 app.post('/rebase', (req, res) => {
   res.status(501).json({ ok: false, error: 'Rebase endpoint is not yet implemented.' });
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
