@@ -586,7 +586,18 @@
 
     function rowMatchesScope(row, keys){
       if(!activeCompetitionId || !activeScopeIds) return true;
-      return keys.some(key=>activeScopeIds.has(normalizeId(row[key])));
+      let hasScopedValue = false;
+      for(const key of keys){
+        const normalizedValue = normalizeId(row?.[key]);
+        if(!normalizedValue){
+          continue;
+        }
+        hasScopedValue = true;
+        if(activeScopeIds.has(normalizedValue)){
+          return true;
+        }
+      }
+      return !hasScopedValue;
     }
 
     function getVisibleIndexes(rowsArray, keys){
