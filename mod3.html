@@ -585,7 +585,7 @@
     }
 
     function rowMatchesScope(row, keys){
-      if(!activeScopeIds) return true;
+      if(!activeCompetitionId || !activeScopeIds) return true;
       return keys.some(key=>activeScopeIds.has(normalizeId(row[key])));
     }
 
