@@ -1,0 +1,6 @@
+# Competition metadata key,value pairs
+competitionId,990
+competitionName,FIFA Ultimate Cup
+season,2023
+maxTeams,32
+country,International
