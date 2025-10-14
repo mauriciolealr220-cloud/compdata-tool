@@ -1,135 +1,263 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CompObj Editor</title>
-  <style>
-    body { font-family: monospace; background: #181818; color: #ddd; margin: 0; padding: 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    th, td { border: 1px solid #333; padding: 6px; text-align: left; }
-    tr:nth-child(even) { background: #202020; }
-    input { background: none; border: none; color: #ddd; width: 100%; font-family: monospace; }
-    input:focus { outline: 1px solid #888; }
-    button { background: #333; color: #fff; border: none; margin: 5px; padding: 5px 10px; cursor: pointer; }
-    button:hover { background: #555; }
-    #fileInput { display: none; }
-  </style>
+<meta charset="UTF-8">
+<title>CompObj Compact Editor</title>
+<style>
+  body {
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 12px;
+    color: #222;
+    background: #f5f6f8;
+    margin: 0;
+    padding: 20px;
+  }
+
+  #container {
+    max-width: 1200px;
+    margin: auto;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    padding: 12px;
+  }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    font-size: 12px;
+    border: 1px solid #ccc;
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: 0.1s;
+  }
+  button:hover { background: #f2f2f2; }
+
+  input[type="number"] {
+    width: 45px;
+    font-size: 12px;
+    padding: 2px 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+
+  input[type="file"] { display: none; }
+
+  #lineCount {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  th, td {
+    border: 1px solid #eee;
+    padding: 3px 6px;
+    height: 24px;
+    text-align: left;
+    background: #fff;
+  }
+
+  th {
+    background: #f9fafb;
+    font-weight: 600;
+    font-size: 12px;
+    color: #555;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  td input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font: inherit;
+    background: transparent;
+    padding: 2px 3px;
+    height: 20px;
+    color: #222;
+  }
+
+  td.num input { text-align: center; color: #333; }
+
+  /* Colored side tags */
+  tr.stage td:first-child { border-left: 3px solid #90c4ff; }
+  tr.group td:first-child { border-left: 3px solid #ffb870; }
+  tr.final td:first-child { border-left: 3px solid #bba7ff; }
+
+  tr:hover td { background: #f5faff; }
+  tr.selected td { background: #e9f3ff !important; outline: 1px solid #0078d7; }
+
+  #table-wrapper {
+    height: 85vh;
+    overflow-y: auto;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+  }
+</style>
 </head>
 <body>
 
-  <h2 style="margin-left:10px;">⚙️ CompObj Excel-Type Editor</h2>
+<div id="container">
+  <div id="controls">
+    <button onclick="document.getElementById('fileInput').click()">📂 Import .txt</button>
+    <input type="file" id="fileInput" accept=".txt,.csv" onchange="importFile(event,false)">
+    <button onclick="document.getElementById('fileInputAppend').click()">➕ Append .txt</button>
+    <input type="file" id="fileInputAppend" accept=".txt,.csv" onchange="importFile(event,true)">
+    <button onclick="addRow()">+ Add Row (End)</button>
+    <span>| Insert:</span>
+    <input type="number" id="insertCount" min="1" value="1">
+    <button onclick="insertRows('above')">↑ Insert Above</button>
+    <button onclick="insertRows('below')">↓ Insert Below</button>
+    <button onclick="deleteRow()">− Delete Selected</button>
+    <button onclick="exportTxt()">💾 Export .txt</button>
+  </div>
 
-  <button onclick="document.getElementById('fileInput').click()">📂 Import .txt</button>
-  <input type="file" id="fileInput" accept=".txt,.csv" onchange="importFile(event)">
-  <button onclick="addRow()">+ Add Row</button>
-  <button onclick="deleteRow()">− Delete Selected</button>
-  <button onclick="exportTxt()">💾 Export .txt</button>
+  <div id="lineCount"></div>
 
-  <table id="sheet"></table>
+  <div id="table-wrapper">
+    <table id="sheet"></table>
+  </div>
+</div>
 
-  <script>
-    let compobj = [];
-    let selected = null;
-    const baseId = 1639; // You can adjust this base number per competition set
+<script>
+let compobj = [];
+let selected = null;
 
-    function render() {
-      const table = document.getElementById("sheet");
-      table.innerHTML = `
-        <tr><th>ID</th><th>Depth</th><th>Code</th><th>Name</th><th>ParentRef</th></tr>
-        ${compobj.map((r, i) => {
-          const displayId = baseId + i;
-          const parentRow = compobj.find(x => x.code === r.parent);
-          const parentDisplay = parentRow ? baseId + compobj.indexOf(parentRow) : "";
-          return `
-            <tr ${selected === i ? 'style="background:#333;"' : ''} onclick="selectRow(${i})">
-              <td>${displayId}</td>
-              <td><input value="${r.depth}" onchange="update(${i}, 'depth', this.value)"></td>
-              <td><input value="${r.code}" onchange="update(${i}, 'code', this.value)"></td>
-              <td><input value="${r.name}" onchange="update(${i}, 'name', this.value)"></td>
-              <td>${parentDisplay}</td>
-            </tr>`;
-        }).join("")}
-      `;
-    }
+function getRowClass(r) {
+  if (!r.code && !r.name) return "";
+  const code = (r.code || "").toUpperCase();
+  const name = (r.name || "").toUpperCase();
+  if (code.startsWith("S")) return "stage";
+  if (code.startsWith("G")) return "group";
+  if (name.includes("FINAL") || name.includes("PLAYOFF")) return "final";
+  return "";
+}
 
-    function selectRow(i) {
-      selected = i;
-      render();
-    }
+function render() {
+  const table = document.getElementById("sheet");
+  document.getElementById("lineCount").textContent = `${compobj.length} lines parsed`;
 
-    function update(i, field, val) {
-      compobj[i][field] = val;
-      render();
-    }
+  table.innerHTML = `
+    <tr>
+      <th style="width:40px;">#</th>
+      <th style="width:60px;">ID</th>
+      <th style="width:60px;">Level</th>
+      <th style="width:80px;">Code</th>
+      <th>Name</th>
+      <th style="width:70px;">Parent</th>
+    </tr>
+    ${compobj.map((r, i) => `
+      <tr class="${getRowClass(r)} ${selected===i?'selected':''}" onclick="selectRow(${i})">
+        <td class="num">${i+1}</td>
+        <td class="num"><input value="${r.id ?? ''}" oninput="update(${i},'id',this.value)"></td>
+        <td class="num"><input value="${r.depth ?? ''}" oninput="update(${i},'depth',this.value)"></td>
+        <td><input value="${r.code ?? ''}" oninput="update(${i},'code',this.value)"></td>
+        <td><input value="${r.name ?? ''}" oninput="update(${i},'name',this.value)"></td>
+        <td class="num"><input value="${r.parentDisplay ?? ''}" oninput="update(${i},'parentDisplay',this.value)"></td>
+      </tr>
+    `).join("")}`;
+}
 
-    function addRow() {
-      const newObj = { depth: 5, code: "", name: "", parent: compobj[selected]?.code || null };
-      if (selected === null) compobj.push(newObj);
-      else compobj.splice(selected + 1, 0, newObj);
-      render();
-    }
+function selectRow(i) {
+  selected = i;
+  render();
+}
 
-    function deleteRow() {
-      if (selected === null) return;
-      compobj.splice(selected, 1);
-      selected = null;
-      render();
-    }
+function update(i, field, value) {
+  compobj[i][field] = value;
+}
 
-    function exportTxt() {
-      const lines = compobj.map((r, i) => {
-        const displayId = baseId + i;
-        const parentRow = compobj.find(x => x.code === r.parent);
-        const parentDisplay = parentRow ? baseId + compobj.indexOf(parentRow) : "";
-        return `${displayId}\t${r.depth}\t${r.code}\t${r.name}\t${parentDisplay}`;
-      }).join("\n");
+function addRow() {
+  compobj.push({ id: compobj.length, depth: 5, code: "", name: "", parentDisplay: "" });
+  render();
+}
 
-      const blob = new Blob([lines], { type: "text/plain" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "compobj.txt";
-      a.click();
-    }
+function insertRows(position) {
+  if (selected === null) return alert("Select a row first.");
+  const count = parseInt(document.getElementById("insertCount").value) || 1;
 
-    function importFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+  const newRows = Array.from({ length: count }, () => ({
+    id: "",
+    depth: 5,
+    code: "",
+    name: "",
+    parentDisplay: ""
+  }));
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const lines = e.target.result.split(/\r?\n/);
-        compobj = lines
-          .filter(line => line.trim() !== "")
-          .map(line => {
-            const parts = line.split(/\t|,/); // handle tab or comma
-            return {
-              id: parseInt(parts[0]),
-              depth: parseInt(parts[1]),
-              code: parts[2] || "",
-              name: parts[3] || "",
-              parent: null, // parent will be relinked later
-              _parentId: parseInt(parts[4]) || null
-            };
-          });
+  const index = position === "above" ? selected : selected + 1;
+  compobj.splice(index, 0, ...newRows);
+  render();
+}
 
-        // Relink parent references dynamically
-        compobj.forEach((r) => {
-          const parentRow = compobj.find(x => x.id === r._parentId);
-          r.parent = parentRow ? parentRow.code : null;
-        });
+function deleteRow() {
+  if (selected === null) return alert("Select a row first.");
+  compobj.splice(selected, 1);
+  selected = null;
+  render();
+}
 
-        render();
+function exportTxt() {
+  const lines = compobj.map(r =>
+    `${r.id}\t${r.depth}\t${r.code}\t${r.name}\t${r.parentDisplay}`
+  ).join("\n");
+  const blob = new Blob([lines], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "compobj.txt";
+  a.click();
+}
+
+function importFile(e, append = false) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function (ev) {
+    const lines = ev.target.result.split(/\r?\n/).filter(l => l.trim() !== "");
+    const parsed = lines.map(l => {
+      const p = l.split(/\t|,/);
+      return {
+        id: p[0] || "",
+        depth: p[1] || "",
+        code: p[2] || "",
+        name: p[3] || "",
+        parentDisplay: p[4] || ""
       };
-      reader.readAsText(file);
-    }
-
-    // Optional: start with example data
-    compobj = [
-      { depth: 2, code: "KORE", name: "NationName_167", parent: null },
-      { depth: 3, code: "C83", name: "TrophyName_Abbr15_83", parent: "KORE" },
-      { depth: 4, code: "S1", name: "FCE_League_Stage_1", parent: "C83" },
-      { depth: 5, code: "G1", name: "", parent: "S1" }
-    ];
+    });
+    compobj = append ? [...compobj, ...parsed] : parsed;
     render();
-  </script>
+  };
+  r.readAsText(f);
+}
+
+/* Example demo data */
+compobj = [
+  { id: 0, depth: 0, code: "FIFA", name: "FIFA", parentDisplay: "-1" },
+  { id: 1, depth: 3, code: "C990", name: "TrophyName_Abbr15_990", parentDisplay: "0" },
+  { id: 2, depth: 4, code: "S1", name: "FCE_Setup_Stage", parentDisplay: "1" },
+  { id: 3, depth: 5, code: "G1", name: "", parentDisplay: "2" },
+  { id: 4, depth: 5, code: "G2", name: "", parentDisplay: "2" },
+  { id: 5, depth: 4, code: "S2", name: "FCE_Group_Stage", parentDisplay: "1" },
+  { id: 6, depth: 5, code: "G1", name: "FCE_Group_A", parentDisplay: "5" },
+  { id: 7, depth: 5, code: "G2", name: "FCE_Group_B", parentDisplay: "5" },
+  { id: 8, depth: 4, code: "S3", name: "FCE_Final", parentDisplay: "1" }
+];
+render();
+</script>
+
 </body>
 </html>
