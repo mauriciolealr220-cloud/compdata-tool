@@ -158,6 +158,7 @@
       <button id="tab-standings" onclick="setActiveSheet('standings')">📊 Standings</button>
       <button id="tab-settings" onclick="setActiveSheet('settings')">⚙️ Settings</button>
       <button id="tab-tasks" onclick="setActiveSheet('tasks')">🧠 Tasks</button>
+      <button id="tab-weather" onclick="setActiveSheet('weather')">🌦️ Weather</button>
     </div>
     <div id="controls">
       <div class="control-set active" data-sheet-controls="compobj">
@@ -238,6 +239,19 @@
         <button onclick="deleteRow('tasks')">− Delete Selected</button>
         <button onclick="exportTxt('tasks')">💾 Export .txt</button>
       </div>
+      <div class="control-set" data-sheet-controls="weather">
+        <button onclick="triggerFileDialog('weather','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-weather-import" accept=".txt,.csv" onchange="importFile(event,false,'weather')">
+        <button onclick="triggerFileDialog('weather','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-weather-append" accept=".txt,.csv" onchange="importFile(event,true,'weather')">
+        <button onclick="addRow('weather')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-weather" min="1" value="1">
+        <button onclick="insertRows('weather','above')">↑ Insert Above</button>
+        <button onclick="insertRows('weather','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('weather')">− Delete Selected</button>
+        <button onclick="exportTxt('weather')">💾 Export .txt</button>
+      </div>
     </div>
 
   <div id="lineCount"></div>
@@ -254,8 +268,9 @@ let advancement = [];
 let standings = [];
 let settings = [];
 let tasks = [];
+let weather = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null, tasks: null };
+const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null, tasks: null, weather: null };
 let tempIdCounter = 0;
 const DYNAMIC_TASK_TYPES = new Set(['updatetable', 'fillfromcomptable']);
 const TASK_HIGHLIGHT_DURATION = 5000;
@@ -381,7 +396,19 @@ function renumberCompobjIds() {
     return { ...row, stageGroupId: mapped };
   });
 
+  updateWeatherIds(idMap);
   updateTaskIds(idMap);
+}
+
+function updateWeatherIds(idMap) {
+  if (weather.length === 0) return;
+  weather = weather.map((row) => {
+    const nation = row.nationId == null ? '' : String(row.nationId);
+    if (nation === '') return row;
+    const mapped = idMap.get(nation);
+    if (mapped === undefined) return row;
+    return { ...row, nationId: mapped };
+  });
 }
 
 function updateTaskIds(idMap) {
@@ -512,6 +539,12 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     return { ...row, stageGroupId: next };
   });
 
+  weather = weather.map((row) => {
+    const nation = row.nationId == null ? '' : String(row.nationId);
+    if (nation !== previous) return row;
+    return { ...row, nationId: next };
+  });
+
   syncTasksForManualIdChange(previous, next);
 }
 
@@ -524,6 +557,7 @@ function render() {
   document.getElementById('tab-standings').classList.toggle('active', activeSheet === 'standings');
   document.getElementById('tab-settings').classList.toggle('active', activeSheet === 'settings');
   document.getElementById('tab-tasks').classList.toggle('active', activeSheet === 'tasks');
+  document.getElementById('tab-weather').classList.toggle('active', activeSheet === 'weather');
   updateControlVisibility();
 
   let countLabel = '';
@@ -535,6 +569,8 @@ function render() {
     countLabel = `Advancement: ${advancement.length} links parsed`;
   } else if (activeSheet === 'standings') {
     countLabel = `Standings: ${standings.length} slots parsed`;
+  } else if (activeSheet === 'weather') {
+    countLabel = `Weather: ${weather.length} rows parsed`;
   } else if (activeSheet === 'tasks') {
     countLabel = `Tasks: ${tasks.length} automation rows parsed`;
   } else {
@@ -646,6 +682,34 @@ function render() {
           <td class="num"><input value="${safe(r.arg2)}" oninput="updateField(${i},'arg2',this.value)"></td>
         </tr>`;
       }).join("")}`;
+  } else if (activeSheet === 'weather') {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:110px;">Nation ID</th>
+        <th style="width:70px;">Entry</th>
+        <th style="width:80px;">Temp</th>
+        <th style="width:80px;">Cloud</th>
+        <th style="width:80px;">Rain</th>
+        <th style="width:80px;">Snow</th>
+        <th style="width:80px;">Wind</th>
+        <th style="width:90px;">Start</th>
+        <th style="width:90px;">End</th>
+      </tr>
+      ${weather.map((r, i) => `
+        <tr class="${selections.weather===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num"><input value="${safe(r.nationId)}" oninput="updateField(${i},'nationId',this.value)"></td>
+          <td class="num"><input value="${safe(r.entry)}" oninput="updateField(${i},'entry',this.value)"></td>
+          <td class="num"><input value="${safe(r.temp)}" oninput="updateField(${i},'temp',this.value)"></td>
+          <td class="num"><input value="${safe(r.cloud)}" oninput="updateField(${i},'cloud',this.value)"></td>
+          <td class="num"><input value="${safe(r.rain)}" oninput="updateField(${i},'rain',this.value)"></td>
+          <td class="num"><input value="${safe(r.snow)}" oninput="updateField(${i},'snow',this.value)"></td>
+          <td class="num"><input value="${safe(r.wind)}" oninput="updateField(${i},'wind',this.value)"></td>
+          <td class="num"><input value="${safe(r.start)}" oninput="updateField(${i},'start',this.value)"></td>
+          <td class="num"><input value="${safe(r.end)}" oninput="updateField(${i},'end',this.value)"></td>
+        </tr>
+      `).join("")}`;
   } else {
     table.innerHTML = `
       <tr>
@@ -682,6 +746,7 @@ function getDataArray(sheet) {
   if (sheet === 'advancement') return advancement;
   if (sheet === 'standings') return standings;
   if (sheet === 'tasks') return tasks;
+  if (sheet === 'weather') return weather;
   return settings;
 }
 
@@ -715,6 +780,9 @@ function defaultRowForSheet(sheet) {
   if (sheet === 'tasks') {
     return { trophyId: '', phase: '', taskType: '', targetId: '', refId: '', arg1: '', arg2: '' };
   }
+  if (sheet === 'weather') {
+    return { nationId: '', entry: '', temp: '', cloud: '', rain: '', snow: '', wind: '', start: '', end: '' };
+  }
   return { stageGroupId: '', key: '', value: '' };
 }
 
@@ -731,6 +799,8 @@ function addRow(sheet = activeSheet) {
   } else if (sheet === 'tasks') {
     clearTaskHighlights();
     tasks.push(defaultRowForSheet(sheet));
+  } else if (sheet === 'weather') {
+    weather.push(defaultRowForSheet(sheet));
   } else {
     settings.push(defaultRowForSheet(sheet));
   }
@@ -767,6 +837,9 @@ function insertRows(sheet, position) {
     clearTaskHighlights();
     const index = position === 'above' ? selected : selected + 1;
     tasks.splice(index, 0, ...newRows);
+  } else if (sheet === 'weather') {
+    const index = position === 'above' ? selected : selected + 1;
+    weather.splice(index, 0, ...newRows);
   } else {
     const index = position === 'above' ? selected : selected + 1;
     settings.splice(index, 0, ...newRows);
@@ -794,6 +867,9 @@ function deleteRow(sheet = activeSheet) {
     clearTaskHighlights();
     tasks.splice(selected, 1);
     selections.tasks = null;
+  } else if (sheet === 'weather') {
+    weather.splice(selected, 1);
+    selections.weather = null;
   } else {
     settings.splice(selected, 1);
     selections.settings = null;
@@ -817,6 +893,9 @@ function exportTxt(sheet = activeSheet) {
   } else if (sheet === 'standings') {
     lines = activeData.map(r => `${r.groupId},${r.slotNumber}`).join('\n');
     filename = 'standings.txt';
+  } else if (sheet === 'weather') {
+    lines = activeData.map(r => `${r.nationId},${r.entry},${r.temp},${r.cloud},${r.rain},${r.snow},${r.wind},${r.start},${r.end}`).join('\n');
+    filename = 'weather.txt';
   } else if (sheet === 'tasks') {
     lines = activeData.map(r => `${r.trophyId},${r.phase},${r.taskType},${r.targetId},${r.refId},${r.arg1},${r.arg2}`).join('\n');
     filename = 'tasks.txt';
@@ -887,6 +966,23 @@ function importFile(e, append = false, sheetOverride = null) {
         };
       });
       standings = append ? [...standings, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else if (sheetTarget === 'weather') {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          nationId: p[0] || '',
+          entry: p[1] || '',
+          temp: p[2] || '',
+          cloud: p[3] || '',
+          rain: p[4] || '',
+          snow: p[5] || '',
+          wind: p[6] || '',
+          start: p[7] || '',
+          end: p[8] || ''
+        };
+      });
+      weather = append ? [...weather, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     } else if (sheetTarget === 'tasks') {
       const parsed = lines.map(l => {
@@ -1026,6 +1122,21 @@ tasks = [
   { trophyId: '1626', phase: 'end', taskType: 'UpdateTable', targetId: '1626', refId: '1628', arg1: '2', arg2: '2' },
   { trophyId: '1626', phase: 'end', taskType: 'UpdateTable', targetId: '1626', refId: '1628', arg1: '3', arg2: '3' },
   { trophyId: '1626', phase: 'end', taskType: 'UpdateLeagueStats', targetId: '1627', refId: '2149', arg1: '0', arg2: '0' }
+];
+
+weather = [
+  { nationId: '1777', entry: '1', temp: '65', cloud: '15', rain: '10', snow: '0', wind: '10', start: '2345', end: '45' },
+  { nationId: '1777', entry: '2', temp: '60', cloud: '25', rain: '10', snow: '0', wind: '5', start: '2315', end: '15' },
+  { nationId: '1777', entry: '3', temp: '60', cloud: '25', rain: '10', snow: '0', wind: '5', start: '2245', end: '2345' },
+  { nationId: '1777', entry: '4', temp: '55', cloud: '20', rain: '15', snow: '0', wind: '10', start: '2200', end: '2300' },
+  { nationId: '1777', entry: '5', temp: '45', cloud: '10', rain: '15', snow: '0', wind: '30', start: '2130', end: '2230' },
+  { nationId: '1777', entry: '6', temp: '45', cloud: '5', rain: '20', snow: '0', wind: '30', start: '2115', end: '2215' },
+  { nationId: '1777', entry: '7', temp: '35', cloud: '15', rain: '10', snow: '0', wind: '40', start: '2130', end: '2230' },
+  { nationId: '1777', entry: '8', temp: '40', cloud: '15', rain: '20', snow: '0', wind: '25', start: '2145', end: '2245' },
+  { nationId: '1777', entry: '9', temp: '55', cloud: '10', rain: '25', snow: '0', wind: '10', start: '2215', end: '2300' },
+  { nationId: '1777', entry: '10', temp: '55', cloud: '25', rain: '10', snow: '0', wind: '10', start: '2230', end: '2330' },
+  { nationId: '1777', entry: '11', temp: '65', cloud: '15', rain: '10', snow: '0', wind: '10', start: '2300', end: '15' },
+  { nationId: '1777', entry: '12', temp: '80', cloud: '5', rain: '10', snow: '0', wind: '5', start: '2330', end: '45' }
 ];
 
 renumberCompobjIds();
