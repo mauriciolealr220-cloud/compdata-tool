@@ -129,6 +129,8 @@
   tr:hover td { background: #f5faff; }
   tr.selected td { background: #e9f3ff !important; outline: 1px solid #0078d7; }
 
+  #sheet tr:nth-child(even) td { background: #fafcff; }
+
   #table-wrapper {
     height: 85vh;
     overflow-y: auto;
@@ -170,6 +172,7 @@ let compobj = [];
 let schedule = [];
 let activeSheet = 'compobj';
 const selections = { compobj: null, schedule: null };
+let tempIdCounter = 0;
 
 function safe(value) {
   return (value ?? '').toString()
@@ -189,6 +192,59 @@ function getRowClass(r) {
   return "";
 }
 
+function createDefaultCompobjRow() {
+  return { id: `__temp-${tempIdCounter++}`, depth: 5, code: '', name: '', parentDisplay: '' };
+}
+
+function renumberCompobjIds() {
+  const idMap = new Map();
+
+  compobj.forEach((row, index) => {
+    const oldId = row.id == null ? '' : String(row.id);
+    const newId = String(index);
+    if (oldId !== '') {
+      idMap.set(oldId, newId);
+    }
+    row.id = newId;
+  });
+
+  compobj.forEach((row) => {
+    const parent = row.parentDisplay == null ? '' : String(row.parentDisplay);
+    if (parent === '') return;
+    const mapped = idMap.get(parent);
+    if (mapped !== undefined) {
+      row.parentDisplay = mapped;
+    }
+  });
+
+  schedule = schedule.map((row) => {
+    const current = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (current === '') return row;
+    const mapped = idMap.get(current);
+    if (mapped === undefined) return row;
+    return { ...row, stageGroupId: mapped };
+  });
+}
+
+function syncReferencesForManualIdChange(oldValue, newValue) {
+  const previous = oldValue == null ? '' : String(oldValue);
+  const next = newValue == null ? '' : String(newValue);
+  if (previous === next) return;
+
+  compobj.forEach((row) => {
+    const parent = row.parentDisplay == null ? '' : String(row.parentDisplay);
+    if (parent === previous) {
+      row.parentDisplay = next;
+    }
+  });
+
+  schedule = schedule.map((row) => {
+    const current = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (current !== previous) return row;
+    return { ...row, stageGroupId: next };
+  });
+}
+
 function render() {
   const table = document.getElementById("sheet");
   const lineCount = document.getElementById("lineCount");
@@ -204,8 +260,8 @@ function render() {
   if (activeSheet === 'compobj') {
     table.innerHTML = `
       <tr>
-        <th style="width:40px;">#</th>
-        <th style="width:60px;">ID</th>
+        <th style="width:32px;">#</th>
+        <th style="width:70px;">ID</th>
         <th style="width:60px;">Level</th>
         <th style="width:80px;">Code</th>
         <th>Name</th>
@@ -260,7 +316,11 @@ function selectRow(i) {
 function updateField(i, field, value) {
   const target = activeSheet === 'compobj' ? compobj : schedule;
   if (!target[i]) return;
+  const previousValue = target[i][field];
   target[i][field] = value;
+  if (activeSheet === 'compobj' && field === 'id') {
+    syncReferencesForManualIdChange(previousValue, value);
+  }
 }
 
 function getSelectedIndex() {
@@ -269,14 +329,15 @@ function getSelectedIndex() {
 
 function defaultRowForActiveSheet() {
   if (activeSheet === 'compobj') {
-    return { id: '', depth: 5, code: '', name: '', parentDisplay: '' };
+    return createDefaultCompobjRow();
   }
   return { stageGroupId: '', dayId: '', matchday: '', minMatches: '', maxMatches: '', time: '' };
 }
 
 function addRow() {
   if (activeSheet === 'compobj') {
-    compobj.push({ id: compobj.length, depth: 5, code: '', name: '', parentDisplay: '' });
+    compobj.push(createDefaultCompobjRow());
+    renumberCompobjIds();
   } else {
     schedule.push(defaultRowForActiveSheet());
   }
@@ -297,13 +358,9 @@ function insertRows(position) {
   const newRows = Array.from({ length: count }, () => ({ ...defaultRowForActiveSheet() }));
 
   if (activeSheet === 'compobj') {
-    const referenceId = getNumericIdForCompRow(selected);
     const index = position === 'above' ? selected : selected + 1;
     compobj.splice(index, 0, ...newRows);
-    const threshold = position === 'above'
-      ? referenceId ?? selected
-      : (referenceId !== null ? referenceId + 1 : selected + 1);
-    adjustScheduleIdsOnInsert(threshold, count);
+    renumberCompobjIds();
   } else {
     const index = position === 'above' ? selected : selected + 1;
     schedule.splice(index, 0, ...newRows);
@@ -315,10 +372,9 @@ function deleteRow() {
   const selected = getSelectedIndex();
   if (selected === null) return alert('Select a row first.');
   if (activeSheet === 'compobj') {
-    const deletedId = getNumericIdForCompRow(selected);
     compobj.splice(selected, 1);
     selections.compobj = null;
-    adjustScheduleIdsOnDelete(deletedId ?? selected);
+    renumberCompobjIds();
   } else {
     schedule.splice(selected, 1);
     selections.schedule = null;
@@ -364,6 +420,7 @@ function importFile(e, append = false) {
       });
       compobj = append ? [...compobj, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+      renumberCompobjIds();
     } else {
       const parsed = lines.map(l => {
         const p = l.split(/\t|,/);
@@ -384,36 +441,6 @@ function importFile(e, append = false) {
   r.readAsText(f);
 }
 
-function getNumericIdForCompRow(index) {
-  if (index == null || index < 0 || index >= compobj.length) return null;
-  const numeric = parseInt(compobj[index].id, 10);
-  return Number.isNaN(numeric) ? null : numeric;
-}
-
-function adjustScheduleIdsOnInsert(threshold, count) {
-  if (!Number.isFinite(threshold) || !count) return;
-  schedule = schedule.map(row => {
-    const current = parseInt(row.stageGroupId, 10);
-    if (Number.isNaN(current)) return row;
-    if (current >= threshold) {
-      return { ...row, stageGroupId: String(current + count) };
-    }
-    return row;
-  });
-}
-
-function adjustScheduleIdsOnDelete(threshold) {
-  if (!Number.isFinite(threshold)) return;
-  schedule = schedule.map(row => {
-    const current = parseInt(row.stageGroupId, 10);
-    if (Number.isNaN(current)) return row;
-    if (current > threshold) {
-      return { ...row, stageGroupId: String(current - 1) };
-    }
-    return row;
-  });
-}
-
 /* Example demo data */
 compobj = [
   { id: 0, depth: 0, code: "FIFA", name: "FIFA", parentDisplay: "-1" },
@@ -432,6 +459,7 @@ schedule = [
   { stageGroupId: '5', dayId: '258', matchday: '2', minMatches: '2', maxMatches: '4', time: '1600' }
 ];
 
+renumberCompobjIds();
 render();
 </script>
 
