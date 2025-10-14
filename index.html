@@ -154,6 +154,7 @@
       <button id="tab-schedule" onclick="setActiveSheet('schedule')">📅 Schedule</button>
       <button id="tab-advancement" onclick="setActiveSheet('advancement')">🏆 Advancement</button>
       <button id="tab-standings" onclick="setActiveSheet('standings')">📊 Standings</button>
+      <button id="tab-settings" onclick="setActiveSheet('settings')">⚙️ Settings</button>
     </div>
     <div id="controls">
       <div class="control-set active" data-sheet-controls="compobj">
@@ -208,6 +209,19 @@
         <button onclick="deleteRow('standings')">− Delete Selected</button>
         <button onclick="exportTxt('standings')">💾 Export .txt</button>
       </div>
+      <div class="control-set" data-sheet-controls="settings">
+        <button onclick="triggerFileDialog('settings','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-settings-import" accept=".txt,.csv" onchange="importFile(event,false,'settings')">
+        <button onclick="triggerFileDialog('settings','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-settings-append" accept=".txt,.csv" onchange="importFile(event,true,'settings')">
+        <button onclick="addRow('settings')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-settings" min="1" value="1">
+        <button onclick="insertRows('settings','above')">↑ Insert Above</button>
+        <button onclick="insertRows('settings','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('settings')">− Delete Selected</button>
+        <button onclick="exportTxt('settings')">💾 Export .txt</button>
+      </div>
     </div>
 
   <div id="lineCount"></div>
@@ -222,8 +236,9 @@ let compobj = [];
 let schedule = [];
 let advancement = [];
 let standings = [];
+let settings = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null, advancement: null, standings: null };
+const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null };
 let tempIdCounter = 0;
 
 function safe(value) {
@@ -297,6 +312,14 @@ function renumberCompobjIds() {
     if (mapped === undefined) return row;
     return { ...row, groupId: mapped };
   });
+
+  settings = settings.map((row) => {
+    const stageGroup = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (stageGroup === '') return row;
+    const mapped = idMap.get(stageGroup);
+    if (mapped === undefined) return row;
+    return { ...row, stageGroupId: mapped };
+  });
 }
 
 function syncReferencesForManualIdChange(oldValue, newValue) {
@@ -339,6 +362,12 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     if (group !== previous) return row;
     return { ...row, groupId: next };
   });
+
+  settings = settings.map((row) => {
+    const stageGroup = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (stageGroup !== previous) return row;
+    return { ...row, stageGroupId: next };
+  });
 }
 
 function render() {
@@ -348,6 +377,7 @@ function render() {
   document.getElementById('tab-schedule').classList.toggle('active', activeSheet === 'schedule');
   document.getElementById('tab-advancement').classList.toggle('active', activeSheet === 'advancement');
   document.getElementById('tab-standings').classList.toggle('active', activeSheet === 'standings');
+  document.getElementById('tab-settings').classList.toggle('active', activeSheet === 'settings');
   updateControlVisibility();
 
   let countLabel = '';
@@ -357,6 +387,8 @@ function render() {
     countLabel = `Schedule: ${schedule.length} entries parsed`;
   } else if (activeSheet === 'advancement') {
     countLabel = `Advancement: ${advancement.length} links parsed`;
+  } else if (activeSheet === 'settings') {
+    countLabel = `Settings: ${settings.length} entries parsed`;
   } else {
     countLabel = `Standings: ${standings.length} slots parsed`;
   }
@@ -422,6 +454,22 @@ function render() {
           <td class="num"><input value="${safe(r.teamCount)}" oninput="updateField(${i},'teamCount',this.value)"></td>
         </tr>
       `).join("")}`;
+  } else if (activeSheet === 'settings') {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:110px;">Stage/Group ID</th>
+        <th>Setting Key</th>
+        <th>Setting Value</th>
+      </tr>
+      ${settings.map((r, i) => `
+        <tr class="${selections.settings===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num"><input value="${safe(r.stageGroupId)}" oninput="updateField(${i},'stageGroupId',this.value)"></td>
+          <td><input value="${safe(r.key)}" oninput="updateField(${i},'key',this.value)"></td>
+          <td><input value="${safe(r.value)}" oninput="updateField(${i},'value',this.value)"></td>
+        </tr>
+      `).join("")}`;
   } else {
     table.innerHTML = `
       <tr>
@@ -454,7 +502,8 @@ function getDataArray(sheet) {
   if (sheet === 'compobj') return compobj;
   if (sheet === 'schedule') return schedule;
   if (sheet === 'advancement') return advancement;
-  return standings;
+  if (sheet === 'standings') return standings;
+  return settings;
 }
 
 function updateField(i, field, value) {
@@ -481,7 +530,10 @@ function defaultRowForSheet(sheet) {
   if (sheet === 'advancement') {
     return { sourceGroupId: '', placement: '', targetGroupId: '', teamCount: '' };
   }
-  return { groupId: '', slotNumber: '' };
+  if (sheet === 'standings') {
+    return { groupId: '', slotNumber: '' };
+  }
+  return { stageGroupId: '', key: '', value: '' };
 }
 
 function addRow(sheet = activeSheet) {
@@ -492,8 +544,10 @@ function addRow(sheet = activeSheet) {
     schedule.push(defaultRowForSheet(sheet));
   } else if (sheet === 'advancement') {
     advancement.push(defaultRowForSheet(sheet));
-  } else {
+  } else if (sheet === 'standings') {
     standings.push(defaultRowForSheet(sheet));
+  } else {
+    settings.push(defaultRowForSheet(sheet));
   }
   render();
 }
@@ -521,9 +575,12 @@ function insertRows(sheet, position) {
   } else if (sheet === 'advancement') {
     const index = position === 'above' ? selected : selected + 1;
     advancement.splice(index, 0, ...newRows);
-  } else {
+  } else if (sheet === 'standings') {
     const index = position === 'above' ? selected : selected + 1;
     standings.splice(index, 0, ...newRows);
+  } else {
+    const index = position === 'above' ? selected : selected + 1;
+    settings.splice(index, 0, ...newRows);
   }
   render();
 }
@@ -541,9 +598,12 @@ function deleteRow(sheet = activeSheet) {
   } else if (sheet === 'advancement') {
     advancement.splice(selected, 1);
     selections.advancement = null;
-  } else {
+  } else if (sheet === 'standings') {
     standings.splice(selected, 1);
     selections.standings = null;
+  } else {
+    settings.splice(selected, 1);
+    selections.settings = null;
   }
   render();
 }
@@ -561,9 +621,12 @@ function exportTxt(sheet = activeSheet) {
   } else if (sheet === 'advancement') {
     lines = activeData.map(r => `${r.sourceGroupId},${r.placement},${r.targetGroupId},${r.teamCount}`).join('\n');
     filename = 'advancement.txt';
-  } else {
+  } else if (sheet === 'standings') {
     lines = activeData.map(r => `${r.groupId},${r.slotNumber}`).join('\n');
     filename = 'standings.txt';
+  } else {
+    lines = activeData.map(r => `${r.stageGroupId},${r.key},${r.value}`).join('\n');
+    filename = 'settings.txt';
   }
   const blob = new Blob([lines], { type: 'text/plain' });
   const a = document.createElement('a');
@@ -619,7 +682,7 @@ function importFile(e, append = false, sheetOverride = null) {
       });
       advancement = append ? [...advancement, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
-    } else {
+    } else if (sheetTarget === 'standings') {
       const parsed = lines.map(l => {
         const p = l.split(/\t|,/);
         return {
@@ -628,6 +691,17 @@ function importFile(e, append = false, sheetOverride = null) {
         };
       });
       standings = append ? [...standings, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          stageGroupId: p[0] || '',
+          key: p[1] || '',
+          value: p.slice(2).join(',') || ''
+        };
+      });
+      settings = append ? [...settings, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     }
     render();
@@ -697,6 +771,41 @@ standings = [
   { groupId: '1634', slotNumber: '1' },
   { groupId: '1636', slotNumber: '0' },
   { groupId: '1636', slotNumber: '1' }
+];
+
+settings = [
+  { stageGroupId: '1625', key: 'nation_id', value: '159' },
+  { stageGroupId: '1625', key: 'rule_suspension', value: '1625' },
+  { stageGroupId: '1625', key: 'schedule_seasonstartmonth', value: 'JUL' },
+  { stageGroupId: '1626', key: 'asset_id', value: '2149' },
+  { stageGroupId: '1626', key: 'comp_type', value: 'LEAGUE' },
+  { stageGroupId: '1626', key: 'rule_numyellowstored', value: '4' },
+  { stageGroupId: '1627', key: 'match_matchsituation', value: 'LEAGUE' },
+  { stageGroupId: '1628', key: 'num_games', value: '2' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '1' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '2' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '3' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '4' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '5' },
+  { stageGroupId: '1628', key: 'info_label_slot_adv_group', value: '6' },
+  { stageGroupId: '1629', key: 'match_matchsituation', value: 'ROUNDX' },
+  { stageGroupId: '1629', key: 'match_stagetype', value: 'KO1LEG' },
+  { stageGroupId: '1629', key: 'info_prize_money', value: '84920' },
+  { stageGroupId: '1629', key: 'info_prize_money_drop', value: '100' },
+  { stageGroupId: '1630', key: 'num_games', value: '1' },
+  { stageGroupId: '1631', key: 'num_games', value: '1' },
+  { stageGroupId: '1632', key: 'match_stagetype', value: 'KO2LEGS' },
+  { stageGroupId: '1632', key: 'match_matchsituation', value: 'SEMI' },
+  { stageGroupId: '1632', key: 'info_prize_money', value: '169845' },
+  { stageGroupId: '1632', key: 'info_prize_money_drop', value: '100' },
+  { stageGroupId: '1633', key: 'num_games', value: '2' },
+  { stageGroupId: '1634', key: 'num_games', value: '2' },
+  { stageGroupId: '1635', key: 'match_stagetype', value: 'KO1LEG' },
+  { stageGroupId: '1635', key: 'match_matchsituation', value: 'FINAL' },
+  { stageGroupId: '1635', key: 'info_prize_money', value: '905840' },
+  { stageGroupId: '1635', key: 'info_prize_money_drop', value: '50' },
+  { stageGroupId: '1636', key: 'num_games', value: '1' },
+  { stageGroupId: '1636', key: 'info_slot_champ', value: '1' }
 ];
 
 renumberCompobjIds();
