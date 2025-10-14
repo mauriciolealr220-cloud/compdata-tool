@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CompObj Sheet Editor</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1>CompObj Sheet Editor</h1>
+        <p class="app__description">
+          Build an Excel-like view of CompObj data. Line numbers adjust automatically and reference numbers stay aligned with their targets.
+        </p>
+        <section class="app__controls">
+          <label class="control">
+            Starting line
+            <input type="number" id="start-line" value="1639" />
+          </label>
+          <button id="add-row" class="button">Add row at end</button>
+          <button id="export-json" class="button button--secondary">Export JSON</button>
+        </section>
+      </header>
+
+      <section class="table-container">
+        <table id="compobj-table">
+          <thead>
+            <tr>
+              <th class="column--line">Line</th>
+              <th>Depth</th>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Reference line</th>
+              <th class="column--actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section class="app__panel" id="inspector">
+        <h2>Row inspector</h2>
+        <p class="inspector__hint">
+          Select a row to edit its values and manage its reference.
+        </p>
+        <form id="row-form" class="row-form" autocomplete="off">
+          <div class="row-form__field">
+            <label for="depth">Depth</label>
+            <input type="number" id="depth" name="depth" min="1" max="9" />
+          </div>
+          <div class="row-form__field">
+            <label for="code">Code</label>
+            <input type="text" id="code" name="code" />
+          </div>
+          <div class="row-form__field">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" />
+          </div>
+          <div class="row-form__field">
+            <label for="reference">References row</label>
+            <select id="reference" name="reference">
+              <option value="">None</option>
+            </select>
+          </div>
+          <div class="row-form__actions">
+            <button type="submit" class="button">Save changes</button>
+            <button type="button" id="delete-row" class="button button--danger">Delete row</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <dialog id="export-dialog">
+      <form method="dialog">
+        <header>
+          <h3>Exported JSON</h3>
+        </header>
+        <textarea readonly></textarea>
+        <menu>
+          <button value="cancel" class="button">Close</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <template id="table-row-template">
+      <tr>
+        <td class="column--line"></td>
+        <td data-field="depth"></td>
+        <td data-field="code"></td>
+        <td data-field="name"></td>
+        <td data-field="reference"></td>
+        <td class="column--actions">
+          <button type="button" class="button button--tiny" data-action="add-above">Add above</button>
+          <button type="button" class="button button--tiny" data-action="add-below">Add below</button>
+          <button type="button" class="button button--tiny" data-action="select">Edit</button>
+        </td>
+      </tr>
+    </template>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
