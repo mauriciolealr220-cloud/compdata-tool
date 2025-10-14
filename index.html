@@ -136,6 +136,8 @@
   tr:hover td { background: #f5faff; }
   tr.selected td { background: #e9f3ff !important; outline: 1px solid #0078d7; }
 
+  td.highlight-auto { background: #e3f1ff !important; transition: background-color 0.3s ease-in-out; }
+
   #sheet tr:nth-child(even) td { background: #fdf7ef; }
 
   #table-wrapper {
@@ -155,6 +157,7 @@
       <button id="tab-advancement" onclick="setActiveSheet('advancement')">🏆 Advancement</button>
       <button id="tab-standings" onclick="setActiveSheet('standings')">📊 Standings</button>
       <button id="tab-settings" onclick="setActiveSheet('settings')">⚙️ Settings</button>
+      <button id="tab-tasks" onclick="setActiveSheet('tasks')">🧠 Tasks</button>
     </div>
     <div id="controls">
       <div class="control-set active" data-sheet-controls="compobj">
@@ -222,6 +225,19 @@
         <button onclick="deleteRow('settings')">− Delete Selected</button>
         <button onclick="exportTxt('settings')">💾 Export .txt</button>
       </div>
+      <div class="control-set" data-sheet-controls="tasks">
+        <button onclick="triggerFileDialog('tasks','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-tasks-import" accept=".txt,.csv" onchange="importFile(event,false,'tasks')">
+        <button onclick="triggerFileDialog('tasks','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-tasks-append" accept=".txt,.csv" onchange="importFile(event,true,'tasks')">
+        <button onclick="addRow('tasks')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-tasks" min="1" value="1">
+        <button onclick="insertRows('tasks','above')">↑ Insert Above</button>
+        <button onclick="insertRows('tasks','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('tasks')">− Delete Selected</button>
+        <button onclick="exportTxt('tasks')">💾 Export .txt</button>
+      </div>
     </div>
 
   <div id="lineCount"></div>
@@ -237,9 +253,53 @@ let schedule = [];
 let advancement = [];
 let standings = [];
 let settings = [];
+let tasks = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null };
+const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null, tasks: null };
 let tempIdCounter = 0;
+const DYNAMIC_TASK_TYPES = new Set(['updatetable', 'fillfromcomptable']);
+const TASK_HIGHLIGHT_DURATION = 5000;
+const taskHighlightMap = new Map();
+
+function shouldUpdateTaskRefId(taskType) {
+  const normalized = (taskType || '').trim().toLowerCase();
+  return DYNAMIC_TASK_TYPES.has(normalized);
+}
+
+function markTaskHighlight(rowIndex, columnKey) {
+  if (!taskHighlightMap.has(rowIndex)) {
+    taskHighlightMap.set(rowIndex, { columns: new Set(), timers: new Map() });
+  }
+  const entry = taskHighlightMap.get(rowIndex);
+  if (!entry.columns.has(columnKey)) {
+    entry.columns.add(columnKey);
+  }
+  const timers = entry.timers;
+  const existing = timers.get(columnKey);
+  if (existing) {
+    clearTimeout(existing);
+  }
+  const timeoutId = setTimeout(() => {
+    const current = taskHighlightMap.get(rowIndex);
+    if (!current) return;
+    current.columns.delete(columnKey);
+    current.timers.delete(columnKey);
+    if (current.columns.size === 0) {
+      taskHighlightMap.delete(rowIndex);
+    }
+    if (activeSheet === 'tasks') {
+      render();
+    }
+  }, TASK_HIGHLIGHT_DURATION);
+  timers.set(columnKey, timeoutId);
+}
+
+function clearTaskHighlights() {
+  taskHighlightMap.forEach((entry) => {
+    entry.timers.forEach((timeoutId) => clearTimeout(timeoutId));
+  });
+  taskHighlightMap.clear();
+}
 
 function safe(value) {
   return (value ?? '').toString()
@@ -320,6 +380,89 @@ function renumberCompobjIds() {
     if (mapped === undefined) return row;
     return { ...row, stageGroupId: mapped };
   });
+
+  updateTaskIds(idMap);
+}
+
+function updateTaskIds(idMap) {
+  if (tasks.length === 0) return;
+  tasks = tasks.map((row, index) => {
+    let nextRow = row;
+    let changed = false;
+
+    const trophy = row.trophyId == null ? '' : String(row.trophyId);
+    if (trophy !== '') {
+      const mappedTrophy = idMap.get(trophy);
+      if (mappedTrophy !== undefined && mappedTrophy !== row.trophyId) {
+        if (!changed) nextRow = { ...nextRow };
+        nextRow.trophyId = mappedTrophy;
+        markTaskHighlight(index, 'trophyId');
+        changed = true;
+      }
+    }
+
+    const target = row.targetId == null ? '' : String(row.targetId);
+    if (target !== '') {
+      const mappedTarget = idMap.get(target);
+      if (mappedTarget !== undefined && mappedTarget !== row.targetId) {
+        if (!changed) nextRow = { ...nextRow };
+        nextRow.targetId = mappedTarget;
+        markTaskHighlight(index, 'targetId');
+        changed = true;
+      }
+    }
+
+    const reference = row.refId == null ? '' : String(row.refId);
+    if (reference !== '' && shouldUpdateTaskRefId(row.taskType)) {
+      const mappedReference = idMap.get(reference);
+      if (mappedReference !== undefined && mappedReference !== row.refId) {
+        if (!changed) nextRow = { ...nextRow };
+        nextRow.refId = mappedReference;
+        markTaskHighlight(index, 'refId');
+        changed = true;
+      }
+    }
+
+    return changed ? nextRow : row;
+  });
+}
+
+function syncTasksForManualIdChange(previous, next) {
+  if (tasks.length === 0) return;
+  const prevValue = previous == null ? '' : String(previous);
+  const nextValue = next == null ? '' : String(next);
+  if (prevValue === nextValue) return;
+
+  tasks = tasks.map((row, index) => {
+    let nextRow = row;
+    let changed = false;
+
+    const trophy = row.trophyId == null ? '' : String(row.trophyId);
+    if (trophy === prevValue) {
+      if (!changed) nextRow = { ...nextRow };
+      nextRow.trophyId = nextValue;
+      markTaskHighlight(index, 'trophyId');
+      changed = true;
+    }
+
+    const target = row.targetId == null ? '' : String(row.targetId);
+    if (target === prevValue) {
+      if (!changed) nextRow = { ...nextRow };
+      nextRow.targetId = nextValue;
+      markTaskHighlight(index, 'targetId');
+      changed = true;
+    }
+
+    const reference = row.refId == null ? '' : String(row.refId);
+    if (reference === prevValue && shouldUpdateTaskRefId(row.taskType)) {
+      if (!changed) nextRow = { ...nextRow };
+      nextRow.refId = nextValue;
+      markTaskHighlight(index, 'refId');
+      changed = true;
+    }
+
+    return changed ? nextRow : row;
+  });
 }
 
 function syncReferencesForManualIdChange(oldValue, newValue) {
@@ -368,6 +511,8 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     if (stageGroup !== previous) return row;
     return { ...row, stageGroupId: next };
   });
+
+  syncTasksForManualIdChange(previous, next);
 }
 
 function render() {
@@ -378,6 +523,7 @@ function render() {
   document.getElementById('tab-advancement').classList.toggle('active', activeSheet === 'advancement');
   document.getElementById('tab-standings').classList.toggle('active', activeSheet === 'standings');
   document.getElementById('tab-settings').classList.toggle('active', activeSheet === 'settings');
+  document.getElementById('tab-tasks').classList.toggle('active', activeSheet === 'tasks');
   updateControlVisibility();
 
   let countLabel = '';
@@ -387,10 +533,12 @@ function render() {
     countLabel = `Schedule: ${schedule.length} entries parsed`;
   } else if (activeSheet === 'advancement') {
     countLabel = `Advancement: ${advancement.length} links parsed`;
-  } else if (activeSheet === 'settings') {
-    countLabel = `Settings: ${settings.length} entries parsed`;
-  } else {
+  } else if (activeSheet === 'standings') {
     countLabel = `Standings: ${standings.length} slots parsed`;
+  } else if (activeSheet === 'tasks') {
+    countLabel = `Tasks: ${tasks.length} automation rows parsed`;
+  } else {
+    countLabel = `Settings: ${settings.length} entries parsed`;
   }
   lineCount.textContent = countLabel;
 
@@ -454,7 +602,51 @@ function render() {
           <td class="num"><input value="${safe(r.teamCount)}" oninput="updateField(${i},'teamCount',this.value)"></td>
         </tr>
       `).join("")}`;
-  } else if (activeSheet === 'settings') {
+  } else if (activeSheet === 'standings') {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:110px;">Group ID</th>
+        <th style="width:110px;">Slot Number</th>
+      </tr>
+      ${standings.map((r, i) => `
+        <tr class="${selections.standings===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num"><input value="${safe(r.groupId)}" oninput="updateField(${i},'groupId',this.value)"></td>
+          <td class="num"><input value="${safe(r.slotNumber)}" oninput="updateField(${i},'slotNumber',this.value)"></td>
+        </tr>
+      `).join("")}`;
+  } else if (activeSheet === 'tasks') {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:120px;">Trophy ID</th>
+        <th style="width:90px;">Task Phase</th>
+        <th style="width:150px;">Task Type</th>
+        <th style="width:120px;">Target ID</th>
+        <th style="width:120px;">Reference ID</th>
+        <th style="width:80px;">Arg1</th>
+        <th style="width:80px;">Arg2</th>
+      </tr>
+      ${tasks.map((r, i) => {
+        const highlight = taskHighlightMap.get(i);
+        const columns = highlight ? highlight.columns : null;
+        const trophyClass = columns && columns.has('trophyId') ? 'highlight-auto' : '';
+        const targetClass = columns && columns.has('targetId') ? 'highlight-auto' : '';
+        const refClass = columns && columns.has('refId') ? 'highlight-auto' : '';
+        return `
+        <tr class="${selections.tasks===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num ${trophyClass}"><input value="${safe(r.trophyId)}" oninput="updateField(${i},'trophyId',this.value)"></td>
+          <td><input value="${safe(r.phase)}" oninput="updateField(${i},'phase',this.value)"></td>
+          <td><input value="${safe(r.taskType)}" oninput="updateField(${i},'taskType',this.value)"></td>
+          <td class="num ${targetClass}"><input value="${safe(r.targetId)}" oninput="updateField(${i},'targetId',this.value)"></td>
+          <td class="num ${refClass}"><input value="${safe(r.refId)}" oninput="updateField(${i},'refId',this.value)"></td>
+          <td class="num"><input value="${safe(r.arg1)}" oninput="updateField(${i},'arg1',this.value)"></td>
+          <td class="num"><input value="${safe(r.arg2)}" oninput="updateField(${i},'arg2',this.value)"></td>
+        </tr>`;
+      }).join("")}`;
+  } else {
     table.innerHTML = `
       <tr>
         <th style="width:40px;">#</th>
@@ -468,20 +660,6 @@ function render() {
           <td class="num"><input value="${safe(r.stageGroupId)}" oninput="updateField(${i},'stageGroupId',this.value)"></td>
           <td><input value="${safe(r.key)}" oninput="updateField(${i},'key',this.value)"></td>
           <td><input value="${safe(r.value)}" oninput="updateField(${i},'value',this.value)"></td>
-        </tr>
-      `).join("")}`;
-  } else {
-    table.innerHTML = `
-      <tr>
-        <th style="width:40px;">#</th>
-        <th style="width:110px;">Group ID</th>
-        <th style="width:110px;">Slot Number</th>
-      </tr>
-      ${standings.map((r, i) => `
-        <tr class="${selections.standings===i?'selected':''}" onclick="selectRow(${i})">
-          <td class="num">${i+1}</td>
-          <td class="num"><input value="${safe(r.groupId)}" oninput="updateField(${i},'groupId',this.value)"></td>
-          <td class="num"><input value="${safe(r.slotNumber)}" oninput="updateField(${i},'slotNumber',this.value)"></td>
         </tr>
       `).join("")}`;
   }
@@ -503,6 +681,7 @@ function getDataArray(sheet) {
   if (sheet === 'schedule') return schedule;
   if (sheet === 'advancement') return advancement;
   if (sheet === 'standings') return standings;
+  if (sheet === 'tasks') return tasks;
   return settings;
 }
 
@@ -533,6 +712,9 @@ function defaultRowForSheet(sheet) {
   if (sheet === 'standings') {
     return { groupId: '', slotNumber: '' };
   }
+  if (sheet === 'tasks') {
+    return { trophyId: '', phase: '', taskType: '', targetId: '', refId: '', arg1: '', arg2: '' };
+  }
   return { stageGroupId: '', key: '', value: '' };
 }
 
@@ -546,6 +728,9 @@ function addRow(sheet = activeSheet) {
     advancement.push(defaultRowForSheet(sheet));
   } else if (sheet === 'standings') {
     standings.push(defaultRowForSheet(sheet));
+  } else if (sheet === 'tasks') {
+    clearTaskHighlights();
+    tasks.push(defaultRowForSheet(sheet));
   } else {
     settings.push(defaultRowForSheet(sheet));
   }
@@ -578,6 +763,10 @@ function insertRows(sheet, position) {
   } else if (sheet === 'standings') {
     const index = position === 'above' ? selected : selected + 1;
     standings.splice(index, 0, ...newRows);
+  } else if (sheet === 'tasks') {
+    clearTaskHighlights();
+    const index = position === 'above' ? selected : selected + 1;
+    tasks.splice(index, 0, ...newRows);
   } else {
     const index = position === 'above' ? selected : selected + 1;
     settings.splice(index, 0, ...newRows);
@@ -601,6 +790,10 @@ function deleteRow(sheet = activeSheet) {
   } else if (sheet === 'standings') {
     standings.splice(selected, 1);
     selections.standings = null;
+  } else if (sheet === 'tasks') {
+    clearTaskHighlights();
+    tasks.splice(selected, 1);
+    selections.tasks = null;
   } else {
     settings.splice(selected, 1);
     selections.settings = null;
@@ -624,6 +817,9 @@ function exportTxt(sheet = activeSheet) {
   } else if (sheet === 'standings') {
     lines = activeData.map(r => `${r.groupId},${r.slotNumber}`).join('\n');
     filename = 'standings.txt';
+  } else if (sheet === 'tasks') {
+    lines = activeData.map(r => `${r.trophyId},${r.phase},${r.taskType},${r.targetId},${r.refId},${r.arg1},${r.arg2}`).join('\n');
+    filename = 'tasks.txt';
   } else {
     lines = activeData.map(r => `${r.stageGroupId},${r.key},${r.value}`).join('\n');
     filename = 'settings.txt';
@@ -691,6 +887,22 @@ function importFile(e, append = false, sheetOverride = null) {
         };
       });
       standings = append ? [...standings, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else if (sheetTarget === 'tasks') {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          trophyId: p[0] || '',
+          phase: p[1] || '',
+          taskType: p[2] || '',
+          targetId: p[3] || '',
+          refId: p[4] || '',
+          arg1: p[5] || '',
+          arg2: p[6] || ''
+        };
+      });
+      clearTaskHighlights();
+      tasks = append ? [...tasks, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     } else {
       const parsed = lines.map(l => {
@@ -806,6 +1018,14 @@ settings = [
   { stageGroupId: '1635', key: 'info_prize_money_drop', value: '50' },
   { stageGroupId: '1636', key: 'num_games', value: '1' },
   { stageGroupId: '1636', key: 'info_slot_champ', value: '1' }
+];
+
+tasks = [
+  { trophyId: '1626', phase: 'start', taskType: 'ClearLeagueStats', targetId: '1627', refId: '2149', arg1: '0', arg2: '0' },
+  { trophyId: '1626', phase: 'end', taskType: 'UpdateTable', targetId: '1626', refId: '1636', arg1: '1', arg2: '1' },
+  { trophyId: '1626', phase: 'end', taskType: 'UpdateTable', targetId: '1626', refId: '1628', arg1: '2', arg2: '2' },
+  { trophyId: '1626', phase: 'end', taskType: 'UpdateTable', targetId: '1626', refId: '1628', arg1: '3', arg2: '3' },
+  { trophyId: '1626', phase: 'end', taskType: 'UpdateLeagueStats', targetId: '1627', refId: '2149', arg1: '0', arg2: '0' }
 ];
 
 renumberCompobjIds();
