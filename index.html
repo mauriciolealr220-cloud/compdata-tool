@@ -590,7 +590,7 @@ function renderObjectivesTable() {
         <th style="width:90px;">Value</th>
       </tr>
       ${objectives.map((row, index) => `
-        <tr class="${selections.objectives===index?'selected':''}" onclick="selectRow(${index})">
+        <tr data-row-index="${index}" class="${selections.objectives===index?'selected':''}" onclick="selectRow(${index})">
           <td class="num">${index + 1}</td>
           <td class="num"><input value="${safe(row.stageGroupId)}" oninput="updateField(${index},'stageGroupId',this.value)"></td>
           <td><input value="${safe(row.objectiveType)}" oninput="updateField(${index},'objectiveType',this.value)"></td>
@@ -643,7 +643,7 @@ function render() {
         <th style="width:70px;">Parent</th>
       </tr>
       ${compobj.map((r, i) => `
-        <tr class="${getRowClass(r)} ${selections.compobj===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${getRowClass(r)} ${selections.compobj===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.id)}" oninput="updateField(${i},'id',this.value)"></td>
           <td class="num"><input value="${safe(r.depth)}" oninput="updateField(${i},'depth',this.value)"></td>
@@ -664,7 +664,7 @@ function render() {
         <th style="width:80px;">Time</th>
       </tr>
       ${schedule.map((r, i) => `
-        <tr class="schedule-row ${selections.schedule===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="schedule-row ${selections.schedule===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.stageGroupId)}" oninput="updateField(${i},'stageGroupId',this.value)"></td>
           <td class="num"><input value="${safe(r.dayId)}" oninput="updateField(${i},'dayId',this.value)"></td>
@@ -684,7 +684,7 @@ function render() {
         <th style="width:100px;">Team Count</th>
       </tr>
       ${advancement.map((r, i) => `
-        <tr class="${selections.advancement===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${selections.advancement===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.sourceGroupId)}" oninput="updateField(${i},'sourceGroupId',this.value)"></td>
           <td class="num"><input value="${safe(r.placement)}" oninput="updateField(${i},'placement',this.value)"></td>
@@ -700,7 +700,7 @@ function render() {
         <th style="width:110px;">Slot Number</th>
       </tr>
       ${standings.map((r, i) => `
-        <tr class="${selections.standings===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${selections.standings===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.groupId)}" oninput="updateField(${i},'groupId',this.value)"></td>
           <td class="num"><input value="${safe(r.slotNumber)}" oninput="updateField(${i},'slotNumber',this.value)"></td>
@@ -725,7 +725,7 @@ function render() {
         const targetClass = columns && columns.has('targetId') ? 'highlight-auto' : '';
         const refClass = columns && columns.has('refId') ? 'highlight-auto' : '';
         return `
-        <tr class="${selections.tasks===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${selections.tasks===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num ${trophyClass}"><input value="${safe(r.trophyId)}" oninput="updateField(${i},'trophyId',this.value)"></td>
           <td><input value="${safe(r.phase)}" oninput="updateField(${i},'phase',this.value)"></td>
@@ -751,7 +751,7 @@ function render() {
         <th style="width:90px;">End</th>
       </tr>
       ${weather.map((r, i) => `
-        <tr class="${selections.weather===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${selections.weather===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.nationId)}" oninput="updateField(${i},'nationId',this.value)"></td>
           <td class="num"><input value="${safe(r.entry)}" oninput="updateField(${i},'entry',this.value)"></td>
@@ -775,7 +775,7 @@ function render() {
         <th>Setting Value</th>
       </tr>
       ${settings.map((r, i) => `
-        <tr class="${selections.settings===i?'selected':''}" onclick="selectRow(${i})">
+        <tr data-row-index="${i}" class="${selections.settings===i?'selected':''}" onclick="selectRow(${i})">
           <td class="num">${i+1}</td>
           <td class="num"><input value="${safe(r.stageGroupId)}" oninput="updateField(${i},'stageGroupId',this.value)"></td>
           <td><input value="${safe(r.key)}" oninput="updateField(${i},'key',this.value)"></td>
@@ -783,6 +783,45 @@ function render() {
         </tr>
       `).join("")}`;
   }
+
+  setupTableInteractions(table);
+}
+
+function setupTableInteractions(tableElement) {
+  if (!tableElement) return;
+
+  highlightSelection();
+
+  const interactiveElements = tableElement.querySelectorAll('input, select, textarea, button');
+  interactiveElements.forEach((element) => {
+    const stop = (event) => event.stopPropagation();
+    element.addEventListener('pointerdown', stop);
+    element.addEventListener('mousedown', stop);
+    element.addEventListener('click', stop);
+    element.addEventListener('focus', () => {
+      const row = element.closest('tr[data-row-index]');
+      if (!row) return;
+      const index = Number.parseInt(row.dataset.rowIndex, 10);
+      focusRow(index);
+    });
+  });
+}
+
+function highlightSelection() {
+  const tableElement = document.getElementById('sheet');
+  if (!tableElement) return;
+  const rows = tableElement.querySelectorAll('tr[data-row-index]');
+  rows.forEach((row) => {
+    const index = Number.parseInt(row.dataset.rowIndex, 10);
+    const isSelected = selections[activeSheet] === index;
+    row.classList.toggle('selected', isSelected);
+  });
+}
+
+function focusRow(index) {
+  if (typeof index !== 'number' || Number.isNaN(index)) return;
+  selections[activeSheet] = index;
+  highlightSelection();
 }
 
 function setActiveSheet(sheet) {
@@ -792,6 +831,10 @@ function setActiveSheet(sheet) {
 }
 
 function selectRow(i) {
+  if (selections[activeSheet] === i) {
+    highlightSelection();
+    return;
+  }
   selections[activeSheet] = i;
   render();
 }
