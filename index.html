@@ -153,6 +153,7 @@
       <button id="tab-compobj" class="active" onclick="setActiveSheet('compobj')">🧩 CompObj</button>
       <button id="tab-schedule" onclick="setActiveSheet('schedule')">📅 Schedule</button>
       <button id="tab-advancement" onclick="setActiveSheet('advancement')">🏆 Advancement</button>
+      <button id="tab-standings" onclick="setActiveSheet('standings')">📊 Standings</button>
     </div>
     <div id="controls">
       <div class="control-set active" data-sheet-controls="compobj">
@@ -194,6 +195,19 @@
         <button onclick="deleteRow('advancement')">− Delete Selected</button>
         <button onclick="exportTxt('advancement')">💾 Export .txt</button>
       </div>
+      <div class="control-set" data-sheet-controls="standings">
+        <button onclick="triggerFileDialog('standings','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-standings-import" accept=".txt,.csv" onchange="importFile(event,false,'standings')">
+        <button onclick="triggerFileDialog('standings','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-standings-append" accept=".txt,.csv" onchange="importFile(event,true,'standings')">
+        <button onclick="addRow('standings')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-standings" min="1" value="1">
+        <button onclick="insertRows('standings','above')">↑ Insert Above</button>
+        <button onclick="insertRows('standings','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('standings')">− Delete Selected</button>
+        <button onclick="exportTxt('standings')">💾 Export .txt</button>
+      </div>
     </div>
 
   <div id="lineCount"></div>
@@ -207,8 +221,9 @@
 let compobj = [];
 let schedule = [];
 let advancement = [];
+let standings = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null, advancement: null };
+const selections = { compobj: null, schedule: null, advancement: null, standings: null };
 let tempIdCounter = 0;
 
 function safe(value) {
@@ -274,6 +289,14 @@ function renumberCompobjIds() {
       targetGroupId: mappedTarget !== undefined ? mappedTarget : row.targetGroupId
     };
   });
+
+  standings = standings.map((row) => {
+    const group = row.groupId == null ? '' : String(row.groupId);
+    if (group === '') return row;
+    const mapped = idMap.get(group);
+    if (mapped === undefined) return row;
+    return { ...row, groupId: mapped };
+  });
 }
 
 function syncReferencesForManualIdChange(oldValue, newValue) {
@@ -310,6 +333,12 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     }
     return changed ? { ...row, sourceGroupId: newSource, targetGroupId: newTarget } : row;
   });
+
+  standings = standings.map((row) => {
+    const group = row.groupId == null ? '' : String(row.groupId);
+    if (group !== previous) return row;
+    return { ...row, groupId: next };
+  });
 }
 
 function render() {
@@ -318,13 +347,19 @@ function render() {
   document.getElementById('tab-compobj').classList.toggle('active', activeSheet === 'compobj');
   document.getElementById('tab-schedule').classList.toggle('active', activeSheet === 'schedule');
   document.getElementById('tab-advancement').classList.toggle('active', activeSheet === 'advancement');
+  document.getElementById('tab-standings').classList.toggle('active', activeSheet === 'standings');
   updateControlVisibility();
 
-  const countLabel = activeSheet === 'compobj'
-    ? `CompObj: ${compobj.length} lines parsed`
-    : activeSheet === 'schedule'
-      ? `Schedule: ${schedule.length} entries parsed`
-      : `Advancement: ${advancement.length} links parsed`;
+  let countLabel = '';
+  if (activeSheet === 'compobj') {
+    countLabel = `CompObj: ${compobj.length} lines parsed`;
+  } else if (activeSheet === 'schedule') {
+    countLabel = `Schedule: ${schedule.length} entries parsed`;
+  } else if (activeSheet === 'advancement') {
+    countLabel = `Advancement: ${advancement.length} links parsed`;
+  } else {
+    countLabel = `Standings: ${standings.length} slots parsed`;
+  }
   lineCount.textContent = countLabel;
 
   if (activeSheet === 'compobj') {
@@ -369,7 +404,7 @@ function render() {
           <td class="num"><input value="${safe(r.time)}" oninput="updateField(${i},'time',this.value)"></td>
         </tr>
       `).join("")}`;
-  } else {
+  } else if (activeSheet === 'advancement') {
     table.innerHTML = `
       <tr>
         <th style="width:40px;">#</th>
@@ -385,6 +420,20 @@ function render() {
           <td class="num"><input value="${safe(r.placement)}" oninput="updateField(${i},'placement',this.value)"></td>
           <td class="num"><input value="${safe(r.targetGroupId)}" oninput="updateField(${i},'targetGroupId',this.value)"></td>
           <td class="num"><input value="${safe(r.teamCount)}" oninput="updateField(${i},'teamCount',this.value)"></td>
+        </tr>
+      `).join("")}`;
+  } else {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:110px;">Group ID</th>
+        <th style="width:110px;">Slot Number</th>
+      </tr>
+      ${standings.map((r, i) => `
+        <tr class="${selections.standings===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num"><input value="${safe(r.groupId)}" oninput="updateField(${i},'groupId',this.value)"></td>
+          <td class="num"><input value="${safe(r.slotNumber)}" oninput="updateField(${i},'slotNumber',this.value)"></td>
         </tr>
       `).join("")}`;
   }
@@ -404,7 +453,8 @@ function selectRow(i) {
 function getDataArray(sheet) {
   if (sheet === 'compobj') return compobj;
   if (sheet === 'schedule') return schedule;
-  return advancement;
+  if (sheet === 'advancement') return advancement;
+  return standings;
 }
 
 function updateField(i, field, value) {
@@ -428,7 +478,10 @@ function defaultRowForSheet(sheet) {
   if (sheet === 'schedule') {
     return { stageGroupId: '', dayId: '', matchday: '', minMatches: '', maxMatches: '', time: '' };
   }
-  return { sourceGroupId: '', placement: '', targetGroupId: '', teamCount: '' };
+  if (sheet === 'advancement') {
+    return { sourceGroupId: '', placement: '', targetGroupId: '', teamCount: '' };
+  }
+  return { groupId: '', slotNumber: '' };
 }
 
 function addRow(sheet = activeSheet) {
@@ -437,8 +490,10 @@ function addRow(sheet = activeSheet) {
     renumberCompobjIds();
   } else if (sheet === 'schedule') {
     schedule.push(defaultRowForSheet(sheet));
-  } else {
+  } else if (sheet === 'advancement') {
     advancement.push(defaultRowForSheet(sheet));
+  } else {
+    standings.push(defaultRowForSheet(sheet));
   }
   render();
 }
@@ -463,9 +518,12 @@ function insertRows(sheet, position) {
   } else if (sheet === 'schedule') {
     const index = position === 'above' ? selected : selected + 1;
     schedule.splice(index, 0, ...newRows);
-  } else {
+  } else if (sheet === 'advancement') {
     const index = position === 'above' ? selected : selected + 1;
     advancement.splice(index, 0, ...newRows);
+  } else {
+    const index = position === 'above' ? selected : selected + 1;
+    standings.splice(index, 0, ...newRows);
   }
   render();
 }
@@ -480,9 +538,12 @@ function deleteRow(sheet = activeSheet) {
   } else if (sheet === 'schedule') {
     schedule.splice(selected, 1);
     selections.schedule = null;
-  } else {
+  } else if (sheet === 'advancement') {
     advancement.splice(selected, 1);
     selections.advancement = null;
+  } else {
+    standings.splice(selected, 1);
+    selections.standings = null;
   }
   render();
 }
@@ -497,9 +558,12 @@ function exportTxt(sheet = activeSheet) {
   } else if (sheet === 'schedule') {
     lines = activeData.map(r => `${r.stageGroupId},${r.dayId},${r.matchday},${r.minMatches},${r.maxMatches},${r.time}`).join('\n');
     filename = 'schedule.txt';
-  } else {
+  } else if (sheet === 'advancement') {
     lines = activeData.map(r => `${r.sourceGroupId},${r.placement},${r.targetGroupId},${r.teamCount}`).join('\n');
     filename = 'advancement.txt';
+  } else {
+    lines = activeData.map(r => `${r.groupId},${r.slotNumber}`).join('\n');
+    filename = 'standings.txt';
   }
   const blob = new Blob([lines], { type: 'text/plain' });
   const a = document.createElement('a');
@@ -543,7 +607,7 @@ function importFile(e, append = false, sheetOverride = null) {
       });
       schedule = append ? [...schedule, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
-    } else {
+    } else if (sheetTarget === 'advancement') {
       const parsed = lines.map(l => {
         const p = l.split(/\t|,/);
         return {
@@ -554,6 +618,16 @@ function importFile(e, append = false, sheetOverride = null) {
         };
       });
       advancement = append ? [...advancement, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          groupId: p[0] || '',
+          slotNumber: p[1] || ''
+        };
+      });
+      standings = append ? [...standings, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     }
     render();
@@ -596,6 +670,33 @@ advancement = [
   { sourceGroupId: '1628', placement: '2', targetGroupId: '1634', teamCount: '2' },
   { sourceGroupId: '1633', placement: '1', targetGroupId: '1636', teamCount: '1' },
   { sourceGroupId: '1634', placement: '1', targetGroupId: '1636', teamCount: '2' }
+];
+
+standings = [
+  { groupId: '1628', slotNumber: '0' },
+  { groupId: '1628', slotNumber: '1' },
+  { groupId: '1628', slotNumber: '2' },
+  { groupId: '1628', slotNumber: '3' },
+  { groupId: '1628', slotNumber: '4' },
+  { groupId: '1628', slotNumber: '5' },
+  { groupId: '1628', slotNumber: '6' },
+  { groupId: '1628', slotNumber: '7' },
+  { groupId: '1628', slotNumber: '8' },
+  { groupId: '1628', slotNumber: '9' },
+  { groupId: '1628', slotNumber: '10' },
+  { groupId: '1628', slotNumber: '11' },
+  { groupId: '1628', slotNumber: '12' },
+  { groupId: '1628', slotNumber: '13' },
+  { groupId: '1630', slotNumber: '0' },
+  { groupId: '1630', slotNumber: '1' },
+  { groupId: '1631', slotNumber: '0' },
+  { groupId: '1631', slotNumber: '1' },
+  { groupId: '1633', slotNumber: '0' },
+  { groupId: '1633', slotNumber: '1' },
+  { groupId: '1634', slotNumber: '0' },
+  { groupId: '1634', slotNumber: '1' },
+  { groupId: '1636', slotNumber: '0' },
+  { groupId: '1636', slotNumber: '1' }
 ];
 
 renumberCompobjIds();
