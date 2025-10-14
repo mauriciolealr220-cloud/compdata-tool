@@ -1,103 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CompObj Sheet Editor</title>
-    <link rel="stylesheet" href="src/styles.css" />
-  </head>
-  <body>
-    <main class="app">
-      <header class="app__header">
-        <h1>CompObj Sheet Editor</h1>
-        <p class="app__description">
-          Build an Excel-like view of CompObj data. Line numbers adjust automatically and reference numbers stay aligned with their targets.
-        </p>
-        <section class="app__controls">
-          <label class="control">
-            Starting line
-            <input type="number" id="start-line" value="1639" />
-          </label>
-          <button id="add-row" class="button">Add row at end</button>
-          <button id="export-json" class="button button--secondary">Export JSON</button>
-        </section>
-      </header>
+<html>
+<head>
+  <title>CompObj Editor</title>
+  <style>
+    body { font-family: monospace; background: #181818; color: #ddd; margin: 0; padding: 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 6px; text-align: left; }
+    tr:nth-child(even) { background: #202020; }
+    input { background: none; border: none; color: #ddd; width: 100%; font-family: monospace; }
+    input:focus { outline: 1px solid #888; }
+    button { background: #333; color: #fff; border: none; margin: 5px; padding: 5px 10px; cursor: pointer; }
+    button:hover { background: #555; }
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
 
-      <section class="table-container">
-        <table id="compobj-table">
-          <thead>
-            <tr>
-              <th class="column--line">Line</th>
-              <th>Depth</th>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Reference line</th>
-              <th class="column--actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </section>
+  <h2 style="margin-left:10px;">⚙️ CompObj Excel-Type Editor</h2>
 
-      <section class="app__panel" id="inspector">
-        <h2>Row inspector</h2>
-        <p class="inspector__hint">
-          Select a row to edit its values and manage its reference.
-        </p>
-        <form id="row-form" class="row-form" autocomplete="off">
-          <div class="row-form__field">
-            <label for="depth">Depth</label>
-            <input type="number" id="depth" name="depth" min="1" max="9" />
-          </div>
-          <div class="row-form__field">
-            <label for="code">Code</label>
-            <input type="text" id="code" name="code" />
-          </div>
-          <div class="row-form__field">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" />
-          </div>
-          <div class="row-form__field">
-            <label for="reference">References row</label>
-            <select id="reference" name="reference">
-              <option value="">None</option>
-            </select>
-          </div>
-          <div class="row-form__actions">
-            <button type="submit" class="button">Save changes</button>
-            <button type="button" id="delete-row" class="button button--danger">Delete row</button>
-          </div>
-        </form>
-      </section>
-    </main>
+  <button onclick="document.getElementById('fileInput').click()">📂 Import .txt</button>
+  <input type="file" id="fileInput" accept=".txt,.csv" onchange="importFile(event)">
+  <button onclick="addRow()">+ Add Row</button>
+  <button onclick="deleteRow()">− Delete Selected</button>
+  <button onclick="exportTxt()">💾 Export .txt</button>
 
-    <dialog id="export-dialog">
-      <form method="dialog">
-        <header>
-          <h3>Exported JSON</h3>
-        </header>
-        <textarea readonly></textarea>
-        <menu>
-          <button value="cancel" class="button">Close</button>
-        </menu>
-      </form>
-    </dialog>
+  <table id="sheet"></table>
 
-    <template id="table-row-template">
-      <tr>
-        <td class="column--line"></td>
-        <td data-field="depth"></td>
-        <td data-field="code"></td>
-        <td data-field="name"></td>
-        <td data-field="reference"></td>
-        <td class="column--actions">
-          <button type="button" class="button button--tiny" data-action="add-above">Add above</button>
-          <button type="button" class="button button--tiny" data-action="add-below">Add below</button>
-          <button type="button" class="button button--tiny" data-action="select">Edit</button>
-        </td>
-      </tr>
-    </template>
+  <script>
+    let compobj = [];
+    let selected = null;
+    const baseId = 1639; // You can adjust this base number per competition set
 
-    <script type="module" src="src/main.js"></script>
-  </body>
+    function render() {
+      const table = document.getElementById("sheet");
+      table.innerHTML = `
+        <tr><th>ID</th><th>Depth</th><th>Code</th><th>Name</th><th>ParentRef</th></tr>
+        ${compobj.map((r, i) => {
+          const displayId = baseId + i;
+          const parentRow = compobj.find(x => x.code === r.parent);
+          const parentDisplay = parentRow ? baseId + compobj.indexOf(parentRow) : "";
+          return `
+            <tr ${selected === i ? 'style="background:#333;"' : ''} onclick="selectRow(${i})">
+              <td>${displayId}</td>
+              <td><input value="${r.depth}" onchange="update(${i}, 'depth', this.value)"></td>
+              <td><input value="${r.code}" onchange="update(${i}, 'code', this.value)"></td>
+              <td><input value="${r.name}" onchange="update(${i}, 'name', this.value)"></td>
+              <td>${parentDisplay}</td>
+            </tr>`;
+        }).join("")}
+      `;
+    }
+
+    function selectRow(i) {
+      selected = i;
+      render();
+    }
+
+    function update(i, field, val) {
+      compobj[i][field] = val;
+      render();
+    }
+
+    function addRow() {
+      const newObj = { depth: 5, code: "", name: "", parent: compobj[selected]?.code || null };
+      if (selected === null) compobj.push(newObj);
+      else compobj.splice(selected + 1, 0, newObj);
+      render();
+    }
+
+    function deleteRow() {
+      if (selected === null) return;
+      compobj.splice(selected, 1);
+      selected = null;
+      render();
+    }
+
+    function exportTxt() {
+      const lines = compobj.map((r, i) => {
+        const displayId = baseId + i;
+        const parentRow = compobj.find(x => x.code === r.parent);
+        const parentDisplay = parentRow ? baseId + compobj.indexOf(parentRow) : "";
+        return `${displayId}\t${r.depth}\t${r.code}\t${r.name}\t${parentDisplay}`;
+      }).join("\n");
+
+      const blob = new Blob([lines], { type: "text/plain" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "compobj.txt";
+      a.click();
+    }
+
+    function importFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split(/\r?\n/);
+        compobj = lines
+          .filter(line => line.trim() !== "")
+          .map(line => {
+            const parts = line.split(/\t|,/); // handle tab or comma
+            return {
+              id: parseInt(parts[0]),
+              depth: parseInt(parts[1]),
+              code: parts[2] || "",
+              name: parts[3] || "",
+              parent: null, // parent will be relinked later
+              _parentId: parseInt(parts[4]) || null
+            };
+          });
+
+        // Relink parent references dynamically
+        compobj.forEach((r) => {
+          const parentRow = compobj.find(x => x.id === r._parentId);
+          r.parent = parentRow ? parentRow.code : null;
+        });
+
+        render();
+      };
+      reader.readAsText(file);
+    }
+
+    // Optional: start with example data
+    compobj = [
+      { depth: 2, code: "KORE", name: "NationName_167", parent: null },
+      { depth: 3, code: "C83", name: "TrophyName_Abbr15_83", parent: "KORE" },
+      { depth: 4, code: "S1", name: "FCE_League_Stage_1", parent: "C83" },
+      { depth: 5, code: "G1", name: "", parent: "S1" }
+    ];
+    render();
+  </script>
+</body>
 </html>
