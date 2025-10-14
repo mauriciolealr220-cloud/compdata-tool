@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -115,6 +116,32 @@
         background: rgba(15, 118, 110, 0.15);
       }
 
+      .nav button .label {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+      }
+
+      .nav button .label strong {
+        font-weight: 600;
+        color: inherit;
+        font-size: 0.95rem;
+      }
+
+      .nav button .label small {
+        color: var(--text-subtle);
+        font-size: 0.75rem;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--text-subtle);
+      }
+
       main {
         flex: 1;
         display: flex;
@@ -131,6 +158,7 @@
         flex-wrap: wrap;
         justify-content: space-between;
         gap: 1rem;
+        align-items: flex-start;
       }
 
       .main-header h2 {
@@ -151,6 +179,7 @@
         gap: 0.75rem;
         color: var(--text-subtle);
         font-size: 0.82rem;
+        margin-top: 0.5rem;
       }
 
       .status-line span.indicator {
@@ -225,215 +254,84 @@
         background: var(--bg-panel);
         border: 1px solid var(--border);
         border-radius: 1.25rem;
-        padding: 1.25rem;
+        padding: 1.5rem;
         display: flex;
         flex-direction: column;
         min-height: 0;
         overflow: hidden;
+        position: relative;
       }
 
-      .editor-grid {
+      .workspace-placeholder {
+        margin: auto;
+        max-width: 480px;
+        text-align: center;
+        color: var(--text-subtle);
+        line-height: 1.6;
+      }
+
+      .editor-surface {
         flex: 1;
-        display: grid;
-        grid-template-columns: minmax(260px, 320px) minmax(220px, 1fr) minmax(240px, 320px);
-        gap: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
         min-height: 0;
       }
 
-      .panel {
-        background: rgba(15, 23, 42, 0.45);
-        border: 1px solid var(--border);
-        border-radius: 1rem;
+      .editor-info {
         display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
+        align-items: center;
+        gap: 0.65rem;
+        font-size: 0.85rem;
+        color: var(--text-subtle);
       }
 
-      .panel-header {
-        padding: 1rem 1.1rem 0.75rem;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+      .editor-info .badge {
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--accent);
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
       }
 
-      .panel-header h3 {
-        margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
-      }
-
-      .panel-body {
-        padding: 1rem 1.1rem;
-        flex: 1;
-        overflow: auto;
-      }
-
-      .tree {
-        list-style: none;
-        margin: 0;
-        padding-left: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-      }
-
-      .tree li {
-        border-radius: 0.75rem;
-        border: 1px solid transparent;
-        padding: 0.45rem 0.6rem 0.45rem 0.95rem;
-        background: rgba(15, 23, 42, 0.25);
-        cursor: pointer;
-        transition: border 150ms ease, background 150ms ease, transform 150ms ease;
-      }
-
-      .tree li:hover {
-        border-color: rgba(56, 189, 248, 0.35);
-        transform: translateX(2px);
-      }
-
-      .tree li.selected {
-        border-color: rgba(56, 189, 248, 0.75);
-        background: rgba(56, 189, 248, 0.15);
-      }
-
-      .tree li .meta {
+      .view-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 0.75rem;
-        color: var(--text-subtle);
-      }
-
-      .tree li .label {
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-      }
-
-      .tree li .label strong {
-        font-size: 0.9rem;
-        color: var(--text);
-      }
-
-      .tree-children {
-        list-style: none;
-        margin: 0.3rem 0 0 0.75rem;
-        padding-left: 0.75rem;
-        border-left: 1px dashed rgba(148, 163, 184, 0.25);
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
-      }
-
-      .field-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        flex-wrap: wrap;
         gap: 0.75rem;
       }
 
-      .field {
-        display: flex;
-        flex-direction: column;
-        gap: 0.4rem;
+      .view-toggle {
+        display: inline-flex;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 0.85rem;
+        overflow: hidden;
       }
 
-      .field label {
-        font-size: 0.78rem;
-        color: var(--text-subtle);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .field input,
-      .field select,
-      .field textarea {
-        width: 100%;
-        padding: 0.55rem 0.7rem;
-        border-radius: 0.65rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        background: rgba(15, 23, 42, 0.55);
-        color: var(--text);
-        font-size: 0.9rem;
-        font-family: inherit;
-      }
-
-      .field textarea {
-        min-height: 160px;
-        resize: vertical;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.88rem;
-      }
-
-      thead th {
-        text-align: left;
-        font-weight: 600;
-        padding: 0.55rem 0.65rem;
-        color: var(--text-subtle);
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-        background: rgba(15, 23, 42, 0.35);
-        position: sticky;
-        top: 0;
-        z-index: 1;
-      }
-      tbody tr {
-        border-bottom: 1px solid rgba(148, 163, 184, 0.08);
-      }
-
-      tbody tr:hover {
-        background: rgba(56, 189, 248, 0.07);
-      }
-
-      td {
-        padding: 0.45rem 0.55rem;
-        vertical-align: middle;
-      }
-
-      td input,
-      td select {
-        width: 100%;
-        border-radius: 0.55rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        background: rgba(15, 23, 42, 0.65);
-        padding: 0.4rem 0.55rem;
-        color: var(--text);
-        font-size: 0.86rem;
-        font-family: inherit;
-      }
-
-      .table-actions {
-        display: flex;
-        gap: 0.35rem;
-      }
-
-      .table-actions button,
-      .inline-button {
+      .view-toggle button {
         all: unset;
-        padding: 0.35rem 0.6rem;
-        border-radius: 0.5rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        background: rgba(15, 23, 42, 0.4);
+        padding: 0.45rem 0.85rem;
+        font-size: 0.82rem;
         cursor: pointer;
-        font-size: 0.75rem;
-        font-weight: 500;
+        color: var(--text-subtle);
+        transition: background 120ms ease, color 120ms ease;
       }
 
-      .inline-button.primary {
+      .view-toggle button.active {
         background: rgba(56, 189, 248, 0.25);
-        border-color: rgba(56, 189, 248, 0.35);
+        color: var(--text);
       }
 
-      .toolbar {
+      .editor-controls {
         display: flex;
         flex-wrap: wrap;
         gap: 0.75rem;
         align-items: center;
-        margin-bottom: 0.85rem;
       }
 
-      .toolbar .search-field {
+      .editor-controls .search-field {
         flex: 1;
         min-width: 180px;
         display: flex;
@@ -441,33 +339,177 @@
         gap: 0.55rem;
         background: rgba(15, 23, 42, 0.55);
         border: 1px solid rgba(148, 163, 184, 0.2);
-        padding: 0.45rem 0.6rem;
         border-radius: 0.7rem;
-        color: var(--text-subtle);
+        padding: 0.45rem 0.65rem;
       }
 
-      .toolbar .search-field input {
+      .editor-controls .search-field span {
+        font-size: 1rem;
+      }
+
+      .editor-controls .search-field input {
         all: unset;
         flex: 1;
-        font-size: 0.86rem;
+        font-size: 0.9rem;
+      }
+
+      .editor-controls .inline-button {
+        all: unset;
+        padding: 0.45rem 0.75rem;
+        border-radius: 0.65rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: rgba(15, 23, 42, 0.55);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 500;
+        transition: transform 120ms ease, border-color 120ms ease;
+      }
+
+      .editor-controls .inline-button.primary {
+        background: rgba(56, 189, 248, 0.25);
+        border-color: rgba(56, 189, 248, 0.4);
         color: var(--text);
+      }
+
+      .editor-controls .inline-button:hover,
+      .editor-controls .inline-button:focus-visible {
+        transform: translateY(-1px);
+        border-color: rgba(56, 189, 248, 0.45);
+      }
+
+      .editor-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-height: 0;
+      }
+
+      .grid-table {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        background: rgba(15, 23, 42, 0.45);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+
+      .grid-head,
+      .grid-body {
+        overflow: auto;
+      }
+
+      .grid-row {
+        display: grid;
+        align-items: stretch;
+        min-height: 0;
+      }
+
+      .grid-head .grid-row {
+        position: sticky;
+        top: 0;
+        background: rgba(15, 23, 42, 0.7);
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-subtle);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      }
+
+      .grid-row > span,
+      .grid-row > div {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .grid-body .grid-row:nth-child(odd) > div,
+      .grid-body .grid-row:nth-child(odd) > span {
+        background: rgba(56, 189, 248, 0.04);
+      }
+
+      .grid-body .grid-row:last-child > div,
+      .grid-body .grid-row:last-child > span {
+        border-bottom: none;
+      }
+
+      .grid-body input,
+      .grid-body select,
+      .grid-body textarea {
+        width: 100%;
+        border-radius: 0.55rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(15, 23, 42, 0.65);
+        padding: 0.45rem 0.55rem;
+        color: var(--text);
+        font-size: 0.86rem;
+        font-family: inherit;
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 0.35rem;
+      }
+
+      .row-actions button {
+        all: unset;
+        padding: 0.35rem 0.55rem;
+        border-radius: 0.55rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(15, 23, 42, 0.55);
+        font-size: 0.75rem;
+        cursor: pointer;
+      }
+
+      .row-actions button:hover,
+      .row-actions button:focus-visible {
+        border-color: rgba(56, 189, 248, 0.4);
+        color: var(--text);
+      }
+
+      .raw-editor {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .raw-editor textarea {
+        flex: 1;
+        border-radius: 1rem;
+        border: 1px solid var(--border);
+        background: rgba(15, 23, 42, 0.55);
+        padding: 1rem;
+        color: var(--text);
+        font-family: 'Fira Code', 'SFMono-Regular', 'Consolas', monospace;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        resize: none;
+      }
+
+      .raw-editor .hint {
+        margin-top: 0.75rem;
+        font-size: 0.8rem;
+        color: var(--text-subtle);
       }
 
       .console {
         border-top: 1px solid var(--border);
-        padding: 1.2rem 2rem 1.6rem;
-        background: rgba(2, 6, 23, 0.82);
-        max-height: 260px;
-        overflow: hidden;
+        padding: 1.5rem 2rem 2rem;
+        background: rgba(10, 16, 28, 0.8);
         display: flex;
         flex-direction: column;
-        gap: 0.85rem;
+        gap: 1rem;
       }
 
       .console-header {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         gap: 1rem;
       }
 
@@ -478,43 +520,39 @@
       }
 
       .console-stream {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        border-radius: 0.85rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        border: 1px solid var(--border);
+        border-radius: 1rem;
+        padding: 1rem;
         background: rgba(15, 23, 42, 0.55);
-        padding: 0.65rem;
+        max-height: 260px;
+        overflow: auto;
         display: flex;
-        flex-direction: column-reverse;
-        gap: 0.5rem;
+        flex-direction: column;
+        gap: 0.85rem;
       }
 
       .console-entry {
-        border-radius: 0.75rem;
-        padding: 0.6rem 0.8rem;
+        border-left: 3px solid rgba(148, 163, 184, 0.25);
+        padding-left: 0.75rem;
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        font-size: 0.85rem;
+        gap: 0.45rem;
       }
 
       .console-entry.info {
-        border-color: rgba(56, 189, 248, 0.3);
+        border-color: rgba(56, 189, 248, 0.5);
       }
 
       .console-entry.success {
-        border-color: rgba(52, 211, 153, 0.35);
+        border-color: rgba(52, 211, 153, 0.6);
       }
 
       .console-entry.warning {
-        border-color: rgba(251, 191, 36, 0.4);
+        border-color: rgba(251, 191, 36, 0.6);
       }
 
       .console-entry.error {
-        border-color: rgba(248, 113, 113, 0.4);
+        border-color: rgba(248, 113, 113, 0.6);
       }
 
       .console-entry header {
@@ -563,14 +601,6 @@
         :root {
           --sidebar-width: 220px;
         }
-        .editor-grid {
-          grid-template-columns: minmax(200px, 280px) 1fr;
-          grid-auto-rows: minmax(220px, 1fr);
-        }
-        .editor-grid .panel:last-child {
-          grid-column: 1 / -1;
-          min-height: 220px;
-        }
       }
 
       @media (max-width: 960px) {
@@ -586,8 +616,12 @@
       }
 
       @media (max-width: 720px) {
-        .editor-grid {
-          grid-template-columns: 1fr;
+        .grid-row {
+          grid-template-columns: 1fr !important;
+        }
+        .grid-row > div,
+        .grid-row > span {
+          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
         }
       }
     </style>
@@ -597,20 +631,18 @@
       <aside>
         <div class="brand">
           <h1>Competition Data Studio</h1>
-          <p>Full-stack editor for FIFA-style tournaments</p>
+          <p>Unified workspace for FIFA-style tournaments</p>
         </div>
         <nav class="nav" id="editor-nav"></nav>
         <div class="sidebar-footer">
-          <div class="badge">Render ready</div>
-          <p style="margin: 0; font-size: 0.75rem; color: var(--text-subtle);">
-            API routes auto-detect the static frontend when deployed to Render.
-          </p>
+          <div class="badge">Workspace: CompData</div>
+          <p>API routes auto-detect the static frontend when deployed to Render.</p>
         </div>
       </aside>
       <main>
         <header class="main-header">
           <div>
-            <h2 id="active-file-heading">Select a file</h2>
+            <h2 id="active-file-heading">Select a dataset</h2>
             <p class="subtitle" id="active-file-subtitle"></p>
             <div class="status-line">
               <span class="indicator" id="sync-indicator">Idle</span>
@@ -618,21 +650,23 @@
             </div>
           </div>
           <div class="action-bar">
-            <button id="action-load">Reload</button>
-            <button id="action-save" class="primary">Save</button>
+            <button id="action-reload">Reload</button>
             <button id="action-validate">Validate</button>
             <button id="action-autofix">Auto-Fix</button>
             <button id="action-compare">Compare</button>
             <button id="action-export">Export ZIP</button>
+            <button id="action-save" class="primary">Save Changes</button>
           </div>
         </header>
         <section class="workspace">
           <div class="workspace-card" id="workspace-card">
-            <div class="placeholder" style="margin: auto; text-align: center; max-width: 480px;">
-              <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Pick a dataset to begin</h3>
-              <p style="margin: 0; color: var(--text-subtle);">
-                Use the sidebar to choose between competition objects, metadata, schedule, standings rules, tasks, and weather
-                profiles. The editor panel updates instantly and can validate, auto-fix, compare, and save changes back to disk.
+            <div class="workspace-placeholder">
+              <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text);">
+                Welcome to the CompData workspace
+              </h3>
+              <p style="margin: 0;">
+                Choose a CompData file on the left to open the unified editor. The structured grid adapts to each
+                dataset, and you can always switch to the raw text view when needed.
               </p>
             </div>
           </div>
@@ -651,126 +685,109 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-nok0L+mHJHZ9frN7kYMboWWAOPw7Ov7BTIzRv5J4zVfOLm8sEzrBc8eCzQEr1Aun" crossorigin="anonymous"></script>
     <script type="module">
-      const FILES = [
+      const WORKSPACE_FILES = [
         {
           name: 'compobj.txt',
           icon: '🏆',
-          title: 'CompObj Editor',
-          description: 'Hierarchy and stage definitions for the competition.',
-          render: renderCompobjEditor,
+          title: 'Competition Structure',
+          description: 'Hierarchy and stage definitions for the tournament tree.',
+          badge: 'CompObj',
+          columns: [
+            { key: 'id', label: 'ID', width: 'minmax(90px, 0.8fr)', type: 'number' },
+            { key: 'level', label: 'Level', width: 'minmax(90px, 0.8fr)', type: 'number' },
+            { key: 'code', label: 'Code', width: 'minmax(140px, 1fr)' },
+            { key: 'name', label: 'Name', width: 'minmax(200px, 1.4fr)' },
+            { key: 'parent', label: 'Parent ID', width: 'minmax(110px, 0.9fr)', type: 'number' },
+          ],
+          newRow: () => ['0', '0', 'CODE', 'New Node', '-1'],
+          groupBy: { column: 1, label: 'levels' },
         },
         {
-          name: 'compdata.txt',
-          icon: '🧮',
-          title: 'CompData Editor',
-          description: 'Key/value metadata for the tournament.',
-          render: ctx => renderCsvEditor(ctx, {
-            title: 'Property Grid',
-            subtitle: 'Edit key/value metadata entries.',
-            columns: [
-              { key: 'key', label: 'Key' },
-              { key: 'value', label: 'Value' },
-            ],
-            filterable: true,
-            reorderable: false,
-            newRow: () => [`property_${Date.now()}`, ''],
-            summaryBuilder: rows => [`${rows.length} editable properties`],
-          }),
+          name: 'comprules.txt',
+          icon: '⚙️',
+          title: 'Rules & Formats',
+          description: 'Progression, tie-breakers, and competition rule sets.',
+          badge: 'CompRules',
+          columns: [
+            { key: 'stage', label: 'Stage', width: 'minmax(100px, 0.8fr)' },
+            { key: 'group', label: 'Context', width: 'minmax(140px, 1fr)' },
+            { key: 'rule', label: 'Rule', width: 'minmax(160px, 1fr)' },
+            { key: 'param1', label: 'Param 1', width: 'minmax(110px, 0.9fr)' },
+            { key: 'param2', label: 'Param 2', width: 'minmax(110px, 0.9fr)' },
+            { key: 'param3', label: 'Param 3', width: 'minmax(110px, 0.9fr)' },
+          ],
+          newRow: () => ['0', 'default', 'RuleKey', '0', '0', '0'],
+          groupBy: { column: 1, label: 'contexts' },
         },
         {
           name: 'schedule.txt',
           icon: '🗓️',
-          title: 'Schedule Editor',
-          description: 'Round, group, and fixture definitions.',
-          render: ctx => renderCsvEditor(ctx, {
-            title: 'Match Schedule',
-            subtitle: 'Maintain stage, round, and kickoff details.',
-            columns: [
-              { key: 'stage', label: 'Stage ID', datalist: 'stage-codes' },
-              { key: 'round', label: 'Round' },
-              { key: 'group', label: 'Group' },
-              { key: 'home', label: 'Home' },
-              { key: 'away', label: 'Away' },
-              { key: 'date', label: 'Date/Time' },
-            ],
-            filterable: true,
-            reorderable: false,
-            datalist: () => ({ 'stage-codes': getStageCodes() }),
-            newRow: () => {
-              const codes = getStageCodes();
-              return [codes[0] || 'S1', '1', '1', '0', '0', '1200'];
-            },
-            summaryBuilder: rows => {
-              const stages = new Set(rows.map(row => row.parts?.[0]).filter(Boolean));
-              return [`${rows.length} fixtures`, `${stages.size} stages`];
-            },
-          }),
+          title: 'Match Schedule',
+          description: 'Fixture sequencing with stage, teams, and kickoff times.',
+          badge: 'Schedule',
+          columns: [
+            { key: 'stage', label: 'Stage', width: 'minmax(110px, 0.8fr)', datalist: 'stage-codes' },
+            { key: 'fixture', label: 'Fixture', width: 'minmax(110px, 0.8fr)' },
+            { key: 'round', label: 'Round', width: 'minmax(110px, 0.8fr)' },
+            { key: 'home', label: 'Home', width: 'minmax(110px, 0.8fr)' },
+            { key: 'away', label: 'Away', width: 'minmax(110px, 0.8fr)' },
+            { key: 'date', label: 'Date', width: 'minmax(140px, 1fr)' },
+          ],
+          newRow: stageCodes => [stageCodes[0] || 'S1', '1', '1', '0', '0', '1200'],
+          groupBy: { column: 2, label: 'rounds' },
+          datalists: () => ({ 'stage-codes': getStageCodes() }),
         },
         {
           name: 'standings.txt',
           icon: '📊',
-          title: 'Standings Editor',
-          description: 'Tie-breaker and ranking rule order.',
-          render: ctx => renderCsvEditor(ctx, {
-            title: 'Rule Order',
-            subtitle: 'Arrange ranking and tie-breaker rules.',
-            columns: [
-              { key: 'ruleSet', label: 'Rule Set' },
-              { key: 'rule', label: 'Rule Key' },
-            ],
-            filterable: false,
-            reorderable: true,
-            newRow: () => ['6', '0'],
-            summaryBuilder: rows => [`${rows.length} rules`, 'Drag buttons to reorder'],
-          }),
+          title: 'Standings Setup',
+          description: 'Ranking order and tie-breakers for group tables.',
+          badge: 'Standings',
+          columns: [
+            { key: 'ruleSet', label: 'Rule Set', width: 'minmax(110px, 0.8fr)' },
+            { key: 'rule', label: 'Rule', width: 'minmax(160px, 1fr)' },
+          ],
+          newRow: () => ['1', '0'],
+          groupBy: { column: 0, label: 'rule sets' },
         },
         {
           name: 'tasks.txt',
-          icon: '⚙️',
-          title: 'Tasks Editor',
-          description: 'Automation commands and sequencing.',
-          render: ctx => renderCsvEditor(ctx, {
-            title: 'Task Sequence',
-            subtitle: 'Configure automation commands for stage population.',
-            columns: [
-              { key: 'stage', label: 'Stage' },
-              { key: 'trigger', label: 'Trigger' },
-              { key: 'command', label: 'Command' },
-              { key: 'param1', label: 'Param 1' },
-              { key: 'param2', label: 'Param 2' },
-              { key: 'param3', label: 'Param 3' },
-              { key: 'param4', label: 'Param 4' },
-            ],
-            filterable: true,
-            reorderable: true,
-            newRow: () => ['0', 'start', 'FillWithTeam', '0', '0', '0', '0'],
-            summaryBuilder: rows => [`${rows.length} automation steps configured`],
-          }),
+          icon: '🔁',
+          title: 'Automation Tasks',
+          description: 'Population scripts and sequencing for tournament automation.',
+          badge: 'Tasks',
+          columns: [
+            { key: 'stage', label: 'Stage', width: 'minmax(110px, 0.8fr)', datalist: 'stage-codes' },
+            { key: 'trigger', label: 'Trigger', width: 'minmax(130px, 1fr)' },
+            { key: 'command', label: 'Command', width: 'minmax(160px, 1fr)' },
+            { key: 'param1', label: 'Param 1', width: 'minmax(110px, 0.9fr)' },
+            { key: 'param2', label: 'Param 2', width: 'minmax(110px, 0.9fr)' },
+            { key: 'param3', label: 'Param 3', width: 'minmax(110px, 0.9fr)' },
+            { key: 'param4', label: 'Param 4', width: 'minmax(110px, 0.9fr)' },
+          ],
+          newRow: stageCodes => [stageCodes[0] || 'S1', 'start', 'FillWithTeam', '0', '0', '0', '0'],
+          groupBy: { column: 0, label: 'stages' },
+          datalists: () => ({ 'stage-codes': getStageCodes() }),
         },
         {
           name: 'weather.txt',
           icon: '☁️',
-          title: 'Weather Editor',
-          description: 'Federation weather profiles by season.',
-          render: ctx => renderCsvEditor(ctx, {
-            title: 'Weather Profiles',
-            subtitle: 'Define seasonal weather weights.',
-            columns: [
-              { key: 'federation', label: 'Federation' },
-              { key: 'season', label: 'Season' },
-              { key: 'condition', label: 'Condition' },
-              { key: 'precip', label: 'Precip%' },
-              { key: 'wind', label: 'Wind%' },
-              { key: 'storm', label: 'Storm%' },
-              { key: 'temp', label: 'Temp°' },
-              { key: 'start', label: 'Start' },
-              { key: 'end', label: 'End' },
-            ],
-            filterable: true,
-            reorderable: false,
-            newRow: () => ['0', '1', '80', '0', '0', '0', '20', '1600', '1900'],
-            summaryBuilder: rows => [`${rows.length} seasonal records`],
-          }),
+          title: 'Federation Weather',
+          description: 'Seasonal weather profiles and probabilities.',
+          badge: 'Weather',
+          columns: [
+            { key: 'federation', label: 'Federation', width: 'minmax(120px, 1fr)' },
+            { key: 'season', label: 'Season', width: 'minmax(100px, 0.8fr)' },
+            { key: 'condition', label: 'Condition', width: 'minmax(130px, 1fr)' },
+            { key: 'precip', label: 'Precip %', width: 'minmax(110px, 0.8fr)' },
+            { key: 'wind', label: 'Wind %', width: 'minmax(110px, 0.8fr)' },
+            { key: 'storm', label: 'Storm %', width: 'minmax(110px, 0.8fr)' },
+            { key: 'temp', label: 'Temp °', width: 'minmax(110px, 0.8fr)' },
+            { key: 'start', label: 'Start', width: 'minmax(120px, 1fr)' },
+            { key: 'end', label: 'End', width: 'minmax(120px, 1fr)' },
+          ],
+          newRow: () => ['0', '1', '80', '0', '0', '0', '20', '1600', '1900'],
+          groupBy: { column: 0, label: 'federations' },
         },
       ];
 
@@ -846,7 +863,7 @@
       const metaSummary = document.getElementById('meta-summary');
       const consoleStream = document.getElementById('console-stream');
 
-      document.getElementById('action-load').addEventListener('click', () => loadActiveFile(true));
+      document.getElementById('action-reload').addEventListener('click', () => loadActiveFile(true));
       document.getElementById('action-save').addEventListener('click', saveActiveFile);
       document.getElementById('action-validate').addEventListener('click', () => validateActiveFile());
       document.getElementById('action-autofix').addEventListener('click', autoFixActiveFile);
@@ -859,7 +876,10 @@
       document.getElementById('action-export').addEventListener('click', exportAllFiles);
 
       renderSidebar();
-      setActiveFile(FILES[0].name);
+      setActiveFile(WORKSPACE_FILES[0].name);
+
+      let activeInfoBar = null;
+
       function ensureFileState(name) {
         if (!appState.files[name]) {
           appState.files[name] = {
@@ -875,7 +895,7 @@
 
       function renderSidebar() {
         navEl.innerHTML = '';
-        FILES.forEach(file => {
+        WORKSPACE_FILES.forEach(file => {
           const button = document.createElement('button');
           button.dataset.file = file.name;
           if (appState.activeFile === file.name) {
@@ -885,7 +905,7 @@
             <span class="icon">${file.icon}</span>
             <span class="label">
               <strong>${escapeHtml(file.title)}</strong>
-              <small style="display:block; font-size:0.75rem; color:var(--text-subtle);">${escapeHtml(file.name)}</small>
+              <small>${escapeHtml(file.name)}</small>
             </span>
           `;
           button.addEventListener('click', () => setActiveFile(file.name));
@@ -982,61 +1002,13 @@
           state.dirty = true;
         }
         if (!silent && appState.activeFile === name) {
-          updateMetaSummary();
+          updateFileStatus();
         }
         return state.content;
       }
 
-      function renderWorkspace() {
-        if (!appState.activeFile) {
-          workspaceCard.innerHTML = '<p style="color: var(--text-subtle); text-align:center;">Select a file to start editing.</p>';
-          return;
-        }
-        const config = FILES.find(file => file.name === appState.activeFile);
-        const state = ensureFileState(appState.activeFile);
-        workspaceCard.innerHTML = '';
-        const context = {
-          container: workspaceCard,
-          fileName: appState.activeFile,
-          fileConfig: config,
-          fileState: state,
-          setContent: (value, opts) => setFileContent(appState.activeFile, value, opts),
-          refresh: () => renderWorkspace(),
-          log: logMessage,
-        };
-        config.render(context);
-      }
-
-      function updateMetaSummary() {
-        if (!appState.activeFile) {
-          metaSummary.textContent = '';
-          return;
-        }
-        const state = ensureFileState(appState.activeFile);
-        const lineCount = state.content ? state.content.split(/\n/).filter(Boolean).length : 0;
-        const bits = [];
-        if (state.lastLoaded) bits.push(`Loaded ${formatRelativeTime(state.lastLoaded)}`);
-        if (state.lastSaved) bits.push(`Saved ${formatRelativeTime(state.lastSaved)}`);
-        bits.push(`${lineCount} lines`);
-        metaSummary.textContent = bits.join(' • ');
-        if (state.dirty) {
-          syncIndicator.textContent = 'Unsaved changes';
-          syncIndicator.classList.add('unsaved');
-        } else {
-          syncIndicator.textContent = 'In sync';
-          syncIndicator.classList.remove('unsaved');
-        }
-      }
-
-      function getStageCodes() {
-        const comp = ensureFileState('compobj.txt');
-        if (!comp.content) return [];
-        return parseCompobjRows(comp.content)
-          .filter(row => row.code && row.code.startsWith('S'))
-          .map(row => row.code);
-      }
-      async function setActiveFile(name) {
-        const config = FILES.find(file => file.name === name);
+      function setActiveFile(name) {
+        const config = WORKSPACE_FILES.find(file => file.name === name);
         if (!config) {
           logMessage('error', `Unknown file: ${name}`);
           return;
@@ -1045,8 +1017,8 @@
         headingEl.textContent = `${config.icon} ${config.title}`;
         subtitleEl.textContent = config.description;
         renderSidebar();
-        updateMetaSummary();
-        await loadActiveFile(!ensureFileState(name).lastLoaded);
+        updateFileStatus();
+        loadActiveFile(!ensureFileState(name).lastLoaded);
       }
 
       async function loadActiveFile(force = false) {
@@ -1055,7 +1027,7 @@
         const state = ensureFileState(name);
         if (!force && state.lastLoaded) {
           renderWorkspace();
-          updateMetaSummary();
+          updateFileStatus();
           return;
         }
         const token = ++appState.loadToken;
@@ -1067,7 +1039,7 @@
           state.dirty = false;
           state.lastLoaded = new Date();
           renderWorkspace();
-          updateMetaSummary();
+          updateFileStatus();
           const lines = state.content.split(/\n/).filter(Boolean).length;
           logMessage('success', `Loaded ${name}`, [`${lines} lines available`]);
         } catch (error) {
@@ -1076,20 +1048,20 @@
           syncIndicator.textContent = 'Error';
         }
       }
-
       async function saveActiveFile() {
         if (!appState.activeFile) return;
         const name = appState.activeFile;
         const state = ensureFileState(name);
         try {
+          syncIndicator.textContent = 'Saving…';
           await api.save(name, state.content);
           state.dirty = false;
           state.lastSaved = new Date();
-          updateMetaSummary();
-          const lines = state.content.split(/\n/).filter(Boolean).length;
-          logMessage('success', `Saved ${name}`, [`${lines} lines written`]);
+          updateFileStatus();
+          logMessage('success', `Saved ${name}`);
         } catch (error) {
           logMessage('error', error.message);
+          syncIndicator.textContent = 'Error';
         }
       }
 
@@ -1098,13 +1070,11 @@
         const name = appState.activeFile;
         try {
           const result = await api.validate(name);
-          const issues = result.issues || [];
-          if (!issues.length) {
-            logMessage('success', `Validation passed for ${name}`);
+          const messages = (result.issues || []).map(issue => `${issue.line ? `Line ${issue.line}: ` : ''}${issue.message}`);
+          if (!messages.length) {
+            logMessage('success', `${name} passed validation`);
           } else {
-            const severity = issues.some(issue => issue.type === 'error') ? 'error' : 'warning';
-            const details = issues.map(issue => `Line ${issue.line ?? '?'} — ${issue.type || 'issue'}: ${issue.message}`);
-            logMessage(severity, `Validation found ${issues.length} issues in ${name}`, details);
+            logMessage('warning', `${messages.length} issues found in ${name}`, messages.slice(0, 20));
           }
         } catch (error) {
           logMessage('error', error.message);
@@ -1113,14 +1083,19 @@
 
       async function validateAllFiles() {
         try {
-          const summary = await api.validateAll();
-          const entries = Object.entries(summary.summaries || {});
-          const details = entries.map(([fileName, result]) => {
-            const status = result.ok ? '✅' : '⚠️';
-            const issueCount = result.issues?.length || 0;
-            return `${status} ${fileName} — ${issueCount} issue${issueCount === 1 ? '' : 's'}`;
+          const result = await api.validateAll();
+          const { files = [] } = result;
+          files.forEach(file => {
+            if (file.issues && file.issues.length) {
+              logMessage(
+                'warning',
+                `${file.name} has ${file.issues.length} issues`,
+                file.issues.slice(0, 12).map(issue => `${issue.line ? `Line ${issue.line}: ` : ''}${issue.message}`)
+              );
+            } else {
+              logMessage('success', `${file.name} passed validation`);
+            }
           });
-          logMessage(summary.ok ? 'success' : 'warning', 'Validation complete', details);
         } catch (error) {
           logMessage('error', error.message);
         }
@@ -1132,17 +1107,12 @@
         const state = ensureFileState(name);
         try {
           const result = await api.autofix(name, state.content);
-          if (result.content !== undefined) {
-            state.content = normaliseNewlines(result.content);
-            state.dirty = true;
+          if (result.fixed) {
+            setFileContent(name, result.fixed, { markDirty: true, silent: false });
             renderWorkspace();
-            updateMetaSummary();
-          }
-          if (result.fixes && result.fixes.length) {
-            const details = result.fixes.map(fix => `Line ${fix.line}: ${fix.message}`);
-            logMessage('info', `Auto-fix applied ${result.fixes.length} adjustments`, details);
+            logMessage('success', `Applied auto-fix to ${name}`);
           } else {
-            logMessage('info', `Auto-fix processed ${name}`, ['No automatic changes were necessary.']);
+            logMessage('info', `Auto-fix returned no changes for ${name}`);
           }
         } catch (error) {
           logMessage('error', error.message);
@@ -1154,7 +1124,7 @@
         const name = appState.activeFile;
         try {
           const result = await api.compare(name);
-          if (!result.ok) {
+          if (result.error) {
             logMessage('warning', `Comparison unavailable for ${name}`, [result.error]);
             return;
           }
@@ -1181,12 +1151,14 @@
       async function exportAllFiles() {
         try {
           if (typeof JSZip === 'undefined') {
-            logMessage('warning', 'JSZip library not loaded', ['The export feature requires network access to cdn.jsdelivr.net.']);
+            logMessage('warning', 'JSZip library not loaded', [
+              'The export feature requires network access to cdn.jsdelivr.net.',
+            ]);
             return;
           }
           const zip = new JSZip();
           await Promise.all(
-            FILES.map(async file => {
+            WORKSPACE_FILES.map(async file => {
               const state = ensureFileState(file.name);
               const content = state.content || (await api.load(file.name));
               zip.file(file.name, content);
@@ -1196,592 +1168,89 @@
           const url = URL.createObjectURL(blob);
           const anchor = document.createElement('a');
           anchor.href = url;
-          anchor.download = `competition-data-${Date.now()}.zip`;
+          anchor.download = `compdata-workspace-${Date.now()}.zip`;
           document.body.appendChild(anchor);
           anchor.click();
           document.body.removeChild(anchor);
           URL.revokeObjectURL(url);
-          logMessage('success', 'Exported all files as ZIP');
+          logMessage('success', 'Exported workspace as ZIP');
         } catch (error) {
           logMessage('error', error.message);
         }
       }
-      function createPanelElement(title, subtitle) {
-        const section = document.createElement('section');
-        section.className = 'panel';
-        const header = document.createElement('div');
-        header.className = 'panel-header';
-        const heading = document.createElement('h3');
-        heading.textContent = title;
-        header.appendChild(heading);
-        if (subtitle) {
-          const sub = document.createElement('p');
-          sub.style.margin = '0.35rem 0 0';
-          sub.style.fontSize = '0.78rem';
-          sub.style.color = 'var(--text-subtle)';
-          sub.textContent = subtitle;
-          header.appendChild(sub);
+
+      function renderWorkspace() {
+        if (!appState.activeFile) {
+          workspaceCard.innerHTML = '<p style="color: var(--text-subtle); text-align:center;">Select a file to start editing.</p>';
+          return;
         }
+        const config = WORKSPACE_FILES.find(file => file.name === appState.activeFile);
+        const state = ensureFileState(appState.activeFile);
+        workspaceCard.innerHTML = '';
+        const surface = document.createElement('div');
+        surface.className = 'editor-surface';
+        workspaceCard.appendChild(surface);
+
+        const infoBar = document.createElement('div');
+        infoBar.className = 'editor-info';
+        const badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = config.badge;
+        infoBar.appendChild(badge);
+        const infoText = document.createElement('span');
+        infoBar.appendChild(infoText);
+        surface.appendChild(infoBar);
+        activeInfoBar = infoText;
+
+        const toggleRow = document.createElement('div');
+        toggleRow.className = 'view-row';
+        const viewToggle = document.createElement('div');
+        viewToggle.className = 'view-toggle';
+        const gridBtn = document.createElement('button');
+        gridBtn.textContent = '🧾 Structured Grid View';
+        const rawBtn = document.createElement('button');
+        rawBtn.textContent = '📝 Raw Text View';
+        viewToggle.append(gridBtn, rawBtn);
+        toggleRow.appendChild(viewToggle);
+        surface.appendChild(toggleRow);
+
         const body = document.createElement('div');
-        body.className = 'panel-body';
-        section.append(header, body);
-        return { section, body, header };
-      }
+        body.className = 'editor-body';
+        surface.appendChild(body);
 
-      function parseCompobjRows(content) {
-        const lines = normaliseNewlines(content).split(/\n/);
-        const rows = [];
-        lines.forEach((line, index) => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
-          const parts = line.split(',');
-          while (parts.length < 5) {
-            parts.push('');
-          }
-          const [idRaw, levelRaw, codeRaw, nameRaw, parentRaw] = parts;
-          rows.push({
-            index,
-            order: rows.length,
-            id: Number(idRaw),
-            level: Number(levelRaw),
-            code: (codeRaw || '').trim(),
-            name: (nameRaw || '').trim(),
-            parent: parentRaw !== undefined && parentRaw.trim() !== '' ? Number(parentRaw) : NaN,
-            raw: trimmed,
-          });
-        });
-        return rows;
-      }
-
-      function serialiseCompobjRows(rows) {
-        return rows
-          .map(row => [
-            Number.isFinite(row.id) ? row.id : '',
-            Number.isFinite(row.level) ? row.level : '',
-            row.code ?? '',
-            row.name ?? '',
-            Number.isFinite(row.parent) ? row.parent : '',
-          ].join(','))
-          .join('\n');
-      }
-      function renderCompobjEditor(ctx) {
-        const { container, fileState } = ctx;
-        container.innerHTML = '';
-        let rows = parseCompobjRows(fileState.content);
-        const cache = fileState.cache;
-        if (!cache.expanded) {
-          cache.expanded = new Set(rows.filter(row => Number.isFinite(row.level) && row.level <= 1).map(row => row.id));
-        }
+        const cache = state.cache;
+        if (!cache.viewMode) cache.viewMode = 'grid';
         if (cache.filter === undefined) cache.filter = '';
-        if (cache.selectedId == null && rows.length) cache.selectedId = rows[0].id;
 
-        const grid = document.createElement('div');
-        grid.className = 'editor-grid';
-        container.appendChild(grid);
-
-        const treePanel = createPanelElement('Competition Tree', 'Browse and select nodes');
-        const detailPanel = createPanelElement('Node Details', 'Edit the selected entry');
-        const actionsPanel = createPanelElement('Quick Actions', 'Generate, duplicate, or edit raw data');
-        grid.append(treePanel.section, detailPanel.section, actionsPanel.section);
-
-        const toolbar = document.createElement('div');
-        toolbar.className = 'toolbar';
-        const searchField = document.createElement('label');
-        searchField.className = 'search-field';
-        searchField.innerHTML = '<span>🔍</span>';
-        const searchInput = document.createElement('input');
-        searchInput.type = 'search';
-        searchInput.placeholder = 'Filter by code, name, or ID';
-        searchInput.value = cache.filter || '';
-        searchField.appendChild(searchInput);
-        toolbar.appendChild(searchField);
-        const expandButton = document.createElement('button');
-        expandButton.className = 'inline-button';
-        expandButton.textContent = 'Expand all';
-        toolbar.appendChild(expandButton);
-        const collapseButton = document.createElement('button');
-        collapseButton.className = 'inline-button';
-        collapseButton.textContent = 'Collapse all';
-        toolbar.appendChild(collapseButton);
-        treePanel.body.appendChild(toolbar);
-
-        const treeList = document.createElement('ul');
-        treeList.className = 'tree';
-        treePanel.body.appendChild(treeList);
-
-        const summaryList = document.createElement('ul');
-        summaryList.style.listStyle = 'none';
-        summaryList.style.margin = '1rem 0 0';
-        summaryList.style.padding = '0';
-        summaryList.style.display = 'flex';
-        summaryList.style.flexDirection = 'column';
-        summaryList.style.gap = '0.35rem';
-        actionsPanel.body.appendChild(summaryList);
-
-        const rawField = document.createElement('div');
-        rawField.className = 'field';
-        const rawLabel = document.createElement('label');
-        rawLabel.textContent = 'Raw compobj.txt';
-        const rawTextarea = document.createElement('textarea');
-        rawTextarea.value = fileState.content;
-        rawField.append(rawLabel, rawTextarea);
-        const rawButtons = document.createElement('div');
-        rawButtons.className = 'table-actions';
-        const applyRaw = document.createElement('button');
-        applyRaw.className = 'inline-button primary';
-        applyRaw.textContent = 'Apply Raw Changes';
-        rawButtons.appendChild(applyRaw);
-        actionsPanel.body.append(rawField, rawButtons);
-
-        const actionRow = document.createElement('div');
-        actionRow.className = 'table-actions';
-        const addStageBtn = document.createElement('button');
-        addStageBtn.className = 'inline-button primary';
-        addStageBtn.textContent = 'Add Stage';
-        const addGroupBtn = document.createElement('button');
-        addGroupBtn.className = 'inline-button';
-        addGroupBtn.textContent = 'Add Group';
-        const duplicateBtn = document.createElement('button');
-        duplicateBtn.className = 'inline-button';
-        duplicateBtn.textContent = 'Duplicate';
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'inline-button';
-        deleteBtn.textContent = 'Delete';
-        actionRow.append(addStageBtn, addGroupBtn, duplicateBtn, deleteBtn);
-        actionsPanel.body.insertBefore(actionRow, summaryList);
-
-        function buildHierarchy() {
-          const map = new Map();
-          rows.forEach(row => {
-            map.set(row.id, { row, children: [] });
-          });
-          const roots = [];
-          map.forEach(node => {
-            if (!Number.isFinite(node.row.parent) || !map.has(node.row.parent) || node.row.parent < 0) {
-              roots.push(node);
-            } else {
-              map.get(node.row.parent).children.push(node);
-            }
-          });
-          const sortNodes = list => list.sort((a, b) => (a.row.order ?? 0) - (b.row.order ?? 0));
-          sortNodes(roots);
-          map.forEach(node => sortNodes(node.children));
-          return roots;
+        function updateToggleButtons() {
+          gridBtn.classList.toggle('active', cache.viewMode === 'grid');
+          rawBtn.classList.toggle('active', cache.viewMode === 'raw');
         }
 
-        function shouldDisplay(node) {
-          const filter = (cache.filter || '').toLowerCase();
-          if (!filter) return true;
-          const target = `${node.row.code} ${node.row.name} ${node.row.id}`.toLowerCase();
-          if (target.includes(filter)) return true;
-          return node.children.some(child => shouldDisplay(child));
+        gridBtn.addEventListener('click', () => {
+          cache.viewMode = 'grid';
+          renderWorkspace();
+        });
+        rawBtn.addEventListener('click', () => {
+          cache.viewMode = 'raw';
+          renderWorkspace();
+        });
+        updateToggleButtons();
+
+        if (cache.viewMode === 'grid') {
+          renderStructuredView(body, config, state, toggleRow);
+        } else {
+          renderRawView(body, state);
         }
 
-        function createTreeNode(node) {
-          const li = document.createElement('li');
-          li.dataset.id = node.row.id;
-          if (cache.selectedId === node.row.id) {
-            li.classList.add('selected');
-          }
-
-          const label = document.createElement('div');
-          label.className = 'label';
-          const title = document.createElement('strong');
-          title.textContent = node.row.code || '(no code)';
-          const name = document.createElement('span');
-          name.textContent = node.row.name || '—';
-          label.append(title, name);
-
-          const meta = document.createElement('div');
-          meta.className = 'meta';
-          if (node.children.length && !cache.filter) {
-            const toggle = document.createElement('button');
-            toggle.className = 'inline-button';
-            toggle.style.padding = '0.15rem 0.45rem';
-            toggle.textContent = cache.expanded.has(node.row.id) ? '−' : '+';
-            toggle.addEventListener('click', event => {
-              event.stopPropagation();
-              if (cache.expanded.has(node.row.id)) {
-                cache.expanded.delete(node.row.id);
-              } else {
-                cache.expanded.add(node.row.id);
-              }
-              renderTree();
-            });
-            meta.appendChild(toggle);
-          }
-          const metaText = document.createElement('span');
-          metaText.textContent = `ID ${Number.isFinite(node.row.id) ? node.row.id : '?'} • Level ${Number.isFinite(node.row.level) ? node.row.level : '?'}`;
-          meta.appendChild(metaText);
-
-          li.append(label, meta);
-
-          li.addEventListener('click', event => {
-            event.stopPropagation();
-            cache.selectedId = node.row.id;
-            renderTree();
-            renderDetails();
-          });
-
-          const expanded = cache.filter ? true : cache.expanded.has(node.row.id);
-          if (node.children.length && expanded) {
-            const childList = document.createElement('ul');
-            childList.className = 'tree-children';
-            node.children.forEach(child => {
-              if (shouldDisplay(child)) {
-                childList.appendChild(createTreeNode(child));
-              }
-            });
-            if (childList.children.length) {
-              li.appendChild(childList);
-            }
-          }
-          return li;
-        }
-
-        function renderTree() {
-          treeList.innerHTML = '';
-          const roots = buildHierarchy();
-          roots.forEach(node => {
-            if (shouldDisplay(node)) {
-              treeList.appendChild(createTreeNode(node));
-            }
-          });
-          updateSummary();
-        }
-
-        function renderDetails() {
-          detailPanel.body.innerHTML = '';
-          if (!rows.length) {
-            detailPanel.body.innerHTML = '<p style="color: var(--text-subtle);">File is empty. Use Quick Actions to create nodes.</p>';
-            return;
-          }
-          const selected = rows.find(row => row.id === cache.selectedId) || rows[0];
-          if (!selected) {
-            cache.selectedId = rows[0]?.id ?? null;
-            renderTree();
-            return;
-          }
-          cache.selectedId = selected.id;
-
-          const fieldGrid = document.createElement('div');
-          fieldGrid.className = 'field-grid';
-
-          const idField = document.createElement('div');
-          idField.className = 'field';
-          const idLabel = document.createElement('label');
-          idLabel.textContent = 'ID';
-          const idInput = document.createElement('input');
-          idInput.type = 'number';
-          idInput.value = Number.isFinite(selected.id) ? String(selected.id) : '';
-          idField.append(idLabel, idInput);
-
-          const levelField = document.createElement('div');
-          levelField.className = 'field';
-          const levelLabel = document.createElement('label');
-          levelLabel.textContent = 'Level';
-          const levelInput = document.createElement('input');
-          levelInput.type = 'number';
-          levelInput.value = Number.isFinite(selected.level) ? String(selected.level) : '';
-          levelField.append(levelLabel, levelInput);
-
-          const codeField = document.createElement('div');
-          codeField.className = 'field';
-          const codeLabel = document.createElement('label');
-          codeLabel.textContent = 'Code';
-          const codeInput = document.createElement('input');
-          codeInput.value = selected.code || '';
-          codeField.append(codeLabel, codeInput);
-
-          const nameField = document.createElement('div');
-          nameField.className = 'field';
-          const nameLabel = document.createElement('label');
-          nameLabel.textContent = 'Name';
-          const nameInput = document.createElement('input');
-          nameInput.value = selected.name || '';
-          nameField.append(nameLabel, nameInput);
-
-          const parentField = document.createElement('div');
-          parentField.className = 'field';
-          const parentLabel = document.createElement('label');
-          parentLabel.textContent = 'Parent ID';
-          const parentInput = document.createElement('input');
-          parentInput.type = 'number';
-          parentInput.value = Number.isFinite(selected.parent) ? String(selected.parent) : '';
-          parentField.append(parentLabel, parentInput);
-
-          fieldGrid.append(idField, levelField, codeField, nameField, parentField);
-          detailPanel.body.appendChild(fieldGrid);
-
-          const info = document.createElement('p');
-          info.style.fontSize = '0.8rem';
-          info.style.color = 'var(--text-subtle)';
-          info.style.marginTop = '0.85rem';
-          info.textContent = `Line ${selected.index + 1}`;
-          detailPanel.body.appendChild(info);
-
-          idInput.addEventListener('change', () => {
-            const newId = Number(idInput.value);
-            if (!Number.isInteger(newId)) {
-              idInput.value = Number.isFinite(selected.id) ? String(selected.id) : '';
-              return;
-            }
-            if (rows.some(row => row !== selected && row.id === newId)) {
-              logMessage('warning', `ID ${newId} already exists`, []);
-              idInput.value = Number.isFinite(selected.id) ? String(selected.id) : '';
-              return;
-            }
-            const oldId = selected.id;
-            selected.id = newId;
-            rows.forEach(row => {
-              if (row.parent === oldId) {
-                row.parent = newId;
-              }
-            });
-            cache.selectedId = newId;
-            ctx.setContent(serialiseCompobjRows(rows));
-            renderTree();
-            renderDetails();
-          });
-
-          levelInput.addEventListener('change', () => {
-            const newLevel = Number(levelInput.value);
-            if (!Number.isInteger(newLevel)) {
-              levelInput.value = Number.isFinite(selected.level) ? String(selected.level) : '';
-              return;
-            }
-            selected.level = newLevel;
-            ctx.setContent(serialiseCompobjRows(rows));
-            renderTree();
-          });
-
-          codeInput.addEventListener('input', () => {
-            selected.code = codeInput.value.trim();
-            ctx.setContent(serialiseCompobjRows(rows), { silent: true });
-            renderTree();
-          });
-          codeInput.addEventListener('change', () => {
-            selected.code = codeInput.value.trim();
-            ctx.setContent(serialiseCompobjRows(rows));
-            renderTree();
-          });
-
-          nameInput.addEventListener('input', () => {
-            selected.name = nameInput.value;
-            ctx.setContent(serialiseCompobjRows(rows), { silent: true });
-            renderTree();
-          });
-          nameInput.addEventListener('change', () => {
-            selected.name = nameInput.value;
-            ctx.setContent(serialiseCompobjRows(rows));
-            renderTree();
-          });
-
-          parentInput.addEventListener('change', () => {
-            const value = parentInput.value.trim();
-            selected.parent = value === '' ? NaN : Number(value);
-            ctx.setContent(serialiseCompobjRows(rows));
-            renderTree();
-          });
-        }
-
-        function generateNextId() {
-          let maxId = 0;
-          rows.forEach(row => {
-            if (Number.isFinite(row.id) && row.id > maxId) {
-              maxId = row.id;
-            }
-          });
-          return maxId + 1;
-        }
-
-        function updateSummary() {
-          summaryList.innerHTML = '';
-          if (!rows.length) {
-            const empty = document.createElement('li');
-            empty.textContent = 'No nodes loaded.';
-            summaryList.appendChild(empty);
-            return;
-          }
-          const totalStages = rows.filter(row => row.code && row.code.startsWith('S')).length;
-          const totalGroups = rows.filter(row => row.code && row.code.startsWith('G')).length;
-          const competitions = rows.filter(row => Number.isFinite(row.level) && row.level === 0).length;
-          const stats = [
-            `${rows.length} total nodes`,
-            `${totalStages} stages`,
-            `${totalGroups} groups`,
-            `${competitions} competitions`,
-          ];
-          stats.forEach(text => {
-            const li = document.createElement('li');
-            li.textContent = text;
-            summaryList.appendChild(li);
-          });
-        }
-
-        searchInput.addEventListener('input', () => {
-          cache.filter = searchInput.value;
-          renderTree();
-        });
-
-        expandButton.addEventListener('click', () => {
-          cache.expanded = new Set(rows.map(row => row.id));
-          renderTree();
-        });
-
-        collapseButton.addEventListener('click', () => {
-          cache.expanded = new Set(rows.filter(row => !Number.isFinite(row.level) || row.level <= 0).map(row => row.id));
-          renderTree();
-        });
-
-        addStageBtn.addEventListener('click', () => {
-          const base = rows.find(row => row.id === cache.selectedId) || rows.find(row => row.level === 0);
-          const newId = generateNextId();
-          const parentId = base ? base.id : -1;
-          const newRow = {
-            index: rows.length,
-            order: rows.length,
-            id: newId,
-            level: base ? (Number.isFinite(base.level) ? base.level + 1 : 1) : 1,
-            code: `S${newId}`,
-            name: `FCE_STAGE_${newId}`,
-            parent: parentId,
-            raw: '',
-          };
-          rows.push(newRow);
-          cache.expanded.add(parentId);
-          cache.selectedId = newId;
-          ctx.setContent(serialiseCompobjRows(rows));
-          ctx.refresh();
-        });
-
-        addGroupBtn.addEventListener('click', () => {
-          const base = rows.find(row => row.id === cache.selectedId) || rows.find(row => row.code && row.code.startsWith('S'));
-          const newId = generateNextId();
-          const parentId = base ? base.id : -1;
-          const newRow = {
-            index: rows.length,
-            order: rows.length,
-            id: newId,
-            level: base ? (Number.isFinite(base.level) ? base.level + 1 : 1) : 1,
-            code: `G${newId}`,
-            name: `Group_${newId}`,
-            parent: parentId,
-            raw: '',
-          };
-          rows.push(newRow);
-          cache.expanded.add(parentId);
-          cache.selectedId = newId;
-          ctx.setContent(serialiseCompobjRows(rows));
-          ctx.refresh();
-        });
-
-        duplicateBtn.addEventListener('click', () => {
-          const base = rows.find(row => row.id === cache.selectedId);
-          if (!base) {
-            logMessage('warning', 'Select a node to duplicate');
-            return;
-          }
-          const newId = generateNextId();
-          const copy = {
-            index: rows.length,
-            order: rows.length,
-            id: newId,
-            level: base.level,
-            code: base.code ? `${base.code}_COPY` : `N${newId}`,
-            name: base.name ? `${base.name} Copy` : '',
-            parent: base.parent,
-            raw: '',
-          };
-          const insertIndex = rows.indexOf(base) + 1;
-          rows.splice(insertIndex, 0, copy);
-          cache.expanded.add(base.parent);
-          cache.selectedId = newId;
-          ctx.setContent(serialiseCompobjRows(rows));
-          ctx.refresh();
-        });
-
-        deleteBtn.addEventListener('click', () => {
-          const selected = rows.find(row => row.id === cache.selectedId);
-          if (!selected) {
-            logMessage('warning', 'Select a node to delete');
-            return;
-          }
-          if (!window.confirm('Delete the selected node and all of its children?')) {
-            return;
-          }
-          const toRemove = new Set([selected.id]);
-          let changed = true;
-          while (changed) {
-            changed = false;
-            rows.forEach(row => {
-              if (!toRemove.has(row.id) && toRemove.has(row.parent)) {
-                toRemove.add(row.id);
-                changed = true;
-              }
-            });
-          }
-          rows = rows.filter(row => !toRemove.has(row.id));
-          cache.selectedId = rows[0]?.id ?? null;
-          ctx.setContent(serialiseCompobjRows(rows));
-          ctx.refresh();
-        });
-
-        applyRaw.addEventListener('click', () => {
-          const value = rawTextarea.value;
-          ctx.setContent(value);
-          rows = parseCompobjRows(value);
-          cache.selectedId = rows[0]?.id ?? null;
-          ctx.refresh();
-          logMessage('info', 'Applied raw compobj.txt changes');
-        });
-
-        renderTree();
-        renderDetails();
-      }
-      function parseCsvRows(content, columnCount) {
-        const lines = normaliseNewlines(content).split(/\n/);
-        const rows = [];
-        lines.forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
-          if (trimmed.startsWith('#')) {
-            rows.push({ isComment: true, raw: trimmed });
-            return;
-          }
-          const parts = line.split(',').map(part => part.trim());
-          while (parts.length < columnCount) {
-            parts.push('');
-          }
-          rows.push({ isComment: false, parts });
-        });
-        return rows;
+        updateFileStatus();
       }
 
-      function serialiseCsvRows(rows) {
-        return rows
-          .map(row => (row.isComment ? row.raw : row.parts.join(',')))
-          .join('\n');
-      }
-
-      function renderCsvEditor(ctx, config) {
-        const { container, fileState } = ctx;
-        container.innerHTML = '';
+      function renderStructuredView(body, config, fileState, toggleRow) {
         const columnCount = config.columns.length;
         let rows = parseCsvRows(fileState.content, columnCount);
-        const cache = fileState.cache;
-        if (cache.filter === undefined) cache.filter = '';
 
-        const grid = document.createElement('div');
-        grid.className = 'editor-grid';
-        container.appendChild(grid);
-
-        const tablePanel = createPanelElement(config.title, config.subtitle);
-        const rawPanel = createPanelElement('Raw Preview', `Direct edit of ${ctx.fileName}`);
-        const summaryPanel = createPanelElement('Summary', 'Dataset snapshot');
-        grid.append(tablePanel.section, rawPanel.section, summaryPanel.section);
-
-        const datalistMap = config.datalist ? config.datalist() || {} : {};
+        const datalistMap = typeof config.datalists === 'function' ? config.datalists() || {} : config.datalists || {};
         Object.entries(datalistMap).forEach(([id, options]) => {
           let list = document.getElementById(id);
           if (!list) {
@@ -1797,227 +1266,307 @@
           });
         });
 
-        const toolbar = document.createElement('div');
-        toolbar.className = 'toolbar';
-        let searchInput = null;
-        if (config.filterable) {
-          const searchField = document.createElement('label');
-          searchField.className = 'search-field';
-          searchField.innerHTML = '<span>🔍</span>';
-          searchInput = document.createElement('input');
-          searchInput.type = 'search';
-          searchInput.placeholder = 'Filter rows';
-          searchInput.value = cache.filter || '';
-          searchField.appendChild(searchInput);
-          toolbar.appendChild(searchField);
-        }
+        const controls = document.createElement('div');
+        controls.className = 'editor-controls';
+        const searchField = document.createElement('label');
+        searchField.className = 'search-field';
+        searchField.innerHTML = '<span>🔍</span>';
+        const searchInput = document.createElement('input');
+        searchInput.type = 'search';
+        searchInput.placeholder = 'Filter rows';
+        searchInput.value = fileState.cache.filter || '';
+        searchField.appendChild(searchInput);
+        controls.appendChild(searchField);
+
         const addButton = document.createElement('button');
         addButton.className = 'inline-button primary';
         addButton.textContent = 'Add Row';
-        toolbar.appendChild(addButton);
-        tablePanel.body.appendChild(toolbar);
+        controls.appendChild(addButton);
 
-        const table = document.createElement('table');
-        const thead = document.createElement('thead');
-        const headRow = document.createElement('tr');
+        toggleRow.appendChild(controls);
+
+        const table = document.createElement('div');
+        table.className = 'grid-table';
+        const head = document.createElement('div');
+        head.className = 'grid-head';
+        const headRow = document.createElement('div');
+        headRow.className = 'grid-row';
+        const templateColumns = [...config.columns.map(col => col.width || 'minmax(140px, 1fr)'), 'minmax(150px, 0.7fr)'].join(' ');
+        headRow.style.gridTemplateColumns = templateColumns;
         config.columns.forEach(col => {
-          const th = document.createElement('th');
-          th.textContent = col.label;
-          headRow.appendChild(th);
+          const span = document.createElement('span');
+          span.textContent = col.label;
+          headRow.appendChild(span);
         });
-        const actionTh = document.createElement('th');
-        actionTh.textContent = 'Actions';
-        headRow.appendChild(actionTh);
-        if (config.reorderable) {
-          const orderTh = document.createElement('th');
-          orderTh.textContent = 'Order';
-          headRow.appendChild(orderTh);
-        }
-        thead.appendChild(headRow);
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        table.appendChild(tbody);
-        tablePanel.body.appendChild(table);
+        const actionSpan = document.createElement('span');
+        actionSpan.textContent = 'Actions';
+        headRow.appendChild(actionSpan);
+        head.appendChild(headRow);
+        table.appendChild(head);
 
-        const rawField = document.createElement('div');
-        rawField.className = 'field';
-        const rawLabel = document.createElement('label');
-        rawLabel.textContent = `${ctx.fileName} raw`;
-        const rawTextarea = document.createElement('textarea');
-        rawTextarea.value = fileState.content;
-        rawField.append(rawLabel, rawTextarea);
-        const rawActions = document.createElement('div');
-        rawActions.className = 'table-actions';
-        const applyRaw = document.createElement('button');
-        applyRaw.className = 'inline-button primary';
-        applyRaw.textContent = 'Apply Raw Changes';
-        rawActions.appendChild(applyRaw);
-        rawPanel.body.append(rawField, rawActions);
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'grid-body';
+        table.appendChild(bodyEl);
+        body.appendChild(table);
 
-        function updateSummary() {
-          summaryPanel.body.innerHTML = '';
-          const list = document.createElement('ul');
-          list.style.listStyle = 'none';
-          list.style.margin = '0';
-          list.style.padding = '0';
-          list.style.display = 'flex';
-          list.style.flexDirection = 'column';
-          list.style.gap = '0.35rem';
-          const dataRows = rows.filter(row => !row.isComment);
-          const summaryLines = config.summaryBuilder ? config.summaryBuilder(dataRows) : [`${dataRows.length} rows`];
-          summaryLines.forEach(line => {
-            const li = document.createElement('li');
-            li.textContent = line;
-            list.appendChild(li);
-          });
-          summaryPanel.body.appendChild(list);
+        function refreshRowsFromState() {
+          rows = parseCsvRows(fileState.content, columnCount);
         }
 
-        function syncRawTextarea() {
-          rawTextarea.value = serialiseCsvRows(rows);
-        }
-
-        function refreshTable() {
-          tbody.innerHTML = '';
-          const filter = (cache.filter || '').toLowerCase();
-          rows.forEach((row, idx) => {
-            if (row.isComment) {
-              return;
-            }
-            if (filter && !row.parts.some(part => part.toLowerCase().includes(filter))) {
-              return;
-            }
-            const tr = document.createElement('tr');
-            tr.dataset.index = String(idx);
-            config.columns.forEach((col, colIndex) => {
-              const td = document.createElement('td');
-              const input = document.createElement('input');
-              input.value = row.parts[colIndex] ?? '';
-              input.dataset.columnIndex = String(colIndex);
-              if (col.datalist && datalistMap[col.datalist]) {
-                input.setAttribute('list', col.datalist);
-              }
-              td.appendChild(input);
-              tr.appendChild(td);
-            });
-            const actionTd = document.createElement('td');
-            actionTd.className = 'table-actions';
-            const duplicateBtn = document.createElement('button');
-            duplicateBtn.className = 'inline-button';
-            duplicateBtn.dataset.action = 'duplicate';
-            duplicateBtn.textContent = 'Duplicate';
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'inline-button';
-            deleteBtn.dataset.action = 'delete';
-            deleteBtn.textContent = 'Delete';
-            actionTd.append(duplicateBtn, deleteBtn);
-            tr.appendChild(actionTd);
-            if (config.reorderable) {
-              const orderTd = document.createElement('td');
-              orderTd.className = 'table-actions';
-              const upBtn = document.createElement('button');
-              upBtn.className = 'inline-button';
-              upBtn.dataset.action = 'up';
-              upBtn.textContent = '▲';
-              const downBtn = document.createElement('button');
-              downBtn.className = 'inline-button';
-              downBtn.dataset.action = 'down';
-              downBtn.textContent = '▼';
-              orderTd.append(upBtn, downBtn);
-              tr.appendChild(orderTd);
-            }
-            tbody.appendChild(tr);
-          });
-          updateSummary();
-          syncRawTextarea();
-        }
-
-        function moveRow(fromIndex, direction) {
-          const targetIndex = (() => {
-            let idx = fromIndex + direction;
-            while (idx >= 0 && idx < rows.length) {
-              if (!rows[idx].isComment) return idx;
-              idx += direction;
-            }
-            return -1;
-          })();
-          if (targetIndex < 0 || targetIndex >= rows.length) {
-            return;
+        function syncContent(options = {}) {
+          const serialised = serialiseCsvRows(rows);
+          setFileContent(appState.activeFile, serialised, options);
+          if (!options.silent) {
+            refreshRowsFromState();
+            updateFileStatus();
           }
-          const [row] = rows.splice(fromIndex, 1);
-          rows.splice(targetIndex, 0, row);
-          ctx.setContent(serialiseCsvRows(rows));
-          refreshTable();
         }
 
-        if (searchInput) {
-          searchInput.addEventListener('input', () => {
-            cache.filter = searchInput.value;
-            refreshTable();
+        function getFilteredData() {
+          const filterValue = (fileState.cache.filter || '').toLowerCase();
+          const filtered = [];
+          rows.forEach((row, index) => {
+            if (row.isComment) return;
+            if (!filterValue) {
+              filtered.push({ row, index });
+              return;
+            }
+            const haystack = row.parts.join(' ').toLowerCase();
+            if (haystack.includes(filterValue)) {
+              filtered.push({ row, index });
+            }
           });
+          return filtered;
         }
 
-        addButton.addEventListener('click', () => {
-          const newParts = config.newRow ? config.newRow() : new Array(columnCount).fill('');
-          rows.push({ isComment: false, parts: newParts });
-          ctx.setContent(serialiseCsvRows(rows));
-          refreshTable();
-        });
-
-        tbody.addEventListener('input', event => {
+        function handleCellInput(event) {
           const input = event.target;
-          if (!(input instanceof HTMLInputElement)) return;
-          const tr = input.closest('tr');
-          if (!tr) return;
-          const rowIndex = Number(tr.dataset.index);
+          const rowIndex = Number(input.dataset.rowIndex);
           const colIndex = Number(input.dataset.columnIndex);
           if (!Number.isInteger(rowIndex) || !Number.isInteger(colIndex)) return;
-          const row = rows[rowIndex];
-          if (!row || row.isComment) return;
-          row.parts[colIndex] = input.value;
-          ctx.setContent(serialiseCsvRows(rows), { silent: true });
-        });
+          if (!rows[rowIndex] || rows[rowIndex].isComment) return;
+          rows[rowIndex].parts[colIndex] = input.value;
+          syncContent({ silent: true });
+        }
 
-        tbody.addEventListener('change', () => {
-          ctx.setContent(serialiseCsvRows(rows));
-          updateSummary();
-        });
+        function handleCellChange(event) {
+          const input = event.target;
+          const rowIndex = Number(input.dataset.rowIndex);
+          const colIndex = Number(input.dataset.columnIndex);
+          if (!Number.isInteger(rowIndex) || !Number.isInteger(colIndex)) return;
+          if (!rows[rowIndex] || rows[rowIndex].isComment) return;
+          rows[rowIndex].parts[colIndex] = input.value;
+          syncContent();
+        }
 
-        tbody.addEventListener('click', event => {
-          const button = event.target.closest('button[data-action]');
-          if (!button) return;
-          const tr = button.closest('tr');
-          if (!tr) return;
-          const rowIndex = Number(tr.dataset.index);
+        function handleDuplicate(event) {
+          const rowIndex = Number(event.target.dataset.rowIndex);
           if (!Number.isInteger(rowIndex)) return;
-          const action = button.dataset.action;
-          if (action === 'delete') {
-            rows.splice(rowIndex, 1);
-            ctx.setContent(serialiseCsvRows(rows));
-            refreshTable();
-          } else if (action === 'duplicate') {
-            const clone = { isComment: false, parts: [...rows[rowIndex].parts] };
-            rows.splice(rowIndex + 1, 0, clone);
-            ctx.setContent(serialiseCsvRows(rows));
-            refreshTable();
-          } else if (action === 'up') {
-            moveRow(rowIndex, -1);
-          } else if (action === 'down') {
-            moveRow(rowIndex, 1);
+          const source = rows[rowIndex];
+          if (!source || source.isComment) return;
+          const clone = { isComment: false, parts: [...source.parts] };
+          rows.splice(rowIndex + 1, 0, clone);
+          syncContent();
+          renderRows();
+        }
+
+        function handleDelete(event) {
+          const rowIndex = Number(event.target.dataset.rowIndex);
+          if (!Number.isInteger(rowIndex)) return;
+          rows.splice(rowIndex, 1);
+          syncContent();
+          renderRows();
+        }
+
+        function renderRows() {
+          refreshRowsFromState();
+          const filtered = getFilteredData();
+          bodyEl.innerHTML = '';
+          if (!filtered.length) {
+            const empty = document.createElement('div');
+            empty.style.padding = '1.2rem';
+            empty.style.color = 'var(--text-subtle)';
+            empty.textContent = 'No rows match the current filter.';
+            bodyEl.appendChild(empty);
+            return;
           }
+          filtered.forEach(entry => {
+            const rowEl = document.createElement('div');
+            rowEl.className = 'grid-row';
+            rowEl.style.gridTemplateColumns = templateColumns;
+            rowEl.dataset.rowIndex = entry.index;
+            config.columns.forEach((col, colIndex) => {
+              const cell = document.createElement('div');
+              const input = document.createElement('input');
+              input.type = col.type === 'number' ? 'number' : 'text';
+              input.value = entry.row.parts[colIndex] ?? '';
+              input.dataset.rowIndex = entry.index;
+              input.dataset.columnIndex = colIndex;
+              if (col.datalist) input.setAttribute('list', col.datalist);
+              input.addEventListener('input', handleCellInput);
+              input.addEventListener('change', handleCellChange);
+              cell.appendChild(input);
+              rowEl.appendChild(cell);
+            });
+            const actionCell = document.createElement('div');
+            actionCell.className = 'row-actions';
+            const duplicateBtn = document.createElement('button');
+            duplicateBtn.textContent = 'Duplicate';
+            duplicateBtn.dataset.rowIndex = entry.index;
+            duplicateBtn.addEventListener('click', handleDuplicate);
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.dataset.rowIndex = entry.index;
+            deleteBtn.addEventListener('click', handleDelete);
+            actionCell.append(duplicateBtn, deleteBtn);
+            rowEl.appendChild(actionCell);
+            bodyEl.appendChild(rowEl);
+          });
+        }
+
+        searchInput.addEventListener('input', () => {
+          fileState.cache.filter = searchInput.value;
+          renderRows();
         });
 
-        applyRaw.addEventListener('click', () => {
-          const value = rawTextarea.value;
-          ctx.setContent(value);
-          rows = parseCsvRows(value, columnCount);
-          cache.filter = '';
-          if (searchInput) searchInput.value = '';
-          refreshTable();
-          logMessage('info', `Applied raw changes to ${ctx.fileName}`);
+        addButton.addEventListener('click', () => {
+          const stageCodes = getStageCodes();
+          let newParts = config.newRow ? config.newRow(stageCodes) : new Array(columnCount).fill('');
+          if (!Array.isArray(newParts)) {
+            newParts = new Array(columnCount).fill('');
+          }
+          newParts = [...newParts];
+          if (newParts.length < columnCount) {
+            while (newParts.length < columnCount) newParts.push('');
+          } else if (newParts.length > columnCount) {
+            newParts = newParts.slice(0, columnCount);
+          }
+          rows.push({ isComment: false, parts: newParts });
+          syncContent();
+          renderRows();
         });
 
-        refreshTable();
+        renderRows();
+      }
+
+      function renderRawView(body, state) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'raw-editor';
+        const textarea = document.createElement('textarea');
+        textarea.value = state.content;
+        wrapper.appendChild(textarea);
+        const hint = document.createElement('p');
+        hint.className = 'hint';
+        hint.textContent = 'Raw editing mode writes directly to disk. Validation, auto-fix, and compare still use the active file.';
+        wrapper.appendChild(hint);
+        body.appendChild(wrapper);
+
+        textarea.addEventListener('input', () => {
+          setFileContent(appState.activeFile, textarea.value, { silent: true });
+        });
+        textarea.addEventListener('change', () => {
+          setFileContent(appState.activeFile, textarea.value);
+          updateFileStatus();
+        });
+      }
+
+      function parseCsvRows(content, columnCount) {
+        const lines = normaliseNewlines(content).split(/\n/);
+        const rows = [];
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          if (line.trim().startsWith('#')) {
+            rows.push({ isComment: true, raw: line.trim() });
+            return;
+          }
+          const parts = line.split(',').map(part => part.trim());
+          while (parts.length < columnCount) {
+            parts.push('');
+          }
+          rows.push({ isComment: false, parts });
+        });
+        return rows;
+      }
+
+      function serialiseCsvRows(rows) {
+        return rows.map(row => (row.isComment ? row.raw : row.parts.join(','))).join('\n');
+      }
+
+      function parseCompobjRows(content) {
+        const lines = normaliseNewlines(content).split(/\n/);
+        const rows = [];
+        lines.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+          if (trimmed.startsWith('#')) return;
+          const parts = trimmed.split(',');
+          while (parts.length < 5) parts.push('');
+          const [id, level, code, name, parent] = parts;
+          rows.push({
+            id: Number(id),
+            level: Number(level),
+            code: (code || '').trim(),
+            name: (name || '').trim(),
+            parent: parent ? Number(parent) : NaN,
+          });
+        });
+        return rows;
+      }
+
+      function getStageCodes() {
+        const comp = ensureFileState('compobj.txt');
+        if (!comp.content) return [];
+        return parseCompobjRows(comp.content)
+          .map(row => row.code)
+          .filter(code => code && code.startsWith('S'));
+      }
+
+      function buildFileStats(config, state) {
+        const stats = [];
+        const rows = parseCsvRows(state.content || '', config.columns.length);
+        const dataRows = rows.filter(row => !row.isComment);
+        const lineCount = dataRows.length;
+        stats.push(`${lineCount} line${lineCount === 1 ? '' : 's'}`);
+        if (config.groupBy) {
+          const { column, label } = config.groupBy;
+          const groups = new Set();
+          dataRows.forEach(row => {
+            const value = (row.parts[column] || '').trim();
+            if (value) groups.add(value);
+          });
+          stats.push(`${groups.size} ${label}`);
+        }
+        if (state.lastSaved) {
+          stats.push(`last saved ${formatRelativeTime(state.lastSaved)}`);
+        } else if (state.lastLoaded) {
+          stats.push(`loaded ${formatRelativeTime(state.lastLoaded)}`);
+        }
+        return stats;
+      }
+
+      function updateFileStatus() {
+        if (!appState.activeFile) {
+          metaSummary.textContent = '';
+          syncIndicator.textContent = 'Idle';
+          syncIndicator.classList.remove('unsaved');
+          if (activeInfoBar) activeInfoBar.textContent = '';
+          return;
+        }
+        const config = WORKSPACE_FILES.find(file => file.name === appState.activeFile);
+        const state = ensureFileState(appState.activeFile);
+        const stats = config ? buildFileStats(config, state) : [];
+        const infoText = stats.join(' • ');
+        metaSummary.textContent = infoText;
+        if (activeInfoBar) {
+          activeInfoBar.textContent = infoText;
+        }
+        if (state.dirty) {
+          syncIndicator.textContent = 'Unsaved changes';
+          syncIndicator.classList.add('unsaved');
+        } else {
+          syncIndicator.textContent = 'In sync';
+          syncIndicator.classList.remove('unsaved');
+        }
       }
     </script>
   </body>
