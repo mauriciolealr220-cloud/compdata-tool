@@ -44,16 +44,23 @@
   }
 
   #controls {
-    display: flex;
+    border: 1px solid #e3e7ef;
+    border-top: none;
+    border-radius: 0 6px 6px 6px;
+    background: #fff;
+    margin-bottom: 10px;
+  }
+
+  #controls .control-set {
+    display: none;
     align-items: center;
     flex-wrap: wrap;
     gap: 6px;
-    margin-bottom: 10px;
-    border: 1px solid #e3e7ef;
-    border-top: none;
     padding: 8px;
-    border-radius: 0 6px 6px 6px;
-    background: #fff;
+  }
+
+  #controls .control-set.active {
+    display: flex;
   }
 
   button {
@@ -129,7 +136,7 @@
   tr:hover td { background: #f5faff; }
   tr.selected td { background: #e9f3ff !important; outline: 1px solid #0078d7; }
 
-  #sheet tr:nth-child(even) td { background: #fafcff; }
+  #sheet tr:nth-child(even) td { background: #fdf7ef; }
 
   #table-wrapper {
     height: 85vh;
@@ -145,20 +152,49 @@
     <div id="sheet-tabs">
       <button id="tab-compobj" class="active" onclick="setActiveSheet('compobj')">🧩 CompObj</button>
       <button id="tab-schedule" onclick="setActiveSheet('schedule')">📅 Schedule</button>
+      <button id="tab-advancement" onclick="setActiveSheet('advancement')">🏆 Advancement</button>
     </div>
     <div id="controls">
-    <button onclick="triggerFileDialog('import')">📂 Import .txt</button>
-    <input type="file" id="fileInput" accept=".txt,.csv" onchange="importFile(event,false)">
-    <button onclick="triggerFileDialog('append')">➕ Append .txt</button>
-    <input type="file" id="fileInputAppend" accept=".txt,.csv" onchange="importFile(event,true)">
-    <button onclick="addRow()">+ Add Row (End)</button>
-    <span>| Insert:</span>
-    <input type="number" id="insertCount" min="1" value="1">
-    <button onclick="insertRows('above')">↑ Insert Above</button>
-    <button onclick="insertRows('below')">↓ Insert Below</button>
-    <button onclick="deleteRow()">− Delete Selected</button>
-    <button onclick="exportTxt()">💾 Export .txt</button>
-  </div>
+      <div class="control-set active" data-sheet-controls="compobj">
+        <button onclick="triggerFileDialog('compobj','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-compobj-import" accept=".txt,.csv" onchange="importFile(event,false,'compobj')">
+        <button onclick="triggerFileDialog('compobj','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-compobj-append" accept=".txt,.csv" onchange="importFile(event,true,'compobj')">
+        <button onclick="addRow('compobj')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-compobj" min="1" value="1">
+        <button onclick="insertRows('compobj','above')">↑ Insert Above</button>
+        <button onclick="insertRows('compobj','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('compobj')">− Delete Selected</button>
+        <button onclick="exportTxt('compobj')">💾 Export .txt</button>
+      </div>
+      <div class="control-set" data-sheet-controls="schedule">
+        <button onclick="triggerFileDialog('schedule','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-schedule-import" accept=".txt,.csv" onchange="importFile(event,false,'schedule')">
+        <button onclick="triggerFileDialog('schedule','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-schedule-append" accept=".txt,.csv" onchange="importFile(event,true,'schedule')">
+        <button onclick="addRow('schedule')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-schedule" min="1" value="1">
+        <button onclick="insertRows('schedule','above')">↑ Insert Above</button>
+        <button onclick="insertRows('schedule','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('schedule')">− Delete Selected</button>
+        <button onclick="exportTxt('schedule')">💾 Export .txt</button>
+      </div>
+      <div class="control-set" data-sheet-controls="advancement">
+        <button onclick="triggerFileDialog('advancement','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-advancement-import" accept=".txt,.csv" onchange="importFile(event,false,'advancement')">
+        <button onclick="triggerFileDialog('advancement','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-advancement-append" accept=".txt,.csv" onchange="importFile(event,true,'advancement')">
+        <button onclick="addRow('advancement')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-advancement" min="1" value="1">
+        <button onclick="insertRows('advancement','above')">↑ Insert Above</button>
+        <button onclick="insertRows('advancement','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('advancement')">− Delete Selected</button>
+        <button onclick="exportTxt('advancement')">💾 Export .txt</button>
+      </div>
+    </div>
 
   <div id="lineCount"></div>
 
@@ -170,8 +206,9 @@
 <script>
 let compobj = [];
 let schedule = [];
+let advancement = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null };
+const selections = { compobj: null, schedule: null, advancement: null };
 let tempIdCounter = 0;
 
 function safe(value) {
@@ -224,6 +261,19 @@ function renumberCompobjIds() {
     if (mapped === undefined) return row;
     return { ...row, stageGroupId: mapped };
   });
+
+  advancement = advancement.map((row) => {
+    const source = row.sourceGroupId == null ? '' : String(row.sourceGroupId);
+    const target = row.targetGroupId == null ? '' : String(row.targetGroupId);
+    const mappedSource = source !== '' ? idMap.get(source) : undefined;
+    const mappedTarget = target !== '' ? idMap.get(target) : undefined;
+    if (mappedSource === undefined && mappedTarget === undefined) return row;
+    return {
+      ...row,
+      sourceGroupId: mappedSource !== undefined ? mappedSource : row.sourceGroupId,
+      targetGroupId: mappedTarget !== undefined ? mappedTarget : row.targetGroupId
+    };
+  });
 }
 
 function syncReferencesForManualIdChange(oldValue, newValue) {
@@ -243,18 +293,38 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     if (current !== previous) return row;
     return { ...row, stageGroupId: next };
   });
+
+  advancement = advancement.map((row) => {
+    const source = row.sourceGroupId == null ? '' : String(row.sourceGroupId);
+    const target = row.targetGroupId == null ? '' : String(row.targetGroupId);
+    let changed = false;
+    let newSource = row.sourceGroupId;
+    let newTarget = row.targetGroupId;
+    if (source === previous) {
+      newSource = next;
+      changed = true;
+    }
+    if (target === previous) {
+      newTarget = next;
+      changed = true;
+    }
+    return changed ? { ...row, sourceGroupId: newSource, targetGroupId: newTarget } : row;
+  });
 }
 
 function render() {
   const table = document.getElementById("sheet");
   const lineCount = document.getElementById("lineCount");
-  const activeData = activeSheet === 'compobj' ? compobj : schedule;
   document.getElementById('tab-compobj').classList.toggle('active', activeSheet === 'compobj');
   document.getElementById('tab-schedule').classList.toggle('active', activeSheet === 'schedule');
+  document.getElementById('tab-advancement').classList.toggle('active', activeSheet === 'advancement');
+  updateControlVisibility();
 
   const countLabel = activeSheet === 'compobj'
     ? `CompObj: ${compobj.length} lines parsed`
-    : `Schedule: ${schedule.length} entries parsed`;
+    : activeSheet === 'schedule'
+      ? `Schedule: ${schedule.length} entries parsed`
+      : `Advancement: ${advancement.length} links parsed`;
   lineCount.textContent = countLabel;
 
   if (activeSheet === 'compobj') {
@@ -277,7 +347,7 @@ function render() {
           <td class="num"><input value="${safe(r.parentDisplay)}" oninput="updateField(${i},'parentDisplay',this.value)"></td>
         </tr>
       `).join("")}`;
-  } else {
+  } else if (activeSheet === 'schedule') {
     table.innerHTML = `
       <tr>
         <th style="width:40px;">#</th>
@@ -299,6 +369,24 @@ function render() {
           <td class="num"><input value="${safe(r.time)}" oninput="updateField(${i},'time',this.value)"></td>
         </tr>
       `).join("")}`;
+  } else {
+    table.innerHTML = `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:110px;">Source Group ID</th>
+        <th style="width:90px;">Placement</th>
+        <th style="width:120px;">Target Group ID</th>
+        <th style="width:100px;">Team Count</th>
+      </tr>
+      ${advancement.map((r, i) => `
+        <tr class="${selections.advancement===i?'selected':''}" onclick="selectRow(${i})">
+          <td class="num">${i+1}</td>
+          <td class="num"><input value="${safe(r.sourceGroupId)}" oninput="updateField(${i},'sourceGroupId',this.value)"></td>
+          <td class="num"><input value="${safe(r.placement)}" oninput="updateField(${i},'placement',this.value)"></td>
+          <td class="num"><input value="${safe(r.targetGroupId)}" oninput="updateField(${i},'targetGroupId',this.value)"></td>
+          <td class="num"><input value="${safe(r.teamCount)}" oninput="updateField(${i},'teamCount',this.value)"></td>
+        </tr>
+      `).join("")}`;
   }
 }
 
@@ -313,8 +401,14 @@ function selectRow(i) {
   render();
 }
 
+function getDataArray(sheet) {
+  if (sheet === 'compobj') return compobj;
+  if (sheet === 'schedule') return schedule;
+  return advancement;
+}
+
 function updateField(i, field, value) {
-  const target = activeSheet === 'compobj' ? compobj : schedule;
+  const target = getDataArray(activeSheet);
   if (!target[i]) return;
   const previousValue = target[i][field];
   target[i][field] = value;
@@ -323,75 +417,89 @@ function updateField(i, field, value) {
   }
 }
 
-function getSelectedIndex() {
-  return selections[activeSheet];
+function getSelectedIndex(sheet = activeSheet) {
+  return selections[sheet];
 }
 
-function defaultRowForActiveSheet() {
-  if (activeSheet === 'compobj') {
+function defaultRowForSheet(sheet) {
+  if (sheet === 'compobj') {
     return createDefaultCompobjRow();
   }
-  return { stageGroupId: '', dayId: '', matchday: '', minMatches: '', maxMatches: '', time: '' };
+  if (sheet === 'schedule') {
+    return { stageGroupId: '', dayId: '', matchday: '', minMatches: '', maxMatches: '', time: '' };
+  }
+  return { sourceGroupId: '', placement: '', targetGroupId: '', teamCount: '' };
 }
 
-function addRow() {
-  if (activeSheet === 'compobj') {
+function addRow(sheet = activeSheet) {
+  if (sheet === 'compobj') {
     compobj.push(createDefaultCompobjRow());
     renumberCompobjIds();
+  } else if (sheet === 'schedule') {
+    schedule.push(defaultRowForSheet(sheet));
   } else {
-    schedule.push(defaultRowForActiveSheet());
+    advancement.push(defaultRowForSheet(sheet));
   }
   render();
 }
 
-function triggerFileDialog(type) {
-  const input = type === 'import' ? document.getElementById('fileInput') : document.getElementById('fileInputAppend');
+function triggerFileDialog(sheet, type) {
+  const input = document.getElementById(`fileInput-${sheet}-${type}`);
   input.value = '';
-  input.dataset.sheet = activeSheet;
   input.click();
 }
 
-function insertRows(position) {
-  const selected = getSelectedIndex();
+function insertRows(sheet, position) {
+  const selected = getSelectedIndex(sheet);
   if (selected === null) return alert('Select a row first.');
-  const count = parseInt(document.getElementById('insertCount').value) || 1;
-  const newRows = Array.from({ length: count }, () => ({ ...defaultRowForActiveSheet() }));
+  const insertInput = document.getElementById(`insertCount-${sheet}`);
+  const count = parseInt(insertInput.value, 10) || 1;
+  const newRows = Array.from({ length: count }, () => ({ ...defaultRowForSheet(sheet) }));
 
-  if (activeSheet === 'compobj') {
+  if (sheet === 'compobj') {
     const index = position === 'above' ? selected : selected + 1;
     compobj.splice(index, 0, ...newRows);
     renumberCompobjIds();
-  } else {
+  } else if (sheet === 'schedule') {
     const index = position === 'above' ? selected : selected + 1;
     schedule.splice(index, 0, ...newRows);
+  } else {
+    const index = position === 'above' ? selected : selected + 1;
+    advancement.splice(index, 0, ...newRows);
   }
   render();
 }
 
-function deleteRow() {
-  const selected = getSelectedIndex();
+function deleteRow(sheet = activeSheet) {
+  const selected = getSelectedIndex(sheet);
   if (selected === null) return alert('Select a row first.');
-  if (activeSheet === 'compobj') {
+  if (sheet === 'compobj') {
     compobj.splice(selected, 1);
     selections.compobj = null;
     renumberCompobjIds();
-  } else {
+  } else if (sheet === 'schedule') {
     schedule.splice(selected, 1);
     selections.schedule = null;
+  } else {
+    advancement.splice(selected, 1);
+    selections.advancement = null;
   }
   render();
 }
 
-function exportTxt() {
-  const activeData = activeSheet === 'compobj' ? compobj : schedule;
+function exportTxt(sheet = activeSheet) {
+  const activeData = getDataArray(sheet);
   let lines = '';
   let filename = '';
-  if (activeSheet === 'compobj') {
-    lines = activeData.map(r => `${r.id}\t${r.depth}\t${r.code}\t${r.name}\t${r.parentDisplay}`).join('\n');
+  if (sheet === 'compobj') {
+    lines = activeData.map(r => `${r.id},${r.depth},${r.code},${r.name},${r.parentDisplay}`).join('\n');
     filename = 'compobj.txt';
-  } else {
-    lines = activeData.map(r => `${r.stageGroupId}\t${r.dayId}\t${r.matchday}\t${r.minMatches}\t${r.maxMatches}\t${r.time}`).join('\n');
+  } else if (sheet === 'schedule') {
+    lines = activeData.map(r => `${r.stageGroupId},${r.dayId},${r.matchday},${r.minMatches},${r.maxMatches},${r.time}`).join('\n');
     filename = 'schedule.txt';
+  } else {
+    lines = activeData.map(r => `${r.sourceGroupId},${r.placement},${r.targetGroupId},${r.teamCount}`).join('\n');
+    filename = 'advancement.txt';
   }
   const blob = new Blob([lines], { type: 'text/plain' });
   const a = document.createElement('a');
@@ -400,9 +508,9 @@ function exportTxt() {
   a.click();
 }
 
-function importFile(e, append = false) {
+function importFile(e, append = false, sheetOverride = null) {
   const f = e.target.files[0];
-  const sheetTarget = e.target.dataset.sheet || activeSheet;
+  const sheetTarget = sheetOverride || e.target.dataset.sheet || activeSheet;
   if (!f) return;
   const r = new FileReader();
   r.onload = function (ev) {
@@ -421,7 +529,7 @@ function importFile(e, append = false) {
       compobj = append ? [...compobj, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
       renumberCompobjIds();
-    } else {
+    } else if (sheetTarget === 'schedule') {
       const parsed = lines.map(l => {
         const p = l.split(/\t|,/);
         return {
@@ -435,10 +543,28 @@ function importFile(e, append = false) {
       });
       schedule = append ? [...schedule, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          sourceGroupId: p[0] || '',
+          placement: p[1] || '',
+          targetGroupId: p[2] || '',
+          teamCount: p[3] || ''
+        };
+      });
+      advancement = append ? [...advancement, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     }
     render();
   };
   r.readAsText(f);
+}
+
+function updateControlVisibility() {
+  document.querySelectorAll('#controls .control-set').forEach((el) => {
+    el.classList.toggle('active', el.dataset.sheetControls === activeSheet);
+  });
 }
 
 /* Example demo data */
@@ -457,6 +583,19 @@ compobj = [
 schedule = [
   { stageGroupId: '2', dayId: '257', matchday: '1', minMatches: '1', maxMatches: '1', time: '1400' },
   { stageGroupId: '5', dayId: '258', matchday: '2', minMatches: '2', maxMatches: '4', time: '1600' }
+];
+
+advancement = [
+  { sourceGroupId: '1628', placement: '3', targetGroupId: '1630', teamCount: '1' },
+  { sourceGroupId: '1628', placement: '6', targetGroupId: '1630', teamCount: '2' },
+  { sourceGroupId: '1628', placement: '4', targetGroupId: '1631', teamCount: '1' },
+  { sourceGroupId: '1628', placement: '5', targetGroupId: '1631', teamCount: '2' },
+  { sourceGroupId: '1630', placement: '1', targetGroupId: '1633', teamCount: '1' },
+  { sourceGroupId: '1628', placement: '1', targetGroupId: '1633', teamCount: '2' },
+  { sourceGroupId: '1631', placement: '1', targetGroupId: '1634', teamCount: '1' },
+  { sourceGroupId: '1628', placement: '2', targetGroupId: '1634', teamCount: '2' },
+  { sourceGroupId: '1633', placement: '1', targetGroupId: '1636', teamCount: '1' },
+  { sourceGroupId: '1634', placement: '1', targetGroupId: '1636', teamCount: '2' }
 ];
 
 renumberCompobjIds();
