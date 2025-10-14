@@ -411,7 +411,7 @@ class Workspace {
   recalculate(markDirty = true) {
     const entry = this.#ensureFile('compobj.txt');
     if (entry.rows.length === 0) {
-      this.lastReferenceStats = { updated: 0, lineMap: {} };
+      this.lastReferenceStats = { updated: 0, lineMap: {}, broken: 0, missing: 0 };
       if (markDirty) {
         this.#markDirty();
       }
@@ -429,7 +429,11 @@ class Workspace {
     });
 
     let updates = 0;
-    const applyReferences = (rows, schema) => {
+    let broken = 0;
+    let missing = 0;
+    const validLines = new Set(entry.rows.map(row => Number(row.LineID)).filter(num => Number.isFinite(num)));
+
+    const applyReferences = (rows, schema, options = {}) => {
       if (!schema.references || schema.references.length === 0) {
         return;
       }
@@ -439,10 +443,19 @@ class Workspace {
           if (current == null) {
             return;
           }
-          if (!lineMap.has(current)) {
+          if (current <= 0) {
             return;
           }
           const mapped = lineMap.get(current);
+          if (mapped == null) {
+            if (!validLines.has(current)) {
+              broken += 1;
+              if (options.trackMissingParent) {
+                missing += 1;
+              }
+            }
+            return;
+          }
           if (mapped !== current) {
             row[field] = String(mapped);
             updates += 1;
@@ -451,7 +464,7 @@ class Workspace {
       });
     };
 
-    applyReferences(entry.rows, entry.schema);
+    applyReferences(entry.rows, entry.schema, { trackMissingParent: true });
     for (const [name, file] of this.files) {
       if (name === 'compobj.txt') {
         continue;
@@ -463,7 +476,7 @@ class Workspace {
     for (const [from, to] of lineMap.entries()) {
       lineMapObject[from] = to;
     }
-    this.lastReferenceStats = { updated: updates, lineMap: lineMapObject };
+    this.lastReferenceStats = { updated: updates, lineMap: lineMapObject, broken, missing };
     if (markDirty) {
       this.#markDirty();
     }
