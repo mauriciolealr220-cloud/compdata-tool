@@ -4,28 +4,52 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>CompData Studio</title>
-    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.6.0/dist/css/tabulator_midnight.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.6.0/dist/css/tabulator.min.css" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="app" class="app-shell">
       <aside class="sidebar">
         <div class="sidebar__title">📦 CompData Studio</div>
+        <div class="sidebar__summary" id="workspace-summary">
+          <h2>📊 Workspace Summary</h2>
+          <ul>
+            <li data-field="files">0 Files Loaded</li>
+            <li data-field="references">0 References Updated</li>
+            <li data-field="broken">0 Broken Links</li>
+            <li data-field="missing">0 Missing Parents</li>
+          </ul>
+        </div>
+        <div class="sidebar__toggles">
+          <label><input type="checkbox" id="toggle-lines" checked /> Show Line Numbers</label>
+          <label><input type="checkbox" id="toggle-colors" checked /> Show Colors</label>
+          <label><input type="checkbox" id="toggle-compact" /> Compact Mode</label>
+        </div>
         <nav class="sidebar__nav" id="sidebar-nav"></nav>
         <div class="sidebar__footer">
           <button id="sync-button" class="sidebar__action">⭮ Sync References</button>
+          <button id="collapse-tree" class="sidebar__action">🗂 Collapse Tree</button>
           <button id="export-zip" class="sidebar__action">📦 Export ZIP</button>
         </div>
       </aside>
       <main class="workspace">
         <header class="toolbar">
           <div class="toolbar__left">
-            <button data-action="add" class="toolbar__btn">➕ Add Row</button>
-            <button data-action="delete" class="toolbar__btn">🗑 Delete Row</button>
-            <button data-action="recalculate" class="toolbar__btn">⭮ Recalculate</button>
-            <button data-action="validate" class="toolbar__btn">⚙️ Validate</button>
+            <button data-action="add" class="toolbar__btn">＋ Add Row</button>
+            <button data-action="delete" class="toolbar__btn">🗑 Delete</button>
+            <button data-action="move-up" class="toolbar__btn">↑ Move</button>
+            <button data-action="move-down" class="toolbar__btn">↓ Move</button>
+            <button data-action="recalculate" class="toolbar__btn">⟳ Recalculate</button>
+            <button data-action="validate" class="toolbar__btn">🧮 Validate</button>
+            <button data-action="templates" class="toolbar__btn">📚 Templates</button>
             <button data-action="autofix" class="toolbar__btn">⚡ Auto-Fix</button>
-            <button data-action="save" class="toolbar__btn toolbar__btn--primary">💾 Save All</button>
+            <div class="toolbar__save-group">
+              <button data-action="save" class="toolbar__btn toolbar__btn--primary">💾 Save All</button>
+              <button id="save-individual" class="toolbar__btn toolbar__btn--ghost" title="Save Individual File">▾</button>
+              <div class="toolbar__menu" id="save-menu"></div>
+            </div>
+            <button id="import-button" class="toolbar__btn toolbar__btn--highlight">📤 Import</button>
+            <button id="export-button" class="toolbar__btn">📦 Export ZIP</button>
           </div>
           <div class="toolbar__right">
             <label class="toggle">
@@ -36,9 +60,24 @@
           </div>
         </header>
         <section class="sheet-header">
-          <div>
+          <div class="sheet-header__primary">
             <h1 id="sheet-title">Competition Structure</h1>
             <p id="sheet-description">Defines competition hierarchy and structure.</p>
+          </div>
+          <div class="sheet-header__filters">
+            <label>Filter by Code
+              <select id="filter-code">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>Parent Line
+              <select id="filter-parent">
+                <option value="">All</option>
+              </select>
+            </label>
+            <label>Contains Text
+              <input type="text" id="filter-text" placeholder="Search..." />
+            </label>
           </div>
           <div class="sheet-meta">
             <span id="line-count">0 lines</span>
@@ -52,6 +91,19 @@
         <footer class="status-bar" id="status-bar">Ready.</footer>
         <section class="console" id="console"></section>
       </main>
+    </div>
+    <input type="file" id="file-input" accept=".txt" multiple hidden />
+    <div class="modal" id="modal" hidden>
+      <div class="modal__dialog">
+        <div class="modal__header">
+          <h2 id="modal-title">Import Summary</h2>
+          <button id="modal-close" class="modal__close">✕</button>
+        </div>
+        <div class="modal__body" id="modal-body"></div>
+        <div class="modal__footer">
+          <button id="modal-confirm" class="modal__confirm">Close</button>
+        </div>
+      </div>
     </div>
     <script src="https://unpkg.com/tabulator-tables@5.6.0/dist/js/tabulator.min.js"></script>
     <script src="app.js" type="module"></script>
