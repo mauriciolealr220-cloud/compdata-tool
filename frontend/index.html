@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CompData Studio</title>
+    <link rel="stylesheet" href="https://unpkg.com/tabulator-tables@5.6.0/dist/css/tabulator_midnight.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar__title">📦 CompData Studio</div>
+        <nav class="sidebar__nav" id="sidebar-nav"></nav>
+        <div class="sidebar__footer">
+          <button id="sync-button" class="sidebar__action">⭮ Sync References</button>
+          <button id="export-zip" class="sidebar__action">📦 Export ZIP</button>
+        </div>
+      </aside>
+      <main class="workspace">
+        <header class="toolbar">
+          <div class="toolbar__left">
+            <button data-action="add" class="toolbar__btn">➕ Add Row</button>
+            <button data-action="delete" class="toolbar__btn">🗑 Delete Row</button>
+            <button data-action="recalculate" class="toolbar__btn">⭮ Recalculate</button>
+            <button data-action="validate" class="toolbar__btn">⚙️ Validate</button>
+            <button data-action="autofix" class="toolbar__btn">⚡ Auto-Fix</button>
+            <button data-action="save" class="toolbar__btn toolbar__btn--primary">💾 Save All</button>
+          </div>
+          <div class="toolbar__right">
+            <label class="toggle">
+              <input type="checkbox" id="autosave-toggle" />
+              <span class="toggle__indicator"></span>
+              <span class="toggle__label">Autosave</span>
+            </label>
+          </div>
+        </header>
+        <section class="sheet-header">
+          <div>
+            <h1 id="sheet-title">Competition Structure</h1>
+            <p id="sheet-description">Defines competition hierarchy and structure.</p>
+          </div>
+          <div class="sheet-meta">
+            <span id="line-count">0 lines</span>
+            <span id="reference-count">0 references updated</span>
+          </div>
+        </section>
+        <nav class="tab-bar" id="tab-bar"></nav>
+        <section class="grid-area">
+          <div id="grid-wrapper" class="grid-wrapper"></div>
+        </section>
+        <footer class="status-bar" id="status-bar">Ready.</footer>
+        <section class="console" id="console"></section>
+      </main>
+    </div>
+    <script src="https://unpkg.com/tabulator-tables@5.6.0/dist/js/tabulator.min.js"></script>
+    <script src="app.js" type="module"></script>
+  </body>
+</html>
