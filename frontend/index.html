@@ -1,32 +1,40 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Competition Data Studio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <title>CompData Studio</title>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_midnight.min.css"
+    />
+    <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
     <style>
       :root {
         color-scheme: dark;
-        --sidebar-width: 280px;
-        --bg: #050910;
-        --bg-panel: #0c1729;
-        --bg-elevated: #101d32;
-        --border: rgba(148, 163, 184, 0.12);
-        --border-strong: rgba(148, 163, 184, 0.24);
-        --text: #f1f5f9;
-        --text-subtle: #94a3b8;
+        --bg: #04070f;
+        --bg-panel: rgba(14, 21, 34, 0.82);
+        --bg-elevated: rgba(17, 25, 41, 0.92);
+        --bg-sidebar: linear-gradient(180deg, rgba(10, 16, 28, 0.9), rgba(4, 7, 15, 0.95));
+        --border: rgba(94, 117, 158, 0.35);
+        --border-subtle: rgba(94, 117, 158, 0.2);
+        --text: #e9f0ff;
+        --text-subtle: #90a1c3;
         --accent: #38bdf8;
+        --accent-strong: #60a5fa;
         --success: #34d399;
         --warning: #fbbf24;
-        --error: #f87171;
+        --danger: #f87171;
+        --sidebar-width: 280px;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size: 15px;
+        background: radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.12), transparent 45%),
+          radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.16), transparent 55%),
+          var(--bg);
       }
 
       * {
@@ -35,14 +43,11 @@
 
       body {
         margin: 0;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08), transparent 40%),
-          radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.12), transparent 45%),
-          var(--bg);
-        color: var(--text);
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        background: transparent;
+        color: var(--text);
       }
 
       .app-shell {
@@ -53,93 +58,89 @@
 
       aside {
         width: var(--sidebar-width);
+        background: var(--bg-sidebar);
         border-right: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(15, 23, 42, 0.65), rgba(2, 6, 23, 0.95));
-        padding: 1.75rem 1.25rem;
+        padding: 2rem 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 1.75rem;
+        gap: 2rem;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
       }
 
       .brand h1 {
-        font-size: 1.3rem;
         margin: 0;
+        font-size: 1.4rem;
         font-weight: 600;
       }
 
       .brand p {
-        margin: 0.25rem 0 0;
-        font-size: 0.85rem;
+        margin: 0;
         color: var(--text-subtle);
+        font-size: 0.85rem;
       }
 
       .nav {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.6rem;
       }
 
       .nav button {
         all: unset;
         display: flex;
-        align-items: center;
         gap: 0.75rem;
-        padding: 0.75rem 0.85rem;
-        border-radius: 0.85rem;
+        align-items: center;
+        padding: 0.75rem 0.9rem;
+        border-radius: 1rem;
         cursor: pointer;
         color: var(--text-subtle);
         border: 1px solid transparent;
-        transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+        transition: background 160ms ease, color 160ms ease, border 160ms ease;
       }
 
-      .nav button:hover,
-      .nav button:focus-visible {
-        background: rgba(56, 189, 248, 0.12);
-        color: var(--text);
-        border-color: rgba(56, 189, 248, 0.3);
-      }
-
-      .nav button.active {
-        background: rgba(56, 189, 248, 0.22);
-        color: var(--text);
-        border-color: rgba(56, 189, 248, 0.6);
-      }
-
-      .nav button span.icon {
+      .nav button .icon {
         width: 2.5rem;
         height: 2.5rem;
+        border-radius: 0.9rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.35rem;
-        border-radius: 0.9rem;
-        background: rgba(15, 118, 110, 0.15);
+        background: rgba(56, 189, 248, 0.1);
+        font-size: 1.25rem;
       }
 
       .nav button .label {
         display: flex;
         flex-direction: column;
-        line-height: 1.2;
+        gap: 0.25rem;
       }
 
       .nav button .label strong {
         font-weight: 600;
         color: inherit;
-        font-size: 0.95rem;
       }
 
-      .nav button .label small {
+      .nav button .label span {
+        font-size: 0.78rem;
         color: var(--text-subtle);
-        font-size: 0.75rem;
       }
 
-      .sidebar-footer {
-        margin-top: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        font-size: 0.75rem;
-        color: var(--text-subtle);
+      .nav button:hover,
+      .nav button:focus-visible {
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--text);
+        border-color: rgba(56, 189, 248, 0.4);
+      }
+
+      .nav button.active {
+        background: rgba(56, 189, 248, 0.25);
+        color: var(--text);
+        border-color: rgba(56, 189, 248, 0.55);
       }
 
       main {
@@ -147,444 +148,55 @@
         display: flex;
         flex-direction: column;
         min-height: 0;
-        background: rgba(15, 23, 42, 0.55);
+        background: rgba(10, 16, 28, 0.75);
         backdrop-filter: blur(18px);
       }
 
       .main-header {
-        padding: 1.5rem 2rem 1.25rem;
-        border-bottom: 1px solid var(--border);
+        padding: 1.6rem 2.25rem 1.4rem;
+        border-bottom: 1px solid var(--border-subtle);
         display: flex;
         flex-wrap: wrap;
+        gap: 1.5rem;
         justify-content: space-between;
-        gap: 1rem;
         align-items: flex-start;
+      }
+
+      .main-header .title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
 
       .main-header h2 {
         margin: 0;
         font-weight: 600;
-        font-size: 1.35rem;
+        font-size: 1.5rem;
       }
 
       .main-header .subtitle {
-        margin-top: 0.35rem;
-        font-size: 0.9rem;
-        color: var(--text-subtle);
-      }
-
-      .status-line {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: var(--text-subtle);
-        font-size: 0.82rem;
-        margin-top: 0.5rem;
-      }
-
-      .status-line span.indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-      }
-
-      .status-line .indicator::before {
-        content: '';
-        width: 0.6rem;
-        height: 0.6rem;
-        border-radius: 999px;
-        background: var(--success);
-        opacity: 0.7;
-      }
-
-      .status-line .indicator.unsaved::before {
-        background: var(--warning);
-        animation: pulse 1.3s ease-in-out infinite alternate;
-      }
-
-      @keyframes pulse {
-        from {
-          opacity: 0.35;
-        }
-        to {
-          opacity: 1;
-        }
-      }
-
-      .action-bar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        align-items: center;
-      }
-
-      .action-bar button {
-        all: unset;
-        padding: 0.5rem 0.9rem;
-        border-radius: 0.7rem;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        background: rgba(30, 41, 59, 0.55);
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: var(--text);
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-
-      .action-bar button.primary {
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.85), rgba(99, 102, 241, 0.85));
-        border-color: transparent;
-      }
-
-      .action-bar button:hover,
-      .action-bar button:focus-visible {
-        transform: translateY(-1px);
-        border-color: rgba(56, 189, 248, 0.45);
-      }
-
-      .workspace {
-        flex: 1;
-        padding: 1.5rem 2rem 1.5rem;
-        min-height: 0;
-        overflow: hidden;
-      }
-
-      .workspace-card {
-        height: 100%;
-        background: var(--bg-panel);
-        border: 1px solid var(--border);
-        border-radius: 1.25rem;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        overflow: hidden;
-        position: relative;
-      }
-
-      .workspace-placeholder {
-        margin: auto;
-        max-width: 480px;
-        text-align: center;
-        color: var(--text-subtle);
-        line-height: 1.6;
-      }
-
-      .editor-surface {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 1.2rem;
-        min-height: 0;
-      }
-
-      .editor-info {
-        display: flex;
-        align-items: center;
-        gap: 0.65rem;
-        font-size: 0.85rem;
-        color: var(--text-subtle);
-      }
-
-      .editor-info .badge {
-        background: rgba(56, 189, 248, 0.18);
-        color: var(--accent);
-        padding: 0.25rem 0.6rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-      }
-
-      .view-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-      }
-
-      .view-toggle {
-        display: inline-flex;
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid var(--border);
-        border-radius: 0.85rem;
-        overflow: hidden;
-      }
-
-      .view-toggle button {
-        all: unset;
-        padding: 0.45rem 0.85rem;
-        font-size: 0.82rem;
-        cursor: pointer;
-        color: var(--text-subtle);
-        transition: background 120ms ease, color 120ms ease;
-      }
-
-      .view-toggle button.active {
-        background: rgba(56, 189, 248, 0.25);
-        color: var(--text);
-      }
-
-      .editor-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        align-items: center;
-      }
-
-      .editor-controls .search-field {
-        flex: 1;
-        min-width: 180px;
-        display: flex;
-        align-items: center;
-        gap: 0.55rem;
-        background: rgba(15, 23, 42, 0.55);
-        border: 1px solid rgba(148, 163, 184, 0.2);
-        border-radius: 0.7rem;
-        padding: 0.45rem 0.65rem;
-      }
-
-      .editor-controls .search-field span {
-        font-size: 1rem;
-      }
-
-      .editor-controls .search-field input {
-        all: unset;
-        flex: 1;
-        font-size: 0.9rem;
-      }
-
-      .editor-controls .inline-button {
-        all: unset;
-        padding: 0.45rem 0.75rem;
-        border-radius: 0.65rem;
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        background: rgba(15, 23, 42, 0.55);
-        cursor: pointer;
-        font-size: 0.8rem;
-        font-weight: 500;
-        transition: transform 120ms ease, border-color 120ms ease;
-      }
-
-      .editor-controls .inline-button.primary {
-        background: rgba(56, 189, 248, 0.25);
-        border-color: rgba(56, 189, 248, 0.4);
-        color: var(--text);
-      }
-
-      .editor-controls .inline-button:hover,
-      .editor-controls .inline-button:focus-visible {
-        transform: translateY(-1px);
-        border-color: rgba(56, 189, 248, 0.45);
-      }
-
-      .editor-body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        min-height: 0;
-      }
-
-      .grid-table {
-        flex: 1;
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        background: rgba(15, 23, 42, 0.45);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-
-      .grid-head,
-      .grid-body {
-        overflow: auto;
-      }
-
-      .grid-row {
-        display: grid;
-        align-items: stretch;
-        min-height: 0;
-      }
-
-      .grid-head .grid-row {
-        position: sticky;
-        top: 0;
-        background: rgba(15, 23, 42, 0.7);
-        font-size: 0.78rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-subtle);
-        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-      }
-
-      .grid-row > span,
-      .grid-row > div {
-        padding: 0.6rem 0.75rem;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .grid-body .grid-row:nth-child(odd) > div,
-      .grid-body .grid-row:nth-child(odd) > span {
-        background: rgba(56, 189, 248, 0.04);
-      }
-
-      .grid-body .grid-row:last-child > div,
-      .grid-body .grid-row:last-child > span {
-        border-bottom: none;
-      }
-
-      .grid-body input,
-      .grid-body select,
-      .grid-body textarea {
-        width: 100%;
-        border-radius: 0.55rem;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        background: rgba(15, 23, 42, 0.65);
-        padding: 0.45rem 0.55rem;
-        color: var(--text);
-        font-size: 0.86rem;
-        font-family: inherit;
-      }
-
-      .row-actions {
-        display: flex;
-        gap: 0.35rem;
-      }
-
-      .row-actions button {
-        all: unset;
-        padding: 0.35rem 0.55rem;
-        border-radius: 0.55rem;
-        border: 1px solid rgba(148, 163, 184, 0.22);
-        background: rgba(15, 23, 42, 0.55);
-        font-size: 0.75rem;
-        cursor: pointer;
-      }
-
-      .row-actions button:hover,
-      .row-actions button:focus-visible {
-        border-color: rgba(56, 189, 248, 0.4);
-        color: var(--text);
-      }
-
-      .raw-editor {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .raw-editor textarea {
-        flex: 1;
-        border-radius: 1rem;
-        border: 1px solid var(--border);
-        background: rgba(15, 23, 42, 0.55);
-        padding: 1rem;
-        color: var(--text);
-        font-family: 'Fira Code', 'SFMono-Regular', 'Consolas', monospace;
-        font-size: 0.85rem;
-        line-height: 1.5;
-        resize: none;
-      }
-
-      .raw-editor .hint {
-        margin-top: 0.75rem;
-        font-size: 0.8rem;
-        color: var(--text-subtle);
-      }
-
-      .console {
-        border-top: 1px solid var(--border);
-        padding: 1.5rem 2rem 2rem;
-        background: rgba(10, 16, 28, 0.8);
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .console-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-      }
-
-      .console-header h3 {
         margin: 0;
-        font-size: 1rem;
-        font-weight: 600;
+        color: var(--text-subtle);
+        font-size: 0.88rem;
+        max-width: 560px;
       }
 
-      .console-stream {
-        border: 1px solid var(--border);
-        border-radius: 1rem;
-        padding: 1rem;
-        background: rgba(15, 23, 42, 0.55);
-        max-height: 260px;
-        overflow: auto;
+      .badge-tray {
         display: flex;
-        flex-direction: column;
-        gap: 0.85rem;
-      }
-
-      .console-entry {
-        border-left: 3px solid rgba(148, 163, 184, 0.25);
-        padding-left: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.45rem;
-      }
-
-      .console-entry.info {
-        border-color: rgba(56, 189, 248, 0.5);
-      }
-
-      .console-entry.success {
-        border-color: rgba(52, 211, 153, 0.6);
-      }
-
-      .console-entry.warning {
-        border-color: rgba(251, 191, 36, 0.6);
-      }
-
-      .console-entry.error {
-        border-color: rgba(248, 113, 113, 0.6);
-      }
-
-      .console-entry header {
-        display: flex;
-        justify-content: space-between;
-        gap: 0.5rem;
-        align-items: center;
-        font-weight: 600;
-      }
-
-      .console-entry ul {
-        margin: 0;
-        padding-left: 1.1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.15rem;
+        gap: 0.75rem;
+        flex-wrap: wrap;
       }
 
       .badge {
         display: inline-flex;
         align-items: center;
         gap: 0.35rem;
-        padding: 0.25rem 0.55rem;
+        padding: 0.25rem 0.6rem;
         border-radius: 999px;
-        font-size: 0.72rem;
-        background: rgba(148, 163, 184, 0.15);
-        color: var(--text-subtle);
-      }
-
-      .badge.success {
-        background: rgba(34, 197, 94, 0.18);
-        color: var(--success);
+        font-size: 0.74rem;
+        font-weight: 500;
+        background: rgba(56, 189, 248, 0.16);
+        color: var(--accent);
       }
 
       .badge.warning {
@@ -592,36 +204,275 @@
         color: var(--warning);
       }
 
-      .badge.error {
-        background: rgba(248, 113, 113, 0.16);
-        color: var(--error);
+      .badge.success {
+        background: rgba(52, 211, 153, 0.16);
+        color: var(--success);
       }
 
-      @media (max-width: 1280px) {
-        :root {
-          --sidebar-width: 220px;
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      .toolbar button {
+        all: unset;
+        padding: 0.55rem 0.9rem;
+        border-radius: 0.85rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: rgba(18, 28, 44, 0.8);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: transform 130ms ease, border 130ms ease, background 130ms ease;
+      }
+
+      .toolbar button.primary {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(99, 102, 241, 0.85));
+        border-color: transparent;
+      }
+
+      .toolbar button:hover,
+      .toolbar button:focus-visible {
+        transform: translateY(-1px);
+        border-color: rgba(56, 189, 248, 0.45);
+      }
+
+      .toolbar button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .autosave-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.82rem;
+        color: var(--text-subtle);
+      }
+
+      .sheet-tabs {
+        padding: 0 2.25rem;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        background: rgba(7, 11, 20, 0.8);
+      }
+
+      .sheet-tabs button {
+        all: unset;
+        padding: 0.6rem 0.9rem;
+        border-radius: 0.85rem 0.85rem 0 0;
+        cursor: pointer;
+        border: 1px solid transparent;
+        color: var(--text-subtle);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        transition: background 140ms ease, border 140ms ease;
+      }
+
+      .sheet-tabs button.active {
+        background: rgba(56, 189, 248, 0.18);
+        color: var(--text);
+        border-color: rgba(56, 189, 248, 0.4);
+        border-bottom-color: transparent;
+      }
+
+      .sheet-tabs button:hover,
+      .sheet-tabs button:focus-visible {
+        color: var(--text);
+        border-color: rgba(56, 189, 248, 0.32);
+      }
+
+      .workspace-panel {
+        flex: 1;
+        padding: 1.5rem 2.25rem 1.25rem;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .grid-card {
+        flex: 1;
+        background: var(--bg-panel);
+        border-radius: 1.25rem;
+        border: 1px solid var(--border-subtle);
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        box-shadow: 0 32px 70px rgba(12, 18, 30, 0.3);
+      }
+
+      #grid {
+        flex: 1;
+      }
+
+      .status-bar {
+        padding: 0.9rem 2.25rem 1.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        color: var(--text-subtle);
+        font-size: 0.82rem;
+        border-top: 1px solid var(--border-subtle);
+        background: rgba(7, 11, 19, 0.85);
+      }
+
+      .console-panel {
+        border-top: 1px solid var(--border);
+        background: rgba(3, 6, 13, 0.92);
+        padding: 1.75rem 2.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .console-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .console-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .console-actions {
+        display: inline-flex;
+        gap: 0.65rem;
+      }
+
+      .console-actions button {
+        all: unset;
+        padding: 0.45rem 0.85rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(94, 117, 158, 0.25);
+        background: rgba(12, 18, 30, 0.9);
+        font-size: 0.78rem;
+        cursor: pointer;
+      }
+
+      .console-actions button:hover,
+      .console-actions button:focus-visible {
+        border-color: rgba(56, 189, 248, 0.45);
+        color: var(--text);
+      }
+
+      .console-log {
+        max-height: 260px;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        font-size: 0.82rem;
+      }
+
+      .log-entry {
+        padding: 0.55rem 0.75rem;
+        border-radius: 0.75rem;
+        border: 1px solid rgba(94, 117, 158, 0.25);
+        background: rgba(8, 12, 20, 0.9);
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        line-height: 1.4;
+      }
+
+      .log-entry span.icon {
+        font-size: 1rem;
+        margin-top: 0.1rem;
+      }
+
+      .log-entry.success {
+        border-color: rgba(52, 211, 153, 0.45);
+      }
+
+      .log-entry.warning {
+        border-color: rgba(251, 191, 36, 0.4);
+      }
+
+      .log-entry.error {
+        border-color: rgba(248, 113, 113, 0.4);
+      }
+
+      .working::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(4, 7, 15, 0.35);
+        pointer-events: none;
+        animation: shimmer 1.2s linear infinite;
+      }
+
+      @keyframes shimmer {
+        from {
+          opacity: 0;
+        }
+        50% {
+          opacity: 0.4;
+        }
+        to {
+          opacity: 0;
         }
       }
 
-      @media (max-width: 960px) {
+      .tabulator {
+        background: rgba(10, 16, 28, 0.8);
+        border: 1px solid rgba(94, 117, 158, 0.3);
+        border-radius: 1rem;
+      }
+
+      .tabulator .tabulator-header {
+        background: rgba(7, 13, 23, 0.95);
+        border-bottom: 1px solid rgba(94, 117, 158, 0.25);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-subtle);
+      }
+
+      .tabulator .tabulator-row.tabulator-selectable:hover {
+        background: rgba(56, 189, 248, 0.08);
+      }
+
+      .tabulator-row.tabulator-selected {
+        background: rgba(56, 189, 248, 0.18);
+      }
+
+      .tabulator .tabulator-cell {
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+
+      .tabulator .tabulator-editing {
+        background: rgba(56, 189, 248, 0.18);
+      }
+
+      @media (max-width: 1080px) {
         aside {
           display: none;
         }
-        .main-header,
-        .workspace,
-        .console {
-          padding-left: 1.25rem;
-          padding-right: 1.25rem;
+        .app-shell {
+          flex-direction: column;
         }
-      }
-
-      @media (max-width: 720px) {
-        .grid-row {
-          grid-template-columns: 1fr !important;
+        .sheet-tabs {
+          padding: 0 1.5rem;
         }
-        .grid-row > div,
-        .grid-row > span {
-          border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+        .workspace-panel {
+          padding: 1.25rem 1.5rem;
+        }
+        .status-bar {
+          padding: 0.85rem 1.5rem 1.2rem;
         }
       }
     </style>
@@ -630,944 +481,541 @@
     <div class="app-shell">
       <aside>
         <div class="brand">
-          <h1>Competition Data Studio</h1>
-          <p>Unified workspace for FIFA-style tournaments</p>
+          <h1>CompData Studio</h1>
+          <p>All-in-one FIFA/EA CompData workspace</p>
         </div>
-        <nav class="nav" id="editor-nav"></nav>
-        <div class="sidebar-footer">
-          <div class="badge">Workspace: CompData</div>
-          <p>API routes auto-detect the static frontend when deployed to Render.</p>
+        <div class="nav">
+          <button type="button" data-target="compobj.txt">
+            <span class="icon">🏆</span>
+            <span class="label">
+              <strong>Competition Structure</strong>
+              <span>Hierarchy & stages</span>
+            </span>
+          </button>
+          <button type="button" data-target="schedule.txt">
+            <span class="icon">🗓️</span>
+            <span class="label">
+              <strong>Schedule Editor</strong>
+              <span>Matches & fixtures</span>
+            </span>
+          </button>
+          <button type="button" data-target="tasks.txt">
+            <span class="icon">🔁</span>
+            <span class="label">
+              <strong>Task Automation</strong>
+              <span>Runtime workflows</span>
+            </span>
+          </button>
+          <button type="button" data-target="advancement.txt">
+            <span class="icon">🧭</span>
+            <span class="label">
+              <strong>Advancement Rules</strong>
+              <span>Promotion flows</span>
+            </span>
+          </button>
+          <button type="button" data-target="settings.txt">
+            <span class="icon">⚙️</span>
+            <span class="label">
+              <strong>Competition Settings</strong>
+              <span>Rules & limits</span>
+            </span>
+          </button>
+          <button type="button" data-target="weather.txt">
+            <span class="icon">☁️</span>
+            <span class="label">
+              <strong>Weather Config</strong>
+              <span>Match conditions</span>
+            </span>
+          </button>
+          <button type="button" data-target="standings.txt">
+            <span class="icon">📊</span>
+            <span class="label">
+              <strong>Standings Rules</strong>
+              <span>Ranking priorities</span>
+            </span>
+          </button>
+          <button type="button" data-target="objectives.txt">
+            <span class="icon">🎯</span>
+            <span class="label">
+              <strong>Objectives</strong>
+              <span>Career goals</span>
+            </span>
+          </button>
         </div>
       </aside>
       <main>
         <header class="main-header">
-          <div>
-            <h2 id="active-file-heading">Select a dataset</h2>
-            <p class="subtitle" id="active-file-subtitle"></p>
-            <div class="status-line">
-              <span class="indicator" id="sync-indicator">Idle</span>
-              <span id="meta-summary"></span>
+          <div class="title-group">
+            <h2 id="active-title">CompData Workspace</h2>
+            <p class="subtitle" id="active-description">
+              Load a dataset to begin editing. References stay intact as you insert, delete, and reorder rows.
+            </p>
+            <div class="badge-tray">
+              <span class="badge" id="status-dirty">Workspace clean</span>
+              <span class="badge" id="status-update">0 references updated</span>
             </div>
           </div>
-          <div class="action-bar">
-            <button id="action-reload">Reload</button>
-            <button id="action-validate">Validate</button>
-            <button id="action-autofix">Auto-Fix</button>
-            <button id="action-compare">Compare</button>
-            <button id="action-export">Export ZIP</button>
-            <button id="action-save" class="primary">Save Changes</button>
+          <div class="toolbar">
+            <button type="button" id="btn-add-row">➕ Add Row</button>
+            <button type="button" id="btn-delete-row">🗑 Delete Row</button>
+            <button type="button" id="btn-recalculate">⭮ Recalculate</button>
+            <button type="button" id="btn-validate">⚙️ Validate</button>
+            <button type="button" id="btn-autofix">⚡ Auto-Fix</button>
+            <button type="button" id="btn-save" class="primary">💾 Save All</button>
+            <button type="button" id="btn-export">📦 Export ZIP</button>
+            <label class="autosave-toggle">
+              <input type="checkbox" id="autosave-toggle" />
+              Auto Save
+            </label>
           </div>
         </header>
-        <section class="workspace">
-          <div class="workspace-card" id="workspace-card">
-            <div class="workspace-placeholder">
-              <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--text);">
-                Welcome to the CompData workspace
-              </h3>
-              <p style="margin: 0;">
-                Choose a CompData file on the left to open the unified editor. The structured grid adapts to each
-                dataset, and you can always switch to the raw text view when needed.
-              </p>
-            </div>
+        <div class="sheet-tabs" id="sheet-tabs"></div>
+        <section class="workspace-panel">
+          <div class="grid-card">
+            <div id="grid"></div>
           </div>
         </section>
-        <section class="console">
-          <div class="console-header">
-            <h3>Console &amp; Validation Log</h3>
-            <div class="action-bar">
-              <button id="action-validate-all">Validate All</button>
-              <button id="action-clear-console">Clear Log</button>
-            </div>
-          </div>
-          <div class="console-stream" id="console-stream"></div>
-        </section>
+        <footer class="status-bar">
+          <span id="status-lines">—</span>
+          <span id="status-references">—</span>
+          <span id="status-saved">—</span>
+        </footer>
       </main>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-nok0L+mHJHZ9frN7kYMboWWAOPw7Ov7BTIzRv5J4zVfOLm8sEzrBc8eCzQEr1Aun" crossorigin="anonymous"></script>
+    <section class="console-panel">
+      <div class="console-header">
+        <h3>Validation & Activity Console</h3>
+        <div class="console-actions">
+          <button type="button" id="btn-clear-console">Clear Log</button>
+        </div>
+      </div>
+      <div class="console-log" id="console-log"></div>
+    </section>
     <script type="module">
-      const WORKSPACE_FILES = [
-        {
-          name: 'compobj.txt',
-          icon: '🏆',
-          title: 'Competition Structure',
-          description: 'Hierarchy and stage definitions for the tournament tree.',
-          badge: 'CompObj',
-          columns: [
-            { key: 'id', label: 'ID', width: 'minmax(90px, 0.8fr)', type: 'number' },
-            { key: 'level', label: 'Level', width: 'minmax(90px, 0.8fr)', type: 'number' },
-            { key: 'code', label: 'Code', width: 'minmax(140px, 1fr)' },
-            { key: 'name', label: 'Name', width: 'minmax(200px, 1.4fr)' },
-            { key: 'parent', label: 'Parent ID', width: 'minmax(110px, 0.9fr)', type: 'number' },
-          ],
-          newRow: () => ['0', '0', 'CODE', 'New Node', '-1'],
-          groupBy: { column: 1, label: 'levels' },
-        },
-        {
-          name: 'comprules.txt',
-          icon: '⚙️',
-          title: 'Rules & Formats',
-          description: 'Progression, tie-breakers, and competition rule sets.',
-          badge: 'CompRules',
-          columns: [
-            { key: 'stage', label: 'Stage', width: 'minmax(100px, 0.8fr)' },
-            { key: 'group', label: 'Context', width: 'minmax(140px, 1fr)' },
-            { key: 'rule', label: 'Rule', width: 'minmax(160px, 1fr)' },
-            { key: 'param1', label: 'Param 1', width: 'minmax(110px, 0.9fr)' },
-            { key: 'param2', label: 'Param 2', width: 'minmax(110px, 0.9fr)' },
-            { key: 'param3', label: 'Param 3', width: 'minmax(110px, 0.9fr)' },
-          ],
-          newRow: () => ['0', 'default', 'RuleKey', '0', '0', '0'],
-          groupBy: { column: 1, label: 'contexts' },
-        },
-        {
-          name: 'schedule.txt',
-          icon: '🗓️',
-          title: 'Match Schedule',
-          description: 'Fixture sequencing with stage, teams, and kickoff times.',
-          badge: 'Schedule',
-          columns: [
-            { key: 'stage', label: 'Stage', width: 'minmax(110px, 0.8fr)', datalist: 'stage-codes' },
-            { key: 'fixture', label: 'Fixture', width: 'minmax(110px, 0.8fr)' },
-            { key: 'round', label: 'Round', width: 'minmax(110px, 0.8fr)' },
-            { key: 'home', label: 'Home', width: 'minmax(110px, 0.8fr)' },
-            { key: 'away', label: 'Away', width: 'minmax(110px, 0.8fr)' },
-            { key: 'date', label: 'Date', width: 'minmax(140px, 1fr)' },
-          ],
-          newRow: stageCodes => [stageCodes[0] || 'S1', '1', '1', '0', '0', '1200'],
-          groupBy: { column: 2, label: 'rounds' },
-          datalists: () => ({ 'stage-codes': getStageCodes() }),
-        },
-        {
-          name: 'standings.txt',
-          icon: '📊',
-          title: 'Standings Setup',
-          description: 'Ranking order and tie-breakers for group tables.',
-          badge: 'Standings',
-          columns: [
-            { key: 'ruleSet', label: 'Rule Set', width: 'minmax(110px, 0.8fr)' },
-            { key: 'rule', label: 'Rule', width: 'minmax(160px, 1fr)' },
-          ],
-          newRow: () => ['1', '0'],
-          groupBy: { column: 0, label: 'rule sets' },
-        },
-        {
-          name: 'tasks.txt',
-          icon: '🔁',
-          title: 'Automation Tasks',
-          description: 'Population scripts and sequencing for tournament automation.',
-          badge: 'Tasks',
-          columns: [
-            { key: 'stage', label: 'Stage', width: 'minmax(110px, 0.8fr)', datalist: 'stage-codes' },
-            { key: 'trigger', label: 'Trigger', width: 'minmax(130px, 1fr)' },
-            { key: 'command', label: 'Command', width: 'minmax(160px, 1fr)' },
-            { key: 'param1', label: 'Param 1', width: 'minmax(110px, 0.9fr)' },
-            { key: 'param2', label: 'Param 2', width: 'minmax(110px, 0.9fr)' },
-            { key: 'param3', label: 'Param 3', width: 'minmax(110px, 0.9fr)' },
-            { key: 'param4', label: 'Param 4', width: 'minmax(110px, 0.9fr)' },
-          ],
-          newRow: stageCodes => [stageCodes[0] || 'S1', 'start', 'FillWithTeam', '0', '0', '0', '0'],
-          groupBy: { column: 0, label: 'stages' },
-          datalists: () => ({ 'stage-codes': getStageCodes() }),
-        },
-        {
-          name: 'weather.txt',
-          icon: '☁️',
-          title: 'Federation Weather',
-          description: 'Seasonal weather profiles and probabilities.',
-          badge: 'Weather',
-          columns: [
-            { key: 'federation', label: 'Federation', width: 'minmax(120px, 1fr)' },
-            { key: 'season', label: 'Season', width: 'minmax(100px, 0.8fr)' },
-            { key: 'condition', label: 'Condition', width: 'minmax(130px, 1fr)' },
-            { key: 'precip', label: 'Precip %', width: 'minmax(110px, 0.8fr)' },
-            { key: 'wind', label: 'Wind %', width: 'minmax(110px, 0.8fr)' },
-            { key: 'storm', label: 'Storm %', width: 'minmax(110px, 0.8fr)' },
-            { key: 'temp', label: 'Temp °', width: 'minmax(110px, 0.8fr)' },
-            { key: 'start', label: 'Start', width: 'minmax(120px, 1fr)' },
-            { key: 'end', label: 'End', width: 'minmax(120px, 1fr)' },
-          ],
-          newRow: () => ['0', '1', '80', '0', '0', '0', '20', '1600', '1900'],
-          groupBy: { column: 0, label: 'federations' },
-        },
-      ];
-
-      const api = {
-        async load(name) {
-          const res = await fetch(`/api/file/${name}`);
-          if (!res.ok) {
-            throw new Error(`Unable to load ${name}: ${await res.text()}`);
-          }
-          return res.text();
-        },
-        async save(name, content) {
-          const res = await fetch(`/api/file/${name}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content }),
-          });
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload.error || `Unable to save ${name}`);
-          }
-        },
-        async validate(name) {
-          const res = await fetch(`/api/validate/${name}`);
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload.error || `Unable to validate ${name}`);
-          }
-          return res.json();
-        },
-        async validateAll() {
-          const res = await fetch('/api/validate/all');
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload.error || 'Unable to validate all files');
-          }
-          return res.json();
-        },
-        async autofix(name, content) {
-          const res = await fetch(`/api/autofix/${name}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content }),
-          });
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload.error || `Unable to auto-fix ${name}`);
-          }
-          return res.json();
-        },
-        async compare(name) {
-          const res = await fetch(`/api/compare/${name}`);
-          if (!res.ok) {
-            const payload = await res.json().catch(() => ({}));
-            throw new Error(payload.error || `Unable to compare ${name}`);
-          }
-          return res.json();
-        },
+      const icons = {
+        'compobj.txt': '🏆',
+        'schedule.txt': '🗓️',
+        'tasks.txt': '🔁',
+        'advancement.txt': '🧭',
+        'settings.txt': '⚙️',
+        'weather.txt': '☁️',
+        'standings.txt': '📊',
+        'objectives.txt': '🎯',
       };
 
-      const appState = {
-        activeFile: null,
-        files: {},
-        logs: [],
-        loadToken: 0,
+      const navButtons = document.querySelectorAll('aside .nav button');
+      const tabsContainer = document.getElementById('sheet-tabs');
+      const gridContainer = document.getElementById('grid');
+      const statusLines = document.getElementById('status-lines');
+      const statusRefs = document.getElementById('status-references');
+      const statusSaved = document.getElementById('status-saved');
+      const badgeDirty = document.getElementById('status-dirty');
+      const badgeUpdate = document.getElementById('status-update');
+      const autosaveToggle = document.getElementById('autosave-toggle');
+      const consoleLog = document.getElementById('console-log');
+
+      const buttons = {
+        add: document.getElementById('btn-add-row'),
+        delete: document.getElementById('btn-delete-row'),
+        recalc: document.getElementById('btn-recalculate'),
+        validate: document.getElementById('btn-validate'),
+        autoFix: document.getElementById('btn-autofix'),
+        save: document.getElementById('btn-save'),
+        export: document.getElementById('btn-export'),
+        clearConsole: document.getElementById('btn-clear-console'),
       };
 
-      const navEl = document.getElementById('editor-nav');
-      const workspaceCard = document.getElementById('workspace-card');
-      const headingEl = document.getElementById('active-file-heading');
-      const subtitleEl = document.getElementById('active-file-subtitle');
-      const syncIndicator = document.getElementById('sync-indicator');
-      const metaSummary = document.getElementById('meta-summary');
-      const consoleStream = document.getElementById('console-stream');
+      const state = {
+        files: new Map(),
+        active: null,
+        table: null,
+        status: {},
+        references: { updated: 0, lineMap: {} },
+        autoSave: false,
+        pendingSave: null,
+        working: false,
+      };
 
-      document.getElementById('action-reload').addEventListener('click', () => loadActiveFile(true));
-      document.getElementById('action-save').addEventListener('click', saveActiveFile);
-      document.getElementById('action-validate').addEventListener('click', () => validateActiveFile());
-      document.getElementById('action-autofix').addEventListener('click', autoFixActiveFile);
-      document.getElementById('action-compare').addEventListener('click', compareActiveFile);
-      document.getElementById('action-validate-all').addEventListener('click', validateAllFiles);
-      document.getElementById('action-clear-console').addEventListener('click', () => {
-        appState.logs = [];
-        renderConsole();
-      });
-      document.getElementById('action-export').addEventListener('click', exportAllFiles);
-
-      renderSidebar();
-      setActiveFile(WORKSPACE_FILES[0].name);
-
-      let activeInfoBar = null;
-
-      function ensureFileState(name) {
-        if (!appState.files[name]) {
-          appState.files[name] = {
-            content: '',
-            dirty: false,
-            lastLoaded: null,
-            lastSaved: null,
-            cache: {},
-          };
-        }
-        return appState.files[name];
+      function setWorking(active) {
+        state.working = active;
+        document.body.classList.toggle('working', active);
       }
 
-      function renderSidebar() {
-        navEl.innerHTML = '';
-        WORKSPACE_FILES.forEach(file => {
-          const button = document.createElement('button');
-          button.dataset.file = file.name;
-          if (appState.activeFile === file.name) {
-            button.classList.add('active');
+      function formatTimeAgo(iso) {
+        if (!iso) return 'Never saved';
+        const then = new Date(iso);
+        if (Number.isNaN(then.getTime())) {
+          return 'Never saved';
+        }
+        const diff = Date.now() - then.getTime();
+        if (diff < 0) {
+          return 'Saving…';
+        }
+        const mins = Math.floor(diff / 60000);
+        if (mins < 1) {
+          return 'Last saved moments ago';
+        }
+        if (mins < 60) {
+          return `Last saved ${mins} min ago`;
+        }
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) {
+          return `Last saved ${hours} hr ago`;
+        }
+        return `Last saved ${then.toLocaleString()}`;
+      }
+
+      function logMessage(level, message) {
+        const entry = document.createElement('div');
+        entry.className = `log-entry ${level}`;
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'icon';
+        iconSpan.textContent =
+          level === 'error' ? '⛔' : level === 'warning' ? '⚠️' : level === 'success' ? '✅' : 'ℹ️';
+        const textSpan = document.createElement('span');
+        textSpan.textContent = message;
+        entry.append(iconSpan, textSpan);
+        consoleLog.append(entry);
+        consoleLog.scrollTop = consoleLog.scrollHeight;
+      }
+
+      function clearConsole() {
+        consoleLog.innerHTML = '';
+      }
+
+      function updateStatus(payload) {
+        state.status = payload.status || {};
+        state.references = payload.references || { updated: 0, lineMap: {} };
+        const totalLines = state.status.totalLines ?? 0;
+        statusLines.textContent = `${totalLines} lines across workspace`;
+        const updates = state.references.updated ?? 0;
+        statusRefs.textContent = `${updates} references updated`; 
+        badgeUpdate.textContent = `${updates} references updated`;
+        const dirty = Boolean(state.status.dirty);
+        badgeDirty.textContent = dirty ? 'Unsaved changes' : 'Workspace clean';
+        badgeDirty.classList.toggle('warning', dirty);
+        statusSaved.textContent = formatTimeAgo(state.status.lastSaved);
+      }
+
+      function buildTabButtons(files) {
+        tabsContainer.innerHTML = '';
+        files.forEach(file => {
+          const tab = document.createElement('button');
+          tab.type = 'button';
+          tab.dataset.name = file.name;
+          tab.textContent = `${icons[file.name] || '📄'} ${file.label}`;
+          if (file.name === state.active) {
+            tab.classList.add('active');
           }
-          button.innerHTML = `
-            <span class="icon">${file.icon}</span>
-            <span class="label">
-              <strong>${escapeHtml(file.title)}</strong>
-              <small>${escapeHtml(file.name)}</small>
-            </span>
-          `;
-          button.addEventListener('click', () => setActiveFile(file.name));
-          navEl.appendChild(button);
+          tab.addEventListener('click', () => {
+            activateFile(file.name);
+          });
+          tabsContainer.append(tab);
         });
       }
 
-      function normaliseNewlines(value) {
-        return (value || '').replace(/\r\n/g, '\n');
-      }
-
-      function escapeHtml(value) {
-        return (value ?? '')
-          .toString()
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      }
-
-      function formatRelativeTime(date) {
-        if (!date) return '';
-        const diff = Date.now() - date.getTime();
-        if (diff < 45 * 1000) return 'just now';
-        const minutes = Math.round(diff / 60000);
-        if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-        const hours = Math.round(minutes / 60);
-        if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-        const days = Math.round(hours / 24);
-        if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
-        const weeks = Math.round(days / 7);
-        return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
-      }
-
-      function formatTimestamp(date) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      }
-
-      function logMessage(type, message, details = []) {
-        const entry = {
-          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-          type,
-          message,
-          details,
-          timestamp: new Date(),
-        };
-        appState.logs.push(entry);
-        if (appState.logs.length > 120) {
-          appState.logs.shift();
-        }
-        renderConsole();
-      }
-
-      function renderConsole() {
-        consoleStream.innerHTML = '';
-        if (!appState.logs.length) {
-          const empty = document.createElement('div');
-          empty.style.color = 'var(--text-subtle)';
-          empty.style.fontSize = '0.85rem';
-          empty.textContent = 'Console ready. Actions, validation, and comparison results will appear here.';
-          consoleStream.appendChild(empty);
+      function applyWorkspace(payload) {
+        if (!payload || !payload.files) {
           return;
         }
-        const fragment = document.createDocumentFragment();
-        appState.logs.forEach(entry => {
-          const wrapper = document.createElement('article');
-          wrapper.className = `console-entry ${entry.type || 'info'}`;
-          const header = document.createElement('header');
-          header.innerHTML = `
-            <span>${escapeHtml(entry.message)}</span>
-            <span class="badge">${formatTimestamp(entry.timestamp)}</span>
-          `;
-          wrapper.appendChild(header);
-          if (entry.details && entry.details.length) {
-            const list = document.createElement('ul');
-            entry.details.forEach(detail => {
-              const li = document.createElement('li');
-              li.textContent = detail;
-              list.appendChild(li);
-            });
-            wrapper.appendChild(list);
-          }
-          fragment.appendChild(wrapper);
+        state.files = new Map(payload.files.map(file => [file.name, file]));
+        updateStatus(payload);
+        const target = state.active && state.files.has(state.active) ? state.active : payload.files[0]?.name;
+        state.active = target || null;
+        buildTabButtons(payload.files);
+        if (state.active) {
+          renderTable(state.files.get(state.active));
+          updateActiveDetails();
+        }
+        updateToolbarState();
+      }
+
+      function updateActiveDetails() {
+        const file = state.files.get(state.active);
+        const titleEl = document.getElementById('active-title');
+        const descEl = document.getElementById('active-description');
+        if (!file) {
+          titleEl.textContent = 'CompData Workspace';
+          descEl.textContent = 'Load a dataset to begin editing.';
+          return;
+        }
+        titleEl.textContent = `${icons[file.name] || '📄'} ${file.label}`;
+        descEl.textContent = file.description || '';
+        document.querySelectorAll('.sheet-tabs button').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.name === file.name);
         });
-        consoleStream.appendChild(fragment);
+        navButtons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.target === file.name);
+        });
       }
 
-      function setFileContent(name, content, options = {}) {
-        const { markDirty = true, silent = false } = options;
-        const state = ensureFileState(name);
-        state.content = normaliseNewlines(content);
-        if (markDirty) {
-          state.dirty = true;
-        }
-        if (!silent && appState.activeFile === name) {
-          updateFileStatus();
-        }
-        return state.content;
+      function buildColumns(file) {
+        return [
+          {
+            formatter: 'rownum',
+            hozAlign: 'center',
+            headerSort: false,
+            frozen: true,
+            width: 60,
+          },
+          ...file.columns.map(col => ({
+            title: col.label,
+            field: col.key,
+            editor: col.readOnly ? false : 'input',
+            sorter: col.type === 'number' ? 'number' : 'string',
+            headerSort: true,
+            hozAlign: col.type === 'number' ? 'right' : 'left',
+            minWidth: col.type === 'number' ? 120 : 160,
+          })),
+        ];
       }
 
-      function setActiveFile(name) {
-        const config = WORKSPACE_FILES.find(file => file.name === name);
-        if (!config) {
-          logMessage('error', `Unknown file: ${name}`);
+      function renderTable(file) {
+        if (!file) {
+          if (state.table) {
+            state.table.destroy();
+            state.table = null;
+          }
           return;
         }
-        appState.activeFile = name;
-        headingEl.textContent = `${config.icon} ${config.title}`;
-        subtitleEl.textContent = config.description;
-        renderSidebar();
-        updateFileStatus();
-        loadActiveFile(!ensureFileState(name).lastLoaded);
+        if (state.table) {
+          state.table.destroy();
+          state.table = null;
+        }
+        gridContainer.innerHTML = '';
+        state.table = new Tabulator(gridContainer, {
+          data: file.rows || [],
+          index: '__id',
+          layout: 'fitDataFill',
+          reactiveData: true,
+          height: '100%',
+          selectable: true,
+          movableRows: file.name === 'compobj.txt',
+          rowHeader: 'rownum',
+          columns: buildColumns(file),
+        });
+        state.table.on('cellEdited', cell => {
+          const rowData = cell.getRow().getData();
+          mutate(`/api/edit/${file.name}`, {
+            rowId: rowData.__id,
+            field: cell.getField(),
+            value: cell.getValue(),
+          });
+        });
+        state.table.on('rowSelectionChanged', () => updateToolbarState());
+        if (file.name === 'compobj.txt') {
+          state.table.on('rowMoved', () => {
+            const order = state.table.getData().map(row => row.__id);
+            mutate(`/api/reorder/${file.name}`, { order }, { message: 'Reordered competition structure.' });
+          });
+        }
       }
 
-      async function loadActiveFile(force = false) {
-        if (!appState.activeFile) return;
-        const name = appState.activeFile;
-        const state = ensureFileState(name);
-        if (!force && state.lastLoaded) {
-          renderWorkspace();
-          updateFileStatus();
+      function updateToolbarState() {
+        const file = state.files.get(state.active);
+        const hasSelection = Boolean(state.table?.getSelectedData().length);
+        buttons.delete.disabled = !hasSelection;
+      }
+
+      function activateFile(name) {
+        if (!state.files.has(name)) {
           return;
         }
-        const token = ++appState.loadToken;
-        try {
-          syncIndicator.textContent = 'Loading…';
-          const content = await api.load(name);
-          if (token !== appState.loadToken) return;
-          state.content = normaliseNewlines(content);
-          state.dirty = false;
-          state.lastLoaded = new Date();
-          renderWorkspace();
-          updateFileStatus();
-          const lines = state.content.split(/\n/).filter(Boolean).length;
-          logMessage('success', `Loaded ${name}`, [`${lines} lines available`]);
-        } catch (error) {
-          if (token !== appState.loadToken) return;
-          logMessage('error', error.message);
-          syncIndicator.textContent = 'Error';
-        }
+        state.active = name;
+        renderTable(state.files.get(name));
+        updateActiveDetails();
+        updateToolbarState();
       }
-      async function saveActiveFile() {
-        if (!appState.activeFile) return;
-        const name = appState.activeFile;
-        const state = ensureFileState(name);
+
+      async function fetchWorkspace() {
+        setWorking(true);
         try {
-          syncIndicator.textContent = 'Saving…';
-          await api.save(name, state.content);
-          state.dirty = false;
-          state.lastSaved = new Date();
-          updateFileStatus();
-          logMessage('success', `Saved ${name}`);
+          const res = await fetch('/api/state');
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || 'Unable to load workspace');
+          }
+          applyWorkspace(data);
+          logMessage('success', 'Workspace ready.');
         } catch (error) {
           logMessage('error', error.message);
-          syncIndicator.textContent = 'Error';
+        } finally {
+          setWorking(false);
         }
       }
 
-      async function validateActiveFile() {
-        if (!appState.activeFile) return;
-        const name = appState.activeFile;
+      function scheduleAutoSave() {
+        if (!state.autoSave) {
+          return;
+        }
+        if (state.pendingSave) {
+          clearTimeout(state.pendingSave);
+        }
+        state.pendingSave = setTimeout(() => {
+          performSave(true);
+        }, 1500);
+      }
+
+      async function mutate(url, body = {}, options = {}) {
+        setWorking(true);
         try {
-          const result = await api.validate(name);
-          const messages = (result.issues || []).map(issue => `${issue.line ? `Line ${issue.line}: ` : ''}${issue.message}`);
-          if (!messages.length) {
-            logMessage('success', `${name} passed validation`);
-          } else {
-            logMessage('warning', `${messages.length} issues found in ${name}`, messages.slice(0, 20));
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || 'Request failed');
+          }
+          if (data.files) {
+            applyWorkspace(data);
+          }
+          if (options.message) {
+            logMessage('success', options.message);
+          }
+          if (state.autoSave && !url.endsWith('/save')) {
+            scheduleAutoSave();
           }
         } catch (error) {
           logMessage('error', error.message);
+        } finally {
+          setWorking(false);
         }
       }
 
-      async function validateAllFiles() {
+      async function performSave(isAuto = false) {
+        if (state.pendingSave) {
+          clearTimeout(state.pendingSave);
+          state.pendingSave = null;
+        }
+        setWorking(true);
         try {
-          const result = await api.validateAll();
-          const { files = [] } = result;
-          files.forEach(file => {
-            if (file.issues && file.issues.length) {
+          const res = await fetch('/api/save', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || 'Save failed');
+          }
+          applyWorkspace(data);
+          const savedCount = data.save?.saved?.length ?? 0;
+          logMessage('success', `${isAuto ? 'Auto-saved' : 'Saved'} ${savedCount} files.`);
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
+        }
+      }
+
+      async function runValidation() {
+        setWorking(true);
+        try {
+          const res = await fetch('/api/validate', { method: 'POST' });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Validation failed');
+          }
+          if (data.issues?.length) {
+            logMessage(
+              data.ok ? 'warning' : 'error',
+              `${data.issues.length} validation issues detected.`
+            );
+            data.issues.forEach(issue => {
               logMessage(
-                'warning',
-                `${file.name} has ${file.issues.length} issues`,
-                file.issues.slice(0, 12).map(issue => `${issue.line ? `Line ${issue.line}: ` : ''}${issue.message}`)
+                issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info',
+                `${issue.file} line ${issue.line || '?'}: ${issue.message}`
               );
-            } else {
-              logMessage('success', `${file.name} passed validation`);
-            }
-          });
-        } catch (error) {
-          logMessage('error', error.message);
-        }
-      }
-
-      async function autoFixActiveFile() {
-        if (!appState.activeFile) return;
-        const name = appState.activeFile;
-        const state = ensureFileState(name);
-        try {
-          const result = await api.autofix(name, state.content);
-          if (result.fixed) {
-            setFileContent(name, result.fixed, { markDirty: true, silent: false });
-            renderWorkspace();
-            logMessage('success', `Applied auto-fix to ${name}`);
-          } else {
-            logMessage('info', `Auto-fix returned no changes for ${name}`);
-          }
-        } catch (error) {
-          logMessage('error', error.message);
-        }
-      }
-
-      async function compareActiveFile() {
-        if (!appState.activeFile) return;
-        const name = appState.activeFile;
-        try {
-          const result = await api.compare(name);
-          if (result.error) {
-            logMessage('warning', `Comparison unavailable for ${name}`, [result.error]);
-            return;
-          }
-          const diffs = result.differences || [];
-          if (!diffs.length) {
-            logMessage('success', `${name} matches the default reference`);
-            return;
-          }
-          const details = diffs.slice(0, 12).map(diff => {
-            const type = diff.type || 'changed';
-            const baseline = diff.baseline ?? '∅';
-            const current = diff.current ?? '∅';
-            return `${type.toUpperCase()} line ${diff.line}: ${baseline} → ${current}`;
-          });
-          if (diffs.length > 12) {
-            details.push(`…and ${diffs.length - 12} more differences`);
-          }
-          logMessage('warning', `${diffs.length} differences detected in ${name}`, details);
-        } catch (error) {
-          logMessage('error', error.message);
-        }
-      }
-
-      async function exportAllFiles() {
-        try {
-          if (typeof JSZip === 'undefined') {
-            logMessage('warning', 'JSZip library not loaded', [
-              'The export feature requires network access to cdn.jsdelivr.net.',
-            ]);
-            return;
-          }
-          const zip = new JSZip();
-          await Promise.all(
-            WORKSPACE_FILES.map(async file => {
-              const state = ensureFileState(file.name);
-              const content = state.content || (await api.load(file.name));
-              zip.file(file.name, content);
-            })
-          );
-          const blob = await zip.generateAsync({ type: 'blob' });
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = `compdata-workspace-${Date.now()}.zip`;
-          document.body.appendChild(anchor);
-          anchor.click();
-          document.body.removeChild(anchor);
-          URL.revokeObjectURL(url);
-          logMessage('success', 'Exported workspace as ZIP');
-        } catch (error) {
-          logMessage('error', error.message);
-        }
-      }
-
-      function renderWorkspace() {
-        if (!appState.activeFile) {
-          workspaceCard.innerHTML = '<p style="color: var(--text-subtle); text-align:center;">Select a file to start editing.</p>';
-          return;
-        }
-        const config = WORKSPACE_FILES.find(file => file.name === appState.activeFile);
-        const state = ensureFileState(appState.activeFile);
-        workspaceCard.innerHTML = '';
-        const surface = document.createElement('div');
-        surface.className = 'editor-surface';
-        workspaceCard.appendChild(surface);
-
-        const infoBar = document.createElement('div');
-        infoBar.className = 'editor-info';
-        const badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = config.badge;
-        infoBar.appendChild(badge);
-        const infoText = document.createElement('span');
-        infoBar.appendChild(infoText);
-        surface.appendChild(infoBar);
-        activeInfoBar = infoText;
-
-        const toggleRow = document.createElement('div');
-        toggleRow.className = 'view-row';
-        const viewToggle = document.createElement('div');
-        viewToggle.className = 'view-toggle';
-        const gridBtn = document.createElement('button');
-        gridBtn.textContent = '🧾 Structured Grid View';
-        const rawBtn = document.createElement('button');
-        rawBtn.textContent = '📝 Raw Text View';
-        viewToggle.append(gridBtn, rawBtn);
-        toggleRow.appendChild(viewToggle);
-        surface.appendChild(toggleRow);
-
-        const body = document.createElement('div');
-        body.className = 'editor-body';
-        surface.appendChild(body);
-
-        const cache = state.cache;
-        if (!cache.viewMode) cache.viewMode = 'grid';
-        if (cache.filter === undefined) cache.filter = '';
-
-        function updateToggleButtons() {
-          gridBtn.classList.toggle('active', cache.viewMode === 'grid');
-          rawBtn.classList.toggle('active', cache.viewMode === 'raw');
-        }
-
-        gridBtn.addEventListener('click', () => {
-          cache.viewMode = 'grid';
-          renderWorkspace();
-        });
-        rawBtn.addEventListener('click', () => {
-          cache.viewMode = 'raw';
-          renderWorkspace();
-        });
-        updateToggleButtons();
-
-        if (cache.viewMode === 'grid') {
-          renderStructuredView(body, config, state, toggleRow);
-        } else {
-          renderRawView(body, state);
-        }
-
-        updateFileStatus();
-      }
-
-      function renderStructuredView(body, config, fileState, toggleRow) {
-        const columnCount = config.columns.length;
-        let rows = parseCsvRows(fileState.content, columnCount);
-
-        const datalistMap = typeof config.datalists === 'function' ? config.datalists() || {} : config.datalists || {};
-        Object.entries(datalistMap).forEach(([id, options]) => {
-          let list = document.getElementById(id);
-          if (!list) {
-            list = document.createElement('datalist');
-            list.id = id;
-            document.body.appendChild(list);
-          }
-          list.innerHTML = '';
-          options.forEach(value => {
-            const option = document.createElement('option');
-            option.value = value;
-            list.appendChild(option);
-          });
-        });
-
-        const controls = document.createElement('div');
-        controls.className = 'editor-controls';
-        const searchField = document.createElement('label');
-        searchField.className = 'search-field';
-        searchField.innerHTML = '<span>🔍</span>';
-        const searchInput = document.createElement('input');
-        searchInput.type = 'search';
-        searchInput.placeholder = 'Filter rows';
-        searchInput.value = fileState.cache.filter || '';
-        searchField.appendChild(searchInput);
-        controls.appendChild(searchField);
-
-        const addButton = document.createElement('button');
-        addButton.className = 'inline-button primary';
-        addButton.textContent = 'Add Row';
-        controls.appendChild(addButton);
-
-        toggleRow.appendChild(controls);
-
-        const table = document.createElement('div');
-        table.className = 'grid-table';
-        const head = document.createElement('div');
-        head.className = 'grid-head';
-        const headRow = document.createElement('div');
-        headRow.className = 'grid-row';
-        const templateColumns = [...config.columns.map(col => col.width || 'minmax(140px, 1fr)'), 'minmax(150px, 0.7fr)'].join(' ');
-        headRow.style.gridTemplateColumns = templateColumns;
-        config.columns.forEach(col => {
-          const span = document.createElement('span');
-          span.textContent = col.label;
-          headRow.appendChild(span);
-        });
-        const actionSpan = document.createElement('span');
-        actionSpan.textContent = 'Actions';
-        headRow.appendChild(actionSpan);
-        head.appendChild(headRow);
-        table.appendChild(head);
-
-        const bodyEl = document.createElement('div');
-        bodyEl.className = 'grid-body';
-        table.appendChild(bodyEl);
-        body.appendChild(table);
-
-        function refreshRowsFromState() {
-          rows = parseCsvRows(fileState.content, columnCount);
-        }
-
-        function syncContent(options = {}) {
-          const serialised = serialiseCsvRows(rows);
-          setFileContent(appState.activeFile, serialised, options);
-          if (!options.silent) {
-            refreshRowsFromState();
-            updateFileStatus();
-          }
-        }
-
-        function getFilteredData() {
-          const filterValue = (fileState.cache.filter || '').toLowerCase();
-          const filtered = [];
-          rows.forEach((row, index) => {
-            if (row.isComment) return;
-            if (!filterValue) {
-              filtered.push({ row, index });
-              return;
-            }
-            const haystack = row.parts.join(' ').toLowerCase();
-            if (haystack.includes(filterValue)) {
-              filtered.push({ row, index });
-            }
-          });
-          return filtered;
-        }
-
-        function handleCellInput(event) {
-          const input = event.target;
-          const rowIndex = Number(input.dataset.rowIndex);
-          const colIndex = Number(input.dataset.columnIndex);
-          if (!Number.isInteger(rowIndex) || !Number.isInteger(colIndex)) return;
-          if (!rows[rowIndex] || rows[rowIndex].isComment) return;
-          rows[rowIndex].parts[colIndex] = input.value;
-          syncContent({ silent: true });
-        }
-
-        function handleCellChange(event) {
-          const input = event.target;
-          const rowIndex = Number(input.dataset.rowIndex);
-          const colIndex = Number(input.dataset.columnIndex);
-          if (!Number.isInteger(rowIndex) || !Number.isInteger(colIndex)) return;
-          if (!rows[rowIndex] || rows[rowIndex].isComment) return;
-          rows[rowIndex].parts[colIndex] = input.value;
-          syncContent();
-        }
-
-        function handleDuplicate(event) {
-          const rowIndex = Number(event.target.dataset.rowIndex);
-          if (!Number.isInteger(rowIndex)) return;
-          const source = rows[rowIndex];
-          if (!source || source.isComment) return;
-          const clone = { isComment: false, parts: [...source.parts] };
-          rows.splice(rowIndex + 1, 0, clone);
-          syncContent();
-          renderRows();
-        }
-
-        function handleDelete(event) {
-          const rowIndex = Number(event.target.dataset.rowIndex);
-          if (!Number.isInteger(rowIndex)) return;
-          rows.splice(rowIndex, 1);
-          syncContent();
-          renderRows();
-        }
-
-        function renderRows() {
-          refreshRowsFromState();
-          const filtered = getFilteredData();
-          bodyEl.innerHTML = '';
-          if (!filtered.length) {
-            const empty = document.createElement('div');
-            empty.style.padding = '1.2rem';
-            empty.style.color = 'var(--text-subtle)';
-            empty.textContent = 'No rows match the current filter.';
-            bodyEl.appendChild(empty);
-            return;
-          }
-          filtered.forEach(entry => {
-            const rowEl = document.createElement('div');
-            rowEl.className = 'grid-row';
-            rowEl.style.gridTemplateColumns = templateColumns;
-            rowEl.dataset.rowIndex = entry.index;
-            config.columns.forEach((col, colIndex) => {
-              const cell = document.createElement('div');
-              const input = document.createElement('input');
-              input.type = col.type === 'number' ? 'number' : 'text';
-              input.value = entry.row.parts[colIndex] ?? '';
-              input.dataset.rowIndex = entry.index;
-              input.dataset.columnIndex = colIndex;
-              if (col.datalist) input.setAttribute('list', col.datalist);
-              input.addEventListener('input', handleCellInput);
-              input.addEventListener('change', handleCellChange);
-              cell.appendChild(input);
-              rowEl.appendChild(cell);
             });
-            const actionCell = document.createElement('div');
-            actionCell.className = 'row-actions';
-            const duplicateBtn = document.createElement('button');
-            duplicateBtn.textContent = 'Duplicate';
-            duplicateBtn.dataset.rowIndex = entry.index;
-            duplicateBtn.addEventListener('click', handleDuplicate);
-            const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'Delete';
-            deleteBtn.dataset.rowIndex = entry.index;
-            deleteBtn.addEventListener('click', handleDelete);
-            actionCell.append(duplicateBtn, deleteBtn);
-            rowEl.appendChild(actionCell);
-            bodyEl.appendChild(rowEl);
-          });
+          } else {
+            logMessage('success', 'Validation passed with no issues.');
+          }
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
         }
+      }
 
-        searchInput.addEventListener('input', () => {
-          fileState.cache.filter = searchInput.value;
-          renderRows();
-        });
-
-        addButton.addEventListener('click', () => {
-          const stageCodes = getStageCodes();
-          let newParts = config.newRow ? config.newRow(stageCodes) : new Array(columnCount).fill('');
-          if (!Array.isArray(newParts)) {
-            newParts = new Array(columnCount).fill('');
+      async function exportZip() {
+        setWorking(true);
+        try {
+          const res = await fetch('/api/export');
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Export failed');
           }
-          newParts = [...newParts];
-          if (newParts.length < columnCount) {
-            while (newParts.length < columnCount) newParts.push('');
-          } else if (newParts.length > columnCount) {
-            newParts = newParts.slice(0, columnCount);
-          }
-          rows.push({ isComment: false, parts: newParts });
-          syncContent();
-          renderRows();
-        });
-
-        renderRows();
-      }
-
-      function renderRawView(body, state) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'raw-editor';
-        const textarea = document.createElement('textarea');
-        textarea.value = state.content;
-        wrapper.appendChild(textarea);
-        const hint = document.createElement('p');
-        hint.className = 'hint';
-        hint.textContent = 'Raw editing mode writes directly to disk. Validation, auto-fix, and compare still use the active file.';
-        wrapper.appendChild(hint);
-        body.appendChild(wrapper);
-
-        textarea.addEventListener('input', () => {
-          setFileContent(appState.activeFile, textarea.value, { silent: true });
-        });
-        textarea.addEventListener('change', () => {
-          setFileContent(appState.activeFile, textarea.value);
-          updateFileStatus();
-        });
-      }
-
-      function parseCsvRows(content, columnCount) {
-        const lines = normaliseNewlines(content).split(/\n/);
-        const rows = [];
-        lines.forEach(line => {
-          if (!line.trim()) return;
-          if (line.trim().startsWith('#')) {
-            rows.push({ isComment: true, raw: line.trim() });
-            return;
-          }
-          const parts = line.split(',').map(part => part.trim());
-          while (parts.length < columnCount) {
-            parts.push('');
-          }
-          rows.push({ isComment: false, parts });
-        });
-        return rows;
-      }
-
-      function serialiseCsvRows(rows) {
-        return rows.map(row => (row.isComment ? row.raw : row.parts.join(','))).join('\n');
-      }
-
-      function parseCompobjRows(content) {
-        const lines = normaliseNewlines(content).split(/\n/);
-        const rows = [];
-        lines.forEach(line => {
-          const trimmed = line.trim();
-          if (!trimmed) return;
-          if (trimmed.startsWith('#')) return;
-          const parts = trimmed.split(',');
-          while (parts.length < 5) parts.push('');
-          const [id, level, code, name, parent] = parts;
-          rows.push({
-            id: Number(id),
-            level: Number(level),
-            code: (code || '').trim(),
-            name: (name || '').trim(),
-            parent: parent ? Number(parent) : NaN,
-          });
-        });
-        return rows;
-      }
-
-      function getStageCodes() {
-        const comp = ensureFileState('compobj.txt');
-        if (!comp.content) return [];
-        return parseCompobjRows(comp.content)
-          .map(row => row.code)
-          .filter(code => code && code.startsWith('S'));
-      }
-
-      function buildFileStats(config, state) {
-        const stats = [];
-        const rows = parseCsvRows(state.content || '', config.columns.length);
-        const dataRows = rows.filter(row => !row.isComment);
-        const lineCount = dataRows.length;
-        stats.push(`${lineCount} line${lineCount === 1 ? '' : 's'}`);
-        if (config.groupBy) {
-          const { column, label } = config.groupBy;
-          const groups = new Set();
-          dataRows.forEach(row => {
-            const value = (row.parts[column] || '').trim();
-            if (value) groups.add(value);
-          });
-          stats.push(`${groups.size} ${label}`);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'compdata-workspace.zip';
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          logMessage('success', 'Exported workspace ZIP.');
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
         }
-        if (state.lastSaved) {
-          stats.push(`last saved ${formatRelativeTime(state.lastSaved)}`);
-        } else if (state.lastLoaded) {
-          stats.push(`loaded ${formatRelativeTime(state.lastLoaded)}`);
-        }
-        return stats;
       }
 
-      function updateFileStatus() {
-        if (!appState.activeFile) {
-          metaSummary.textContent = '';
-          syncIndicator.textContent = 'Idle';
-          syncIndicator.classList.remove('unsaved');
-          if (activeInfoBar) activeInfoBar.textContent = '';
+      buttons.add.addEventListener('click', () => {
+        if (!state.active) return;
+        let index = null;
+        const selection = state.table?.getSelectedRows?.() || [];
+        if (selection.length) {
+          index = selection[selection.length - 1].getPosition(true) + 1;
+        }
+        mutate(`/api/insert/${state.active}`, { index }, { message: 'Inserted new row.' });
+      });
+
+      buttons.delete.addEventListener('click', () => {
+        if (!state.active || !state.table) return;
+        const selected = state.table.getSelectedData();
+        const rowIds = selected.map(row => row.__id);
+        if (!rowIds.length) {
+          logMessage('warning', 'Select a row to delete.');
           return;
         }
-        const config = WORKSPACE_FILES.find(file => file.name === appState.activeFile);
-        const state = ensureFileState(appState.activeFile);
-        const stats = config ? buildFileStats(config, state) : [];
-        const infoText = stats.join(' • ');
-        metaSummary.textContent = infoText;
-        if (activeInfoBar) {
-          activeInfoBar.textContent = infoText;
+        mutate(`/api/delete/${state.active}`, { rowIds }, { message: `Deleted ${rowIds.length} row(s).` });
+      });
+
+      buttons.recalc.addEventListener('click', () => {
+        mutate('/api/recalculate', {}, { message: 'Recalculated line numbers and references.' });
+      });
+
+      buttons.validate.addEventListener('click', () => runValidation());
+
+      buttons.autoFix.addEventListener('click', () => {
+        mutate('/api/recalculate', {}, { message: 'Auto-fixed reference map.' });
+      });
+
+      buttons.save.addEventListener('click', () => performSave(false));
+
+      buttons.export.addEventListener('click', () => exportZip());
+
+      buttons.clearConsole.addEventListener('click', clearConsole);
+
+      autosaveToggle.addEventListener('change', event => {
+        state.autoSave = event.target.checked;
+        logMessage('info', state.autoSave ? 'Auto-save enabled.' : 'Auto-save disabled.');
+        if (state.autoSave) {
+          scheduleAutoSave();
+        } else if (state.pendingSave) {
+          clearTimeout(state.pendingSave);
+          state.pendingSave = null;
         }
-        if (state.dirty) {
-          syncIndicator.textContent = 'Unsaved changes';
-          syncIndicator.classList.add('unsaved');
-        } else {
-          syncIndicator.textContent = 'In sync';
-          syncIndicator.classList.remove('unsaved');
-        }
-      }
+      });
+
+      navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          const target = button.dataset.target;
+          if (state.files.has(target)) {
+            activateFile(target);
+          }
+        });
+      });
+
+      fetchWorkspace();
     </script>
   </body>
 </html>

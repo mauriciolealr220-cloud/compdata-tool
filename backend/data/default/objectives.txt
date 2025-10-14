@@ -1,0 +1,2 @@
+1,WinCompetition,1,High,BudgetBoost
+1,ReachStage,32,Medium,BoardTrust
