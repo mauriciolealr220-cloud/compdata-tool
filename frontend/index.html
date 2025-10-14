@@ -10,31 +10,40 @@
     />
     <link
       rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <link
+      rel="stylesheet"
       href="https://unpkg.com/tabulator-tables@5.5.2/dist/css/tabulator_midnight.min.css"
     />
     <script src="https://unpkg.com/tabulator-tables@5.5.2/dist/js/tabulator.min.js"></script>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #04070f;
-        --bg-panel: rgba(14, 21, 34, 0.82);
-        --bg-elevated: rgba(17, 25, 41, 0.92);
-        --bg-sidebar: linear-gradient(180deg, rgba(10, 16, 28, 0.9), rgba(4, 7, 15, 0.95));
-        --border: rgba(94, 117, 158, 0.35);
-        --border-subtle: rgba(94, 117, 158, 0.2);
-        --text: #e9f0ff;
-        --text-subtle: #90a1c3;
-        --accent: #38bdf8;
+        --bg: #0e1116;
+        --bg-panel: rgba(21, 26, 34, 0.88);
+        --bg-elevated: rgba(27, 34, 44, 0.92);
+        --bg-sidebar: linear-gradient(180deg, rgba(12, 17, 25, 0.96), rgba(8, 12, 18, 0.98));
+        --border: rgba(59, 130, 246, 0.22);
+        --border-subtle: rgba(148, 163, 184, 0.18);
+        --text: #f0f5ff;
+        --text-subtle: #9aa9c8;
+        --accent: #3b82f6;
         --accent-strong: #60a5fa;
-        --success: #34d399;
+        --success: #22c55e;
         --warning: #fbbf24;
         --danger: #f87171;
-        --sidebar-width: 280px;
-        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        --grid-even: #151a22;
+        --grid-odd: #1b222c;
+        --grid-selected: #273a55;
+        --grid-highlight: rgba(250, 204, 21, 0.2);
+        --sidebar-width: 320px;
+        --card-radius: 22px;
+        font-family: 'Inter', 'JetBrains Mono', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
         font-size: 15px;
-        background: radial-gradient(circle at 15% 20%, rgba(56, 189, 248, 0.12), transparent 45%),
-          radial-gradient(circle at 80% 0%, rgba(129, 140, 248, 0.16), transparent 55%),
-          var(--bg);
+        background: radial-gradient(circle at 18% 22%, rgba(59, 130, 246, 0.18), transparent 55%),
+          radial-gradient(circle at 82% 8%, rgba(99, 102, 241, 0.16), transparent 58%), var(--bg);
       }
 
       * {
@@ -143,6 +152,96 @@
         border-color: rgba(56, 189, 248, 0.55);
       }
 
+      .workspace-summary {
+        background: rgba(21, 28, 40, 0.82);
+        border: 1px solid var(--border-subtle);
+        border-radius: 1.2rem;
+        padding: 1.1rem 1.2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+        box-shadow: 0 18px 38px rgba(8, 12, 22, 0.35);
+      }
+
+      .workspace-summary h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--accent-strong);
+      }
+
+      .summary-stats {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+      }
+
+      .summary-stats li {
+        background: rgba(14, 20, 32, 0.78);
+        border: 1px solid rgba(59, 130, 246, 0.18);
+        border-radius: 0.9rem;
+        padding: 0.55rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        font-size: 0.8rem;
+      }
+
+      .summary-stats .label {
+        color: var(--text-subtle);
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-weight: 500;
+        font-size: 0.7rem;
+      }
+
+      .summary-stats .value {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .sidebar-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        padding: 1rem 1.1rem;
+        border-radius: 1rem;
+        border: 1px solid var(--border-subtle);
+        background: rgba(18, 24, 36, 0.8);
+      }
+
+      .sidebar-footer h3 {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-subtle);
+      }
+
+      .toggle-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.82rem;
+      }
+
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        color: var(--text-subtle);
+      }
+
+      .toggle input[type='checkbox'] {
+        accent-color: var(--accent);
+        width: 1rem;
+        height: 1rem;
+      }
+
       main {
         flex: 1;
         display: flex;
@@ -209,16 +308,24 @@
         color: var(--success);
       }
 
-      .toolbar {
+      .command-bar {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
         align-items: center;
+        gap: 0.75rem;
+        padding: 0.85rem 2.25rem;
+        border-bottom: 1px solid var(--border-subtle);
+        background: rgba(10, 16, 26, 0.82);
       }
 
-      .toolbar button {
+      .command-bar .command,
+      .command-split > button,
+      .filter-actions button {
         all: unset;
-        padding: 0.55rem 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.55rem 0.95rem;
         border-radius: 0.85rem;
         border: 1px solid rgba(148, 163, 184, 0.22);
         background: rgba(18, 28, 44, 0.8);
@@ -228,21 +335,89 @@
         transition: transform 130ms ease, border 130ms ease, background 130ms ease;
       }
 
-      .toolbar button.primary {
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(99, 102, 241, 0.85));
+      .command-bar .command.primary,
+      .command-split > button.primary {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(99, 102, 241, 0.85));
         border-color: transparent;
+        color: #fff;
       }
 
-      .toolbar button:hover,
-      .toolbar button:focus-visible {
+      .command-bar .command:hover,
+      .command-bar .command:focus-visible,
+      .command-split > button:hover,
+      .command-split > button:focus-visible,
+      .filter-actions button:hover,
+      .filter-actions button:focus-visible {
         transform: translateY(-1px);
-        border-color: rgba(56, 189, 248, 0.45);
+        border-color: rgba(59, 130, 246, 0.45);
       }
 
-      .toolbar button:disabled {
+      .command-bar .command[disabled],
+      .filter-actions button[disabled] {
         opacity: 0.55;
         cursor: not-allowed;
         transform: none;
+      }
+
+      .command-spacer {
+        flex: 1 1 auto;
+      }
+
+      .command-split {
+        position: relative;
+        display: inline-flex;
+        border-radius: 0.9rem;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+      }
+
+      .command-split > button {
+        border: none;
+        background: rgba(18, 28, 44, 0.8);
+      }
+
+      .command-split > button + button {
+        width: 2.3rem;
+        justify-content: center;
+        padding: 0.55rem 0;
+      }
+
+      .command-split.open {
+        border-color: rgba(59, 130, 246, 0.55);
+      }
+
+      .command-split .dropdown {
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        right: 0;
+        min-width: 180px;
+        padding: 0.6rem;
+        border-radius: 0.8rem;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        box-shadow: 0 12px 32px rgba(8, 15, 28, 0.45);
+        display: none;
+        flex-direction: column;
+        gap: 0.35rem;
+        z-index: 20;
+      }
+
+      .command-split.open .dropdown {
+        display: flex;
+      }
+
+      .command-split .dropdown button {
+        all: unset;
+        padding: 0.45rem 0.6rem;
+        border-radius: 0.65rem;
+        cursor: pointer;
+        font-size: 0.82rem;
+        color: var(--text);
+      }
+
+      .command-split .dropdown button:hover,
+      .command-split .dropdown button:focus-visible {
+        background: rgba(59, 130, 246, 0.18);
       }
 
       .autosave-toggle {
@@ -286,6 +461,72 @@
       .sheet-tabs button:focus-visible {
         color: var(--text);
         border-color: rgba(56, 189, 248, 0.32);
+      }
+
+      .filter-bar {
+        padding: 1rem 2.25rem 0.6rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .filter-group {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .filter-group label {
+        font-size: 0.82rem;
+        color: var(--text-subtle);
+      }
+
+      .filter-group select,
+      .filter-group input[type='text'] {
+        background: rgba(12, 19, 30, 0.9);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        padding: 0.45rem 0.75rem;
+        color: var(--text);
+        font-size: 0.82rem;
+        min-width: 150px;
+      }
+
+      .filter-group input[type='text'] {
+        min-width: 210px;
+      }
+
+      .filter-group select:focus,
+      .filter-group input[type='text']:focus,
+      .template-loader select:focus {
+        outline: none;
+        border-color: rgba(59, 130, 246, 0.55);
+      }
+
+      .filter-actions {
+        display: inline-flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .template-loader {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+
+      .template-loader select {
+        background: rgba(12, 19, 30, 0.9);
+        border: 1px solid var(--border-subtle);
+        border-radius: 0.75rem;
+        padding: 0.45rem 0.65rem;
+        color: var(--text);
+        font-size: 0.8rem;
+        min-width: 180px;
       }
 
       .workspace-panel {
@@ -427,35 +668,206 @@
       }
 
       .tabulator {
-        background: rgba(10, 16, 28, 0.8);
-        border: 1px solid rgba(94, 117, 158, 0.3);
-        border-radius: 1rem;
+        background: rgba(17, 23, 33, 0.9);
+        border: 1px solid var(--border);
+        border-radius: var(--card-radius);
+        font-family: 'JetBrains Mono', 'Inter', monospace;
       }
 
       .tabulator .tabulator-header {
-        background: rgba(7, 13, 23, 0.95);
-        border-bottom: 1px solid rgba(94, 117, 158, 0.25);
+        background: linear-gradient(180deg, rgba(9, 15, 26, 0.95), rgba(12, 18, 30, 0.92));
+        border-bottom: 1px solid rgba(59, 130, 246, 0.22);
         font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--text-subtle);
       }
 
+      .tabulator .tabulator-row {
+        background-color: var(--grid-odd);
+        border-bottom: 1px solid rgba(12, 19, 30, 0.6);
+        transition: background 120ms ease;
+      }
+
+      .tabulator .tabulator-row:nth-child(even) {
+        background-color: var(--grid-even);
+      }
+
       .tabulator .tabulator-row.tabulator-selectable:hover {
-        background: rgba(56, 189, 248, 0.08);
+        background-color: rgba(59, 130, 246, 0.12);
       }
 
       .tabulator-row.tabulator-selected {
-        background: rgba(56, 189, 248, 0.18);
+        background-color: var(--grid-selected) !important;
       }
 
       .tabulator .tabulator-cell {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--text);
+        padding: 0.4rem 0.55rem;
+        border-right: 1px solid rgba(9, 14, 22, 0.35);
+      }
+
+      .tabulator .tabulator-cell.cell-code,
+      .tabulator .tabulator-cell.cell-name {
+        font-family: 'JetBrains Mono', monospace;
+      }
+
+      .tabulator .tabulator-cell[data-placeholder='true'] {
+        position: relative;
+        color: transparent;
+      }
+
+      .tabulator .tabulator-cell[data-placeholder='true']::after {
+        content: attr(data-placeholder-text);
+        position: absolute;
+        inset: 0.4rem 0.55rem;
+        color: rgba(226, 232, 240, 0.4);
+        font-style: italic;
+        pointer-events: none;
       }
 
       .tabulator .tabulator-editing {
-        background: rgba(56, 189, 248, 0.18);
+        background: var(--grid-highlight);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35) inset;
+      }
+
+      .tabulator-row.entity-competition {
+        border-left: 3px solid rgba(59, 130, 246, 0.65);
+      }
+
+      .tabulator-row.entity-stage {
+        border-left: 3px solid rgba(34, 197, 94, 0.6);
+      }
+
+      .tabulator-row.entity-group {
+        border-left: 3px solid rgba(249, 115, 22, 0.65);
+      }
+
+      .tabulator-row.entity-nation {
+        border-left: 3px solid rgba(165, 180, 252, 0.65);
+      }
+
+      .tabulator-row.entity-empty {
+        opacity: 0.55;
+      }
+
+      .tabulator-row[data-level-depth] .tabulator-cell.cell-code,
+      .tabulator-row[data-level-depth] .tabulator-cell.cell-name {
+        padding-left: calc(0.55rem + (var(--level-depth, 0) * 1.1rem));
+      }
+
+      body.compact-mode .tabulator .tabulator-cell {
+        padding: 0.3rem 0.45rem;
+        font-size: 0.78rem;
+      }
+
+      body.compact-mode .tabulator .tabulator-row {
+        min-height: 28px;
+      }
+
+      body.no-colors .tabulator .tabulator-row {
+        background-color: rgba(17, 23, 33, 0.85);
+        border-left-color: transparent;
+      }
+
+      body.no-colors .tabulator .tabulator-row:nth-child(even) {
+        background-color: rgba(14, 19, 30, 0.85);
+      }
+
+      body.no-colors .tabulator-row.entity-empty {
+        opacity: 0.7;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 13, 22, 0.72);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        z-index: 40;
+      }
+
+      .modal-card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: 1.1rem;
+        min-width: min(460px, 90vw);
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 64px rgba(6, 10, 20, 0.55);
+      }
+
+      .modal-header,
+      .modal-footer {
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .modal-body {
+        padding: 0 1.25rem 1rem;
+        overflow-y: auto;
+      }
+
+      #btn-close-import {
+        all: unset;
+        cursor: pointer;
+        font-size: 1.1rem;
+        color: var(--text-subtle);
+      }
+
+      #btn-close-import:hover,
+      #btn-close-import:focus-visible {
+        color: var(--text);
+      }
+
+      .import-summary {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .import-summary li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.6rem;
+        padding: 0.65rem 0.75rem;
+        border-radius: 0.8rem;
+        border: 1px solid rgba(59, 130, 246, 0.25);
+        background: rgba(12, 19, 30, 0.86);
+        font-size: 0.83rem;
+      }
+
+      .import-summary li span.status {
+        font-size: 1rem;
+      }
+
+      .import-summary li.warning {
+        border-color: rgba(251, 191, 36, 0.35);
+      }
+
+      .import-summary li.error {
+        border-color: rgba(248, 113, 113, 0.4);
       }
 
       @media (max-width: 1080px) {
@@ -482,28 +894,49 @@
       <aside>
         <div class="brand">
           <h1>CompData Studio</h1>
-          <p>All-in-one FIFA/EA CompData workspace</p>
+          <p>The modern toolkit for FIFA/PES competition data.</p>
+        </div>
+        <div class="workspace-summary" id="workspace-summary">
+          <h2>📊 Workspace Summary</h2>
+          <ul class="summary-stats">
+            <li>
+              <span class="label">Files Loaded</span>
+              <span class="value" data-stat="files">0</span>
+            </li>
+            <li>
+              <span class="label">References Updated</span>
+              <span class="value" data-stat="references">0</span>
+            </li>
+            <li>
+              <span class="label">Broken Links</span>
+              <span class="value" data-stat="broken">0</span>
+            </li>
+            <li>
+              <span class="label">Missing Parents</span>
+              <span class="value" data-stat="missing">0</span>
+            </li>
+          </ul>
         </div>
         <div class="nav">
           <button type="button" data-target="compobj.txt">
             <span class="icon">🏆</span>
             <span class="label">
               <strong>Competition Structure</strong>
-              <span>Hierarchy & stages</span>
+              <span>Hierarchy & tiers</span>
             </span>
           </button>
           <button type="button" data-target="schedule.txt">
             <span class="icon">🗓️</span>
             <span class="label">
               <strong>Schedule Editor</strong>
-              <span>Matches & fixtures</span>
+              <span>Fixtures & rounds</span>
             </span>
           </button>
           <button type="button" data-target="tasks.txt">
             <span class="icon">🔁</span>
             <span class="label">
               <strong>Task Automation</strong>
-              <span>Runtime workflows</span>
+              <span>Events & triggers</span>
             </span>
           </button>
           <button type="button" data-target="advancement.txt">
@@ -542,6 +975,23 @@
             </span>
           </button>
         </div>
+        <div class="sidebar-footer">
+          <h3>Display</h3>
+          <div class="toggle-list">
+            <label class="toggle">
+              <input type="checkbox" id="toggle-lines" checked />
+              <span>Show Line Numbers</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="toggle-colors" checked />
+              <span>Show Colors</span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="toggle-compact" />
+              <span>Compact Mode</span>
+            </label>
+          </div>
+        </div>
       </aside>
       <main>
         <header class="main-header">
@@ -550,27 +1000,64 @@
             <p class="subtitle" id="active-description">
               Load a dataset to begin editing. References stay intact as you insert, delete, and reorder rows.
             </p>
-            <div class="badge-tray">
-              <span class="badge" id="status-dirty">Workspace clean</span>
-              <span class="badge" id="status-update">0 references updated</span>
-            </div>
           </div>
-          <div class="toolbar">
-            <button type="button" id="btn-add-row">➕ Add Row</button>
-            <button type="button" id="btn-delete-row">🗑 Delete Row</button>
-            <button type="button" id="btn-recalculate">⭮ Recalculate</button>
-            <button type="button" id="btn-validate">⚙️ Validate</button>
-            <button type="button" id="btn-autofix">⚡ Auto-Fix</button>
-            <button type="button" id="btn-save" class="primary">💾 Save All</button>
-            <button type="button" id="btn-export">📦 Export ZIP</button>
-            <label class="autosave-toggle">
-              <input type="checkbox" id="autosave-toggle" />
-              Auto Save
-            </label>
+          <div class="badge-tray">
+            <span class="badge" id="status-dirty">Workspace clean</span>
+            <span class="badge" id="status-update">0 references updated</span>
           </div>
         </header>
+        <div class="command-bar" role="toolbar">
+          <button type="button" id="btn-add-row" class="command">+ Add Row</button>
+          <button type="button" id="btn-delete-row" class="command">🗑 Delete</button>
+          <button type="button" id="btn-recalculate" class="command">⟳ Recalculate</button>
+          <button type="button" id="btn-validate" class="command">🧮 Validate</button>
+          <button type="button" id="btn-autofix" class="command">⚡ Auto-Fix</button>
+          <button type="button" id="btn-sync" class="command">🔗 Sync References</button>
+          <div class="command-spacer"></div>
+          <div class="command-split" id="save-split">
+            <button type="button" id="btn-save" class="primary">💾 Save All</button>
+            <button type="button" id="btn-save-menu" aria-haspopup="true" aria-expanded="false">▾</button>
+            <div class="dropdown" id="save-menu">
+              <button type="button" id="btn-save-sheet">Save Active Sheet</button>
+              <button type="button" id="btn-reset-columns">Reset Column Order</button>
+            </div>
+          </div>
+          <button type="button" id="btn-import" class="command">📤 Import Files</button>
+          <button type="button" id="btn-export" class="command">📦 Export ZIP</button>
+          <label class="autosave-toggle">
+            <input type="checkbox" id="autosave-toggle" />
+            Auto Save
+          </label>
+        </div>
         <div class="sheet-tabs" id="sheet-tabs"></div>
         <section class="workspace-panel">
+          <div class="filter-bar">
+            <div class="filter-group">
+              <label for="filter-code">Filter by:</label>
+              <select id="filter-code">
+                <option value="">Code</option>
+              </select>
+              <select id="filter-parent">
+                <option value="">Parent Line</option>
+              </select>
+              <input type="text" id="filter-text" placeholder="Contains text…" />
+            </div>
+            <div class="filter-actions">
+              <button type="button" id="btn-collapse">Collapse Tree</button>
+              <button type="button" id="btn-clear-filters">Reset Filters</button>
+              <div class="template-loader" id="template-loader">
+                <select id="template-select">
+                  <option value="">Template Presets</option>
+                  <option value="tasks:knockout">Knockout Stage Tasks</option>
+                  <option value="tasks:group">Group Stage Tasks</option>
+                  <option value="objectives:win">Win League</option>
+                  <option value="objectives:avoid">Avoid Relegation</option>
+                  <option value="objectives:quarter">Reach Quarterfinals</option>
+                </select>
+                <button type="button" id="btn-apply-template">Insert Template</button>
+              </div>
+            </div>
+          </div>
           <div class="grid-card">
             <div id="grid"></div>
           </div>
@@ -582,6 +1069,21 @@
         </footer>
       </main>
     </div>
+    <input type="file" id="file-import" accept=".txt" multiple hidden />
+    <div class="modal hidden" id="import-modal" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <div class="modal-card">
+        <header class="modal-header">
+          <h3 id="import-modal-title">Import Summary</h3>
+          <button type="button" id="btn-close-import" aria-label="Close">✕</button>
+        </header>
+        <div class="modal-body">
+          <ul id="import-summary" class="import-summary"></ul>
+        </div>
+        <footer class="modal-footer">
+          <button type="button" id="btn-dismiss-import" class="primary">Got it</button>
+        </footer>
+      </div>
+    </div>
     <section class="console-panel">
       <div class="console-header">
         <h3>Validation & Activity Console</h3>
@@ -591,7 +1093,7 @@
       </div>
       <div class="console-log" id="console-log"></div>
     </section>
-    <script type="module">
+        <script type="module">
       const icons = {
         'compobj.txt': '🏆',
         'schedule.txt': '🗓️',
@@ -603,7 +1105,7 @@
         'objectives.txt': '🎯',
       };
 
-      const navButtons = document.querySelectorAll('aside .nav button');
+      const navButtons = Array.from(document.querySelectorAll('aside .nav button'));
       const tabsContainer = document.getElementById('sheet-tabs');
       const gridContainer = document.getElementById('grid');
       const statusLines = document.getElementById('status-lines');
@@ -613,6 +1115,36 @@
       const badgeUpdate = document.getElementById('status-update');
       const autosaveToggle = document.getElementById('autosave-toggle');
       const consoleLog = document.getElementById('console-log');
+      const importInput = document.getElementById('file-import');
+      const importModal = document.getElementById('import-modal');
+      const importSummaryList = document.getElementById('import-summary');
+      const btnCloseImport = document.getElementById('btn-close-import');
+      const btnDismissImport = document.getElementById('btn-dismiss-import');
+      const saveSplit = document.getElementById('save-split');
+      const saveMenuButton = document.getElementById('btn-save-menu');
+      const saveMenu = document.getElementById('save-menu');
+
+      const summaryStats = {
+        files: document.querySelector('[data-stat="files"]'),
+        references: document.querySelector('[data-stat="references"]'),
+        broken: document.querySelector('[data-stat="broken"]'),
+        missing: document.querySelector('[data-stat="missing"]'),
+      };
+
+      const toggles = {
+        lines: document.getElementById('toggle-lines'),
+        colors: document.getElementById('toggle-colors'),
+        compact: document.getElementById('toggle-compact'),
+      };
+
+      const filterControls = {
+        code: document.getElementById('filter-code'),
+        parent: document.getElementById('filter-parent'),
+        text: document.getElementById('filter-text'),
+      };
+
+      const templateLoader = document.getElementById('template-loader');
+      const templateSelect = document.getElementById('template-select');
 
       const buttons = {
         add: document.getElementById('btn-add-row'),
@@ -620,9 +1152,76 @@
         recalc: document.getElementById('btn-recalculate'),
         validate: document.getElementById('btn-validate'),
         autoFix: document.getElementById('btn-autofix'),
+        sync: document.getElementById('btn-sync'),
         save: document.getElementById('btn-save'),
+        saveMenu: saveMenuButton,
+        saveSheet: document.getElementById('btn-save-sheet'),
+        resetColumns: document.getElementById('btn-reset-columns'),
+        import: document.getElementById('btn-import'),
         export: document.getElementById('btn-export'),
+        collapse: document.getElementById('btn-collapse'),
+        clearFilters: document.getElementById('btn-clear-filters'),
+        applyTemplate: document.getElementById('btn-apply-template'),
         clearConsole: document.getElementById('btn-clear-console'),
+      };
+
+      const filterContext = { codeField: null, parentField: null };
+
+      const knownFiles = [
+        'compobj.txt',
+        'schedule.txt',
+        'tasks.txt',
+        'advancement.txt',
+        'settings.txt',
+        'weather.txt',
+        'standings.txt',
+        'objectives.txt',
+      ];
+
+      const FILE_SIGNATURES = {
+        'compobj.txt': 5,
+        'schedule.txt': 8,
+        'tasks.txt': 6,
+        'advancement.txt': 5,
+        'settings.txt': 3,
+        'weather.txt': 6,
+        'standings.txt': 3,
+        'objectives.txt': 5,
+      };
+
+      const TEMPLATE_LIBRARY = {
+        'tasks:knockout': {
+          file: 'tasks.txt',
+          rows: [
+            { TaskType: 'FillWithTeams', Trigger: 'OnStageStart', Action: 'Populate', TargetStage: '', Param1: 'Winners', Param2: '' },
+            { TaskType: 'ScheduleMatches', Trigger: 'OnStageStart', Action: 'CreateBracket', TargetStage: '', Param1: 'Knockout', Param2: '' },
+          ],
+        },
+        'tasks:group': {
+          file: 'tasks.txt',
+          rows: [
+            { TaskType: 'FillWithTeams', Trigger: 'OnStageStart', Action: 'Populate', TargetStage: '', Param1: 'Group', Param2: '' },
+            { TaskType: 'ScheduleMatches', Trigger: 'OnStageStart', Action: 'CreateRoundRobin', TargetStage: '', Param1: 'Double', Param2: '' },
+          ],
+        },
+        'objectives:win': {
+          file: 'objectives.txt',
+          rows: [
+            { CompetitionLine: '', ObjectiveType: 'WinLeague', TargetValue: 'Champion', Importance: 'Critical', Reward: 'BudgetBoost' },
+          ],
+        },
+        'objectives:avoid': {
+          file: 'objectives.txt',
+          rows: [
+            { CompetitionLine: '', ObjectiveType: 'AvoidRelegation', TargetValue: 'StayUp', Importance: 'High', Reward: 'BoardTrust' },
+          ],
+        },
+        'objectives:quarter': {
+          file: 'objectives.txt',
+          rows: [
+            { CompetitionLine: '', ObjectiveType: 'ReachRound', TargetValue: 'Quarterfinal', Importance: 'High', Reward: 'FanGrowth' },
+          ],
+        },
       };
 
       const state = {
@@ -634,7 +1233,13 @@
         autoSave: false,
         pendingSave: null,
         working: false,
+        preferences: { theme: 'night-sky', compactMode: false, showLineNumbers: true, showColors: true },
+        metrics: { brokenLinks: 0, missingParents: 0 },
+        filters: { code: '', parent: '', text: '', treeCollapsed: false },
+        lineLookup: new Map(),
       };
+
+      let textFilterTimer = null;
 
       function setWorking(active) {
         state.working = active;
@@ -683,18 +1288,60 @@
         consoleLog.innerHTML = '';
       }
 
+      function updateWorkspaceSummary() {
+        summaryStats.files.textContent = String(state.status.filesLoaded ?? state.files.size ?? 0);
+        summaryStats.references.textContent = String(state.references.updated ?? 0);
+        summaryStats.broken.textContent = String(state.metrics.brokenLinks ?? 0);
+        summaryStats.missing.textContent = String(state.metrics.missingParents ?? 0);
+      }
+
       function updateStatus(payload) {
         state.status = payload.status || {};
         state.references = payload.references || { updated: 0, lineMap: {} };
         const totalLines = state.status.totalLines ?? 0;
         statusLines.textContent = `${totalLines} lines across workspace`;
         const updates = state.references.updated ?? 0;
-        statusRefs.textContent = `${updates} references updated`; 
+        statusRefs.textContent = `${updates} references updated`;
         badgeUpdate.textContent = `${updates} references updated`;
+        badgeUpdate.classList.toggle('warning', updates > 0);
         const dirty = Boolean(state.status.dirty);
         badgeDirty.textContent = dirty ? 'Unsaved changes' : 'Workspace clean';
         badgeDirty.classList.toggle('warning', dirty);
         statusSaved.textContent = formatTimeAgo(state.status.lastSaved);
+        updateWorkspaceSummary();
+      }
+
+      function rebuildLineLookup() {
+        state.lineLookup = new Map();
+        const comp = state.files.get('compobj.txt');
+        if (!comp) {
+          return;
+        }
+        comp.rows.forEach(row => {
+          if (row.LineID) {
+            state.lineLookup.set(String(row.LineID), row);
+          }
+        });
+      }
+
+      function syncPreferenceClasses() {
+        document.body.classList.toggle('compact-mode', state.preferences.compactMode);
+        document.body.classList.toggle('no-colors', !state.preferences.showColors);
+        toggles.lines.checked = state.preferences.showLineNumbers;
+        toggles.colors.checked = state.preferences.showColors;
+        toggles.compact.checked = state.preferences.compactMode;
+      }
+
+      function updateNavTooltips() {
+        navButtons.forEach(button => {
+          const name = button.dataset.target;
+          const file = state.files.get(name);
+          if (file) {
+            button.title = `${file.label} • ${file.rows.length} lines`;
+          } else {
+            button.title = 'Not loaded yet';
+          }
+        });
       }
 
       function buildTabButtons(files) {
@@ -704,12 +1351,11 @@
           tab.type = 'button';
           tab.dataset.name = file.name;
           tab.textContent = `${icons[file.name] || '📄'} ${file.label}`;
+          tab.title = `Lines: ${file.rows.length}`;
           if (file.name === state.active) {
             tab.classList.add('active');
           }
-          tab.addEventListener('click', () => {
-            activateFile(file.name);
-          });
+          tab.addEventListener('click', () => activateFile(file.name));
           tabsContainer.append(tab);
         });
       }
@@ -719,15 +1365,45 @@
           return;
         }
         state.files = new Map(payload.files.map(file => [file.name, file]));
+        if (payload.preferences) {
+          state.preferences = { ...state.preferences, ...payload.preferences };
+        }
+        rebuildLineLookup();
         updateStatus(payload);
-        const target = state.active && state.files.has(state.active) ? state.active : payload.files[0]?.name;
-        state.active = target || null;
+        syncPreferenceClasses();
+        const target = state.active && state.files.has(state.active) ? state.active : payload.files[0]?.name || null;
+        state.active = target;
         buildTabButtons(payload.files);
+        updateNavTooltips();
         if (state.active) {
           renderTable(state.files.get(state.active));
           updateActiveDetails();
+        } else if (state.table) {
+          state.table.destroy();
+          state.table = null;
         }
         updateToolbarState();
+      }
+
+      function applyPreferences(changedKey) {
+        syncPreferenceClasses();
+        if (!state.active) {
+          return;
+        }
+        const file = state.files.get(state.active);
+        if (!file) {
+          return;
+        }
+        if (changedKey === 'showLineNumbers') {
+          renderTable(file);
+          return;
+        }
+        if (state.table && changedKey === 'showColors') {
+          state.table.getRows().forEach(row => formatRow(row, file));
+        }
+        if (state.table && changedKey === 'compactMode') {
+          state.table.redraw(true);
+        }
       }
 
       function updateActiveDetails() {
@@ -737,37 +1413,262 @@
         if (!file) {
           titleEl.textContent = 'CompData Workspace';
           descEl.textContent = 'Load a dataset to begin editing.';
+        } else {
+          titleEl.textContent = `${icons[file.name] || '📄'} ${file.label}`;
+          descEl.textContent = file.description || '';
+        }
+        document.querySelectorAll('.sheet-tabs button').forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.name === file?.name);
+          if (file && btn.dataset.name === file.name) {
+            btn.title = `Lines: ${file.rows.length}`;
+          }
+        });
+        navButtons.forEach(button => {
+          button.classList.toggle('active', button.dataset.target === file?.name);
+        });
+        updateNavTooltips();
+      }
+
+      function canonicalFileName(name) {
+        if (!name) return null;
+        const base = String(name).trim().toLowerCase().split(/[/\\]/).pop();
+        return knownFiles.find(file => file === base) || null;
+      }
+
+      function splitCsvLine(line) {
+        return String(line || '').replace(/\r$/, '').split(',');
+      }
+
+      function detectFileType(name, content) {
+        const canonical = canonicalFileName(name);
+        if (canonical) {
+          return { name: canonical, reason: 'filename' };
+        }
+        const lines = String(content || '')
+          .split(/\r?\n/)
+          .map(entry => entry.trim())
+          .filter(Boolean);
+        if (!lines.length) {
+          return { name: null, reason: 'empty file' };
+        }
+        const firstCells = splitCsvLine(lines[0]);
+        const columnCount = firstCells.length;
+        const candidates = Object.entries(FILE_SIGNATURES)
+          .filter(([, count]) => count === columnCount)
+          .map(([file]) => file);
+        let choice = null;
+        if (candidates.length === 1) {
+          choice = candidates[0];
+        } else if (candidates.length > 1) {
+          const joined = lines.slice(0, 5).join(' ').toLowerCase();
+          if (columnCount === 6) {
+            choice = joined.match(/summer|winter|rain|snow|fog/) ? 'weather.txt' : 'tasks.txt';
+          } else if (columnCount === 5) {
+            if (joined.includes('promotion') || joined.includes('relegation')) {
+              choice = 'advancement.txt';
+            } else if (joined.includes('quarter') || joined.includes('budget') || joined.includes('winleague')) {
+              choice = 'objectives.txt';
+            } else {
+              choice = 'compobj.txt';
+            }
+          } else if (columnCount === 3) {
+            choice = joined.includes('points') || joined.includes('goal') || joined.includes('wins') ? 'standings.txt' : 'settings.txt';
+          }
+        }
+        if (choice) {
+          return { name: choice, reason: `${columnCount} columns` };
+        }
+        return { name: null, reason: 'unknown' };
+      }
+
+      function getCodeOptions() {
+        const codes = new Set();
+        const comp = state.files.get('compobj.txt');
+        if (comp) {
+          comp.rows.forEach(row => {
+            if (row.Code) {
+              codes.add(row.Code);
+            }
+          });
+        }
+        ['C1', 'C2', 'S1', 'S2', 'G1', 'G2', 'Nation', 'League'].forEach(code => codes.add(code));
+        return Array.from(codes).sort();
+      }
+
+      function getParentLookup() {
+        const lookup = {};
+        state.lineLookup.forEach((row, line) => {
+          const label = `${line} • ${row.Code || row.Name || 'Line'}`.trim();
+          lookup[line] = label;
+        });
+        return lookup;
+      }
+
+      function determineEditor(file, column) {
+        if (column.readOnly) {
+          return { type: false };
+        }
+        const fileName = file.name;
+        const staticLists = {
+          'compobj.txt': {
+            Code: () => getCodeOptions(),
+            ParentLine: () => getParentLookup(),
+          },
+          'settings.txt': {
+            Rule: ['PointsPerWin', 'MaxSubs', 'OvertimeEnabled', 'MaxForeignPlayers', 'HomeAdvantage'],
+          },
+          'weather.txt': {
+            Season: ['Summer', 'Autumn', 'Winter', 'Spring'],
+            Region: ['Europe', 'Asia', 'Americas', 'Africa', 'Oceania'],
+            WeatherType: ['Clear', 'Rain', 'Snow', 'Fog', 'Windy'],
+          },
+          'objectives.txt': {
+            ObjectiveType: ['WinLeague', 'AvoidRelegation', 'ReachRound', 'WinCup'],
+            Importance: ['Low', 'Medium', 'High', 'Critical'],
+            Reward: ['BudgetBoost', 'FanGrowth', 'BoardTrust'],
+          },
+          'standings.txt': {
+            Rule: ['Points', 'GoalDifference', 'Wins', 'GoalsScored', 'HeadToHead'],
+          },
+        };
+        if (column.key === 'ParentLine' || column.key === 'StageLine' || column.key === 'CompetitionLine') {
+          return { type: 'list', params: { values: getParentLookup() } };
+        }
+        const fileLists = staticLists[fileName] || {};
+        const source = fileLists[column.key];
+        if (source) {
+          const values = typeof source === 'function' ? source() : source;
+          if (Array.isArray(values)) {
+            const map = {};
+            values.forEach(item => {
+              map[item] = item;
+            });
+            return { type: 'list', params: { values: map } };
+          }
+          return { type: 'list', params: { values } };
+        }
+        if (column.type === 'number') {
+          return { type: 'input', params: { attrs: { inputmode: 'numeric', pattern: '\\d*' } } };
+        }
+        return { type: 'input' };
+      }
+
+      function nameFormatter(cell, placeholder = '') {
+        const value = cell.getValue();
+        const element = cell.getElement();
+        if (!value && placeholder) {
+          element.setAttribute('data-placeholder', 'true');
+          element.setAttribute('data-placeholder-text', placeholder);
+          return '';
+        }
+        element.removeAttribute('data-placeholder');
+        element.removeAttribute('data-placeholder-text');
+        return value ?? '';
+      }
+
+      function getCellTooltip(file, column, value, rowData) {
+        if (value == null || value === '') {
+          return '';
+        }
+        const key = column.key;
+        const stringValue = String(value);
+        if (/Line/i.test(key) && state.lineLookup.has(stringValue)) {
+          const ref = state.lineLookup.get(stringValue);
+          const label = `${ref.Code || ''}${ref.Code && ref.Name ? ' · ' : ''}${ref.Name || ''}`.trim();
+          return `Line ${ref.LineID} → ${label}`.trim();
+        }
+        if (file.name === 'schedule.txt' && key === 'MatchID') {
+          if (rowData.HomeRef || rowData.AwayRef) {
+            return `${rowData.HomeRef || '?'} vs ${rowData.AwayRef || '?'}`;
+          }
+        }
+        if (file.name === 'advancement.txt' && (key === 'StageFrom' || key === 'StageTo')) {
+          const ref = state.lineLookup.get(stringValue);
+          if (ref) {
+            const label = `${ref.Code || ''}${ref.Code && ref.Name ? ' · ' : ''}${ref.Name || ''}`.trim();
+            return `${key === 'StageFrom' ? 'From' : 'To'} ${label}`;
+          }
+        }
+        return '';
+      }
+
+      function formatRow(row, file) {
+        const element = row.getElement();
+        element.classList.remove('entity-competition', 'entity-stage', 'entity-group', 'entity-nation', 'entity-empty');
+        element.removeAttribute('data-level-depth');
+        if (!state.preferences.showColors) {
           return;
         }
-        titleEl.textContent = `${icons[file.name] || '📄'} ${file.label}`;
-        descEl.textContent = file.description || '';
-        document.querySelectorAll('.sheet-tabs button').forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.name === file.name);
-        });
-        navButtons.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.target === file.name);
-        });
+        const data = row.getData();
+        if (file.name === 'compobj.txt') {
+          const level = Number(data.Level) || 1;
+          const depth = Math.max(0, level - 1);
+          element.style.setProperty('--level-depth', depth);
+          element.setAttribute('data-level-depth', depth);
+          const code = String(data.Code || '').toUpperCase();
+          if (!code) {
+            element.classList.add('entity-empty');
+          } else if (code.startsWith('C')) {
+            element.classList.add('entity-competition');
+          } else if (code.startsWith('S')) {
+            element.classList.add('entity-stage');
+          } else if (code.startsWith('G')) {
+            element.classList.add('entity-group');
+          } else {
+            element.classList.add('entity-nation');
+          }
+        } else {
+          element.style.removeProperty('--level-depth');
+          if (file.name === 'tasks.txt') {
+            element.classList.add('entity-group');
+          } else if (file.name === 'standings.txt' || file.name === 'advancement.txt') {
+            element.classList.add('entity-stage');
+          }
+        }
+        const hasValues = Object.values(data).some(val => String(val ?? '').trim() !== '');
+        if (!hasValues) {
+          element.classList.add('entity-empty');
+        }
       }
 
       function buildColumns(file) {
-        return [
-          {
-            formatter: 'rownum',
+        const columns = [];
+        if (state.preferences.showLineNumbers) {
+          columns.push({
+            title: '#',
+            field: '__rowNumber',
+            width: 60,
             hozAlign: 'center',
             headerSort: false,
-            frozen: true,
-            width: 60,
-          },
-          ...file.columns.map(col => ({
+            formatter: cell => cell.getRow().getPosition(true) + 1,
+          });
+        }
+        file.columns.forEach(col => {
+          const editorConfig = determineEditor(file, col);
+          const columnConfig = {
             title: col.label,
             field: col.key,
-            editor: col.readOnly ? false : 'input',
-            sorter: col.type === 'number' ? 'number' : 'string',
             headerSort: true,
-            hozAlign: col.type === 'number' ? 'right' : 'left',
-            minWidth: col.type === 'number' ? 120 : 160,
-          })),
-        ];
+            sorter: col.type === 'number' ? 'number' : 'string',
+            hozAlign: col.type === 'number' ? 'center' : 'left',
+            minWidth: col.type === 'number' ? 110 : 160,
+            cssClass: `cell-${col.key.toLowerCase()}`,
+            tooltip: cell => getCellTooltip(file, col, cell.getValue(), cell.getRow().getData()),
+          };
+          if (editorConfig.type === false) {
+            columnConfig.editor = false;
+          } else {
+            columnConfig.editor = editorConfig.type || 'input';
+            if (editorConfig.params) {
+              columnConfig.editorParams = editorConfig.params;
+            }
+          }
+          if (col.key === 'Name') {
+            columnConfig.formatter = cell => nameFormatter(cell, '— click to enter name —');
+          }
+          columns.push(columnConfig);
+        });
+        return columns;
       }
 
       function renderTable(file) {
@@ -778,6 +1679,7 @@
           }
           return;
         }
+        const selectedIds = state.table ? state.table.getSelectedData().map(row => row.__id) : [];
         if (state.table) {
           state.table.destroy();
           state.table = null;
@@ -787,12 +1689,13 @@
           data: file.rows || [],
           index: '__id',
           layout: 'fitDataFill',
-          reactiveData: true,
           height: '100%',
+          reactiveData: true,
           selectable: true,
           movableRows: file.name === 'compobj.txt',
-          rowHeader: 'rownum',
+          history: true,
           columns: buildColumns(file),
+          rowFormatter: row => formatRow(row, file),
         });
         state.table.on('cellEdited', cell => {
           const rowData = cell.getRow().getData();
@@ -809,51 +1712,138 @@
             mutate(`/api/reorder/${file.name}`, { order }, { message: 'Reordered competition structure.' });
           });
         }
-      }
-
-      function updateToolbarState() {
-        const file = state.files.get(state.active);
-        const hasSelection = Boolean(state.table?.getSelectedData().length);
-        buttons.delete.disabled = !hasSelection;
-      }
-
-      function activateFile(name) {
-        if (!state.files.has(name)) {
-          return;
-        }
-        state.active = name;
-        renderTable(state.files.get(name));
-        updateActiveDetails();
-        updateToolbarState();
-      }
-
-      async function fetchWorkspace() {
-        setWorking(true);
-        try {
-          const res = await fetch('/api/state');
-          const data = await res.json();
-          if (!res.ok || data.ok === false) {
-            throw new Error(data.error || 'Unable to load workspace');
+        state.table.on('tableBuilt', () => {
+          if (selectedIds.length) {
+            state.table.selectRow(selectedIds);
           }
-          applyWorkspace(data);
-          logMessage('success', 'Workspace ready.');
-        } catch (error) {
-          logMessage('error', error.message);
-        } finally {
-          setWorking(false);
-        }
+          updateFilterControlsForFile(file);
+          applyFilters();
+          updateToolbarState();
+        });
       }
 
-      function scheduleAutoSave() {
-        if (!state.autoSave) {
+      function populateSelect(select, placeholder, options) {
+        if (!select) return;
+        select.innerHTML = '';
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = placeholder;
+        select.append(placeholderOption);
+        options.forEach(option => {
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.label;
+          select.append(opt);
+        });
+      }
+
+      function resetFilters() {
+        if (filterControls.code) filterControls.code.value = '';
+        if (filterControls.parent) filterControls.parent.value = '';
+        if (filterControls.text) filterControls.text.value = '';
+        state.filters.code = '';
+        state.filters.parent = '';
+        state.filters.text = '';
+      }
+
+      function updateFilterControlsForFile(file) {
+        resetFilters();
+        if (!file) {
+          filterContext.codeField = null;
+          filterContext.parentField = null;
+          if (filterControls.code) filterControls.code.disabled = true;
+          if (filterControls.parent) filterControls.parent.disabled = true;
+          if (templateLoader) templateLoader.hidden = true;
           return;
         }
-        if (state.pendingSave) {
-          clearTimeout(state.pendingSave);
+        const codeColumn = file.columns.find(col => col.key === 'Code');
+        filterContext.codeField = codeColumn ? codeColumn.key : null;
+        const preferredParents = ['ParentLine', 'StageLine', 'CompetitionLine'];
+        filterContext.parentField = null;
+        for (const key of preferredParents) {
+          if (file.columns.some(col => col.key === key)) {
+            filterContext.parentField = key;
+            break;
+          }
         }
-        state.pendingSave = setTimeout(() => {
-          performSave(true);
-        }, 1500);
+        if (!filterContext.parentField) {
+          const fallback = file.columns.find(col => /Line/i.test(col.key) && col.key !== 'LineID');
+          filterContext.parentField = fallback?.key || null;
+        }
+        if (filterControls.code) {
+          if (filterContext.codeField) {
+            const codes = new Set();
+            file.rows.forEach(row => {
+              const value = row[filterContext.codeField];
+              if (value) codes.add(value);
+            });
+            const options = Array.from(codes)
+              .sort()
+              .map(value => ({ value, label: value }));
+            populateSelect(filterControls.code, 'Code', options);
+            filterControls.code.disabled = false;
+          } else {
+            populateSelect(filterControls.code, 'Code', []);
+            filterControls.code.disabled = true;
+          }
+        }
+        if (filterControls.parent) {
+          if (filterContext.parentField) {
+            const lookup = getParentLookup();
+            const options = Object.entries(lookup).map(([value, label]) => ({ value, label }));
+            populateSelect(filterControls.parent, 'Parent Line', options);
+            filterControls.parent.disabled = false;
+          } else {
+            populateSelect(filterControls.parent, 'Parent Line', []);
+            filterControls.parent.disabled = true;
+          }
+        }
+        const showTemplate = file.name === 'tasks.txt' || file.name === 'objectives.txt';
+        if (templateLoader) {
+          templateLoader.hidden = !showTemplate;
+          if (!showTemplate) {
+            templateSelect.value = '';
+          }
+        }
+        buttons.collapse.disabled = file.name !== 'compobj.txt';
+        buttons.collapse.textContent = 'Collapse Tree';
+        state.filters.treeCollapsed = false;
+      }
+
+      function applyFilters() {
+        if (!state.table) {
+          return;
+        }
+        const filters = [];
+        if (state.filters.code && filterContext.codeField) {
+          filters.push({ field: filterContext.codeField, type: '=', value: state.filters.code });
+        }
+        if (state.filters.parent && filterContext.parentField) {
+          filters.push({ field: filterContext.parentField, type: '=', value: state.filters.parent });
+        }
+        if (state.filters.treeCollapsed && state.active === 'compobj.txt') {
+          filters.push({ field: 'Level', type: '=', value: '1' });
+        }
+        state.table.clearFilter(true);
+        if (filters.length) {
+          state.table.setFilter(filters);
+        } else {
+          state.table.setFilter([]);
+        }
+        if (state.filters.text) {
+          const search = state.filters.text.toLowerCase();
+          state.table.addFilter(row =>
+            Object.values(row).some(value => String(value ?? '').toLowerCase().includes(search))
+          );
+        }
+        buttons.collapse.textContent = state.filters.treeCollapsed ? 'Expand Tree' : 'Collapse Tree';
+      }
+
+      function toggleSaveMenu(force) {
+        if (!saveSplit) return;
+        const show = typeof force === 'boolean' ? force : !saveSplit.classList.contains('open');
+        saveSplit.classList.toggle('open', show);
+        saveMenuButton?.setAttribute('aria-expanded', show ? 'true' : 'false');
       }
 
       async function mutate(url, body = {}, options = {}) {
@@ -871,14 +1861,19 @@
           if (data.files) {
             applyWorkspace(data);
           }
+          if (typeof options.onSuccess === 'function') {
+            options.onSuccess(data);
+          }
           if (options.message) {
             logMessage('success', options.message);
           }
           if (state.autoSave && !url.endsWith('/save')) {
             scheduleAutoSave();
           }
+          return data;
         } catch (error) {
           logMessage('error', error.message);
+          throw error;
         } finally {
           setWorking(false);
         }
@@ -889,6 +1884,7 @@
           clearTimeout(state.pendingSave);
           state.pendingSave = null;
         }
+        toggleSaveMenu(false);
         setWorking(true);
         try {
           const res = await fetch('/api/save', { method: 'POST' });
@@ -898,7 +1894,7 @@
           }
           applyWorkspace(data);
           const savedCount = data.save?.saved?.length ?? 0;
-          logMessage('success', `${isAuto ? 'Auto-saved' : 'Saved'} ${savedCount} files.`);
+          logMessage('success', `${isAuto ? 'Auto-saved' : 'Saved'} ${savedCount} file(s).`);
         } catch (error) {
           logMessage('error', error.message);
         } finally {
@@ -914,12 +1910,13 @@
           if (!res.ok) {
             throw new Error(data.error || 'Validation failed');
           }
-          if (data.issues?.length) {
-            logMessage(
-              data.ok ? 'warning' : 'error',
-              `${data.issues.length} validation issues detected.`
-            );
-            data.issues.forEach(issue => {
+          const issues = Array.isArray(data.issues) ? data.issues : [];
+          state.metrics.brokenLinks = issues.filter(issue => issue.severity === 'error').length;
+          state.metrics.missingParents = issues.filter(issue => (issue.message || '').toLowerCase().includes('parent')).length;
+          updateWorkspaceSummary();
+          if (issues.length) {
+            logMessage(data.ok ? 'warning' : 'error', `${issues.length} validation issue(s) detected.`);
+            issues.forEach(issue => {
               logMessage(
                 issue.severity === 'error' ? 'error' : issue.severity === 'warning' ? 'warning' : 'info',
                 `${issue.file} line ${issue.line || '?'}: ${issue.message}`
@@ -958,7 +1955,222 @@
         }
       }
 
-      buttons.add.addEventListener('click', () => {
+      async function exportActiveSheet() {
+        if (!state.active) {
+          logMessage('warning', 'Select a sheet to export.');
+          return;
+        }
+        toggleSaveMenu(false);
+        setWorking(true);
+        try {
+          const res = await fetch(`/api/export/${state.active}`);
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || 'Export failed');
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = state.active;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          logMessage('success', `Exported ${state.active}.`);
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
+        }
+      }
+
+      async function handleImport(event) {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) {
+          return;
+        }
+        setWorking(true);
+        try {
+          const payloads = await Promise.all(
+            files.map(async file => {
+              const content = await file.text();
+              const detection = detectFileType(file.name, content);
+              return {
+                name: file.name,
+                content,
+                detectedName: detection.name || undefined,
+                detection,
+              };
+            })
+          );
+          const body = {
+            files: payloads.map(item => ({
+              name: item.name,
+              detectedName: item.detectedName,
+              content: item.content,
+            })),
+          };
+          const res = await fetch('/api/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || 'Import failed');
+          }
+          applyWorkspace(data);
+          showImportSummary(data.import, payloads);
+          const count = data.import?.files?.length ?? payloads.length;
+          logMessage('success', `Imported ${count} file(s).`);
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
+          importInput.value = '';
+        }
+      }
+
+      function showImportSummary(summary, payloads) {
+        if (!importModal || !importSummaryList) {
+          return;
+        }
+        importSummaryList.innerHTML = '';
+        const detectionMap = new Map(payloads.map(item => [item.name, item]));
+        if (summary?.files?.length) {
+          summary.files.forEach(file => {
+            const li = document.createElement('li');
+            const detection = detectionMap.get(file.originalName) || detectionMap.get(file.name) || {};
+            const statusIcon = document.createElement('span');
+            statusIcon.className = 'status';
+            const hasIssues = Array.isArray(file.issues) && file.issues.length > 0;
+            statusIcon.textContent = hasIssues ? '⚠️' : '✅';
+            if (hasIssues) {
+              li.classList.add('warning');
+            }
+            const details = document.createElement('div');
+            const headline = document.createElement('strong');
+            headline.textContent = `${file.name} · ${file.lines} lines`;
+            details.append(headline);
+            const metaParts = [];
+            if (file.originalName && file.originalName !== file.name) {
+              metaParts.push(`from ${file.originalName}`);
+            }
+            if (detection.detection?.reason) {
+              metaParts.push(`detected via ${detection.detection.reason}`);
+            }
+            if (metaParts.length) {
+              const meta = document.createElement('div');
+              meta.style.fontSize = '0.74rem';
+              meta.style.color = 'var(--text-subtle)';
+              meta.textContent = metaParts.join(' • ');
+              details.append(meta);
+            }
+            if (hasIssues) {
+              file.issues.slice(0, 3).forEach(issue => {
+                const issueLine = document.createElement('div');
+                issueLine.style.fontSize = '0.76rem';
+                issueLine.style.marginTop = '0.3rem';
+                issueLine.textContent = `⚠️ Line ${issue.line ?? '?'}: ${issue.message}`;
+                details.append(issueLine);
+              });
+            }
+            li.append(statusIcon, details);
+            importSummaryList.append(li);
+          });
+        } else {
+          const empty = document.createElement('li');
+          empty.textContent = 'No files were imported.';
+          importSummaryList.append(empty);
+        }
+        importModal.classList.remove('hidden');
+      }
+
+      function hideImportModal() {
+        if (importModal) {
+          importModal.classList.add('hidden');
+        }
+      }
+
+      async function applyTemplate() {
+        const key = templateSelect?.value;
+        if (!key) {
+          return;
+        }
+        const template = TEMPLATE_LIBRARY[key];
+        if (!template) {
+          return;
+        }
+        if (state.active !== template.file) {
+          logMessage('warning', `Switch to ${template.file} to use this template.`);
+          return;
+        }
+        for (const row of template.rows) {
+          await mutate(`/api/insert/${state.active}`, { row });
+        }
+        logMessage('success', `Inserted ${template.rows.length} template row(s).`);
+        templateSelect.value = '';
+        buttons.applyTemplate.disabled = true;
+      }
+
+      function updateToolbarState() {
+        const hasSelection = Boolean(state.table?.getSelectedData().length);
+        if (buttons.delete) buttons.delete.disabled = !hasSelection;
+        const file = state.files.get(state.active);
+        const showTemplate = file && (file.name === 'tasks.txt' || file.name === 'objectives.txt');
+        if (templateLoader) {
+          templateLoader.hidden = !showTemplate;
+        }
+        if (buttons.applyTemplate) {
+          buttons.applyTemplate.disabled = templateLoader?.hidden || !templateSelect?.value;
+        }
+        if (buttons.collapse) {
+          buttons.collapse.disabled = !file || file.name !== 'compobj.txt';
+        }
+      }
+
+      function activateFile(name) {
+        if (!state.files.has(name)) {
+          logMessage('warning', `${name} is not loaded yet.`);
+          return;
+        }
+        state.active = name;
+        renderTable(state.files.get(name));
+        updateActiveDetails();
+        updateToolbarState();
+      }
+
+      async function fetchWorkspace() {
+        setWorking(true);
+        try {
+          const res = await fetch('/api/state');
+          const data = await res.json();
+          if (!res.ok || data.ok === false) {
+            throw new Error(data.error || 'Unable to load workspace');
+          }
+          applyWorkspace(data);
+          logMessage('success', 'Workspace ready.');
+        } catch (error) {
+          logMessage('error', error.message);
+        } finally {
+          setWorking(false);
+        }
+      }
+
+      async function setPreference(key, value) {
+        state.preferences = { ...state.preferences, [key]: value };
+        applyPreferences(key);
+        try {
+          await fetch('/api/theme', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [key]: value }),
+          });
+        } catch (error) {
+          logMessage('error', `Failed to save preference: ${error.message}`);
+        }
+      }
+
+      buttons.add?.addEventListener('click', () => {
         if (!state.active) return;
         let index = null;
         const selection = state.table?.getSelectedRows?.() || [];
@@ -968,7 +2180,7 @@
         mutate(`/api/insert/${state.active}`, { index }, { message: 'Inserted new row.' });
       });
 
-      buttons.delete.addEventListener('click', () => {
+      buttons.delete?.addEventListener('click', () => {
         if (!state.active || !state.table) return;
         const selected = state.table.getSelectedData();
         const rowIds = selected.map(row => row.__id);
@@ -979,43 +2191,178 @@
         mutate(`/api/delete/${state.active}`, { rowIds }, { message: `Deleted ${rowIds.length} row(s).` });
       });
 
-      buttons.recalc.addEventListener('click', () => {
+      buttons.recalc?.addEventListener('click', () => {
         mutate('/api/recalculate', {}, { message: 'Recalculated line numbers and references.' });
       });
 
-      buttons.validate.addEventListener('click', () => runValidation());
+      buttons.validate?.addEventListener('click', () => runValidation());
 
-      buttons.autoFix.addEventListener('click', () => {
+      buttons.autoFix?.addEventListener('click', () => {
         mutate('/api/recalculate', {}, { message: 'Auto-fixed reference map.' });
       });
 
-      buttons.save.addEventListener('click', () => performSave(false));
+      buttons.sync?.addEventListener('click', () => {
+        mutate('/api/sync', {}, {
+          onSuccess: data => {
+            const updated = data.sync?.references?.updated ?? 0;
+            logMessage('success', updated ? `Synced ${updated} reference(s).` : 'References already in sync.');
+          },
+        });
+      });
 
-      buttons.export.addEventListener('click', () => exportZip());
+      buttons.save?.addEventListener('click', () => performSave(false));
 
-      buttons.clearConsole.addEventListener('click', clearConsole);
+      buttons.saveMenu?.addEventListener('click', () => toggleSaveMenu());
 
-      autosaveToggle.addEventListener('change', event => {
+      buttons.saveSheet?.addEventListener('click', () => exportActiveSheet());
+
+      buttons.resetColumns?.addEventListener('click', () => {
+        toggleSaveMenu(false);
+        if (state.active) {
+          renderTable(state.files.get(state.active));
+        }
+      });
+
+      buttons.import?.addEventListener('click', () => importInput?.click());
+
+      buttons.export?.addEventListener('click', () => exportZip());
+
+      buttons.collapse?.addEventListener('click', () => {
+        if (!state.active || state.active !== 'compobj.txt') {
+          return;
+        }
+        state.filters.treeCollapsed = !state.filters.treeCollapsed;
+        applyFilters();
+      });
+
+      buttons.clearFilters?.addEventListener('click', () => {
+        resetFilters();
+        state.filters.treeCollapsed = false;
+        applyFilters();
+      });
+
+      buttons.applyTemplate?.addEventListener('click', () => applyTemplate());
+
+      buttons.clearConsole?.addEventListener('click', clearConsole);
+
+      saveMenu && document.addEventListener('click', event => {
+        if (saveSplit && !saveSplit.contains(event.target)) {
+          toggleSaveMenu(false);
+        }
+      });
+
+      if (importInput) {
+        importInput.addEventListener('change', handleImport);
+      }
+
+      if (importModal) {
+        importModal.addEventListener('click', event => {
+          if (event.target === importModal) {
+            hideImportModal();
+          }
+        });
+      }
+
+      btnCloseImport?.addEventListener('click', hideImportModal);
+      btnDismissImport?.addEventListener('click', hideImportModal);
+
+      toggles.lines?.addEventListener('change', event => setPreference('showLineNumbers', event.target.checked));
+      toggles.colors?.addEventListener('change', event => setPreference('showColors', event.target.checked));
+      toggles.compact?.addEventListener('change', event => setPreference('compactMode', event.target.checked));
+
+      if (filterControls.code) {
+        filterControls.code.addEventListener('change', event => {
+          state.filters.code = event.target.value;
+          applyFilters();
+        });
+      }
+
+      if (filterControls.parent) {
+        filterControls.parent.addEventListener('change', event => {
+          state.filters.parent = event.target.value;
+          applyFilters();
+        });
+      }
+
+      if (filterControls.text) {
+        filterControls.text.addEventListener('input', event => {
+          const value = event.target.value;
+          if (textFilterTimer) {
+            clearTimeout(textFilterTimer);
+          }
+          textFilterTimer = setTimeout(() => {
+            state.filters.text = value.trim();
+            applyFilters();
+          }, 180);
+        });
+      }
+
+      autosaveToggle?.addEventListener('change', event => {
         state.autoSave = event.target.checked;
         logMessage('info', state.autoSave ? 'Auto-save enabled.' : 'Auto-save disabled.');
-        if (state.autoSave) {
-          scheduleAutoSave();
-        } else if (state.pendingSave) {
+        if (!state.autoSave && state.pendingSave) {
           clearTimeout(state.pendingSave);
           state.pendingSave = null;
+        }
+      });
+
+      templateSelect?.addEventListener('change', () => {
+        if (buttons.applyTemplate) {
+          buttons.applyTemplate.disabled = !templateSelect.value;
         }
       });
 
       navButtons.forEach(button => {
         button.addEventListener('click', () => {
           const target = button.dataset.target;
-          if (state.files.has(target)) {
+          if (target) {
             activateFile(target);
           }
         });
       });
 
+      document.addEventListener('keydown', event => {
+        if (event.ctrlKey && event.key.toLowerCase() === 's') {
+          event.preventDefault();
+          performSave(false);
+        }
+        if (event.ctrlKey && event.key.toLowerCase() === 'z') {
+          event.preventDefault();
+          if (typeof state.table?.historyUndo === 'function') {
+            state.table.historyUndo();
+          } else if (typeof state.table?.undo === 'function') {
+            state.table.undo();
+          }
+        }
+        if (event.ctrlKey && event.key.toLowerCase() === 'y') {
+          event.preventDefault();
+          if (typeof state.table?.historyRedo === 'function') {
+            state.table.historyRedo();
+          } else if (typeof state.table?.redo === 'function') {
+            state.table.redo();
+          }
+        }
+        if (event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+          if (state.active === 'compobj.txt') {
+            const rows = state.table?.getSelectedRows() || [];
+            if (rows.length) {
+              event.preventDefault();
+              const targetRow = rows[rows.length - 1];
+              if (event.key === 'ArrowUp' && typeof targetRow.move === 'function') {
+                targetRow.move('up');
+              } else if (event.key === 'ArrowDown' && typeof targetRow.move === 'function') {
+                targetRow.move('down');
+              }
+            }
+          }
+        }
+        if (event.key === 'Escape' && importModal && !importModal.classList.contains('hidden')) {
+          hideImportModal();
+        }
+      });
+
       fetchWorkspace();
+
     </script>
   </body>
 </html>
