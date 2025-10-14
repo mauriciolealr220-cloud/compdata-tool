@@ -59,11 +59,29 @@ app.get(
 );
 
 app.get(
+  '/api/files',
+  wrapAsync(async (req, res) => {
+    await workspaceReady;
+    res.json({ ok: true, files: workspace.listFiles(), status: workspace.getStatus() });
+  })
+);
+
+app.get(
   '/api/file/:name',
   wrapAsync(async (req, res) => {
     await workspaceReady;
     const name = canonicalName(req.params.name);
     res.json({ ok: true, file: workspace.getFileState(name), status: workspace.getStatus() });
+  })
+);
+
+app.post(
+  '/api/import',
+  wrapAsync(async (req, res) => {
+    await workspaceReady;
+    const { files } = req.body || {};
+    const summary = await workspace.importFiles(Array.isArray(files) ? files : []);
+    res.json({ ok: true, import: summary, ...workspace.describe() });
   })
 );
 
@@ -123,6 +141,15 @@ app.post(
 );
 
 app.post(
+  '/api/sync',
+  wrapAsync(async (req, res) => {
+    await workspaceReady;
+    const sync = workspace.syncReferences();
+    res.json({ ok: true, sync, ...workspace.describe() });
+  })
+);
+
+app.post(
   '/api/save',
   wrapAsync(async (req, res) => {
     await workspaceReady;
@@ -151,6 +178,27 @@ app.get(
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', 'attachment; filename="compdata-workspace.zip"');
     res.send(buffer);
+  })
+);
+
+app.get(
+  '/api/export/:name',
+  wrapAsync(async (req, res) => {
+    await workspaceReady;
+    const name = canonicalName(req.params.name);
+    const content = workspace.serializeFile(name);
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+    res.send(content ? `${content}\n` : '');
+  })
+);
+
+app.post(
+  '/api/theme',
+  wrapAsync(async (req, res) => {
+    await workspaceReady;
+    const preferences = await workspace.savePreferences(req.body || {});
+    res.json({ ok: true, preferences });
   })
 );
 

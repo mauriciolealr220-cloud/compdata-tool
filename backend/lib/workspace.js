@@ -6,6 +6,13 @@ const path = require('path');
 const crypto = require('crypto');
 const { splitCsvLine, joinCsvLine } = require('./csv');
 
+const DEFAULT_PREFERENCES = {
+  theme: 'night-sky',
+  compactMode: false,
+  showLineNumbers: true,
+  showColors: true,
+};
+
 const FILE_SCHEMAS = {
   'compobj.txt': {
     label: 'Competition Structure',
@@ -221,10 +228,15 @@ class Workspace {
     this.lastSaved = null;
     this.lastReferenceStats = { updated: 0, lineMap: {} };
     this.modifiedAt = null;
+    this.uploadsDir = path.join(this.dataDir, 'uploads');
+    this.preferencesPath = path.join(this.dataDir, 'preferences.json');
+    this.preferences = { ...DEFAULT_PREFERENCES };
+    this.lastImportSummary = null;
   }
 
   async loadAll() {
     await fsp.mkdir(this.dataDir, { recursive: true });
+    await fsp.mkdir(this.uploadsDir, { recursive: true });
     for (const name of FILE_ORDER) {
       const schema = FILE_SCHEMAS[name];
       const filePath = path.join(this.dataDir, name);
@@ -236,10 +248,47 @@ class Workspace {
           throw err;
         }
       }
-      const rows = this.#parseRows(schema, normaliseLineEndings(content));
+      const { rows } = this.#parseRows(schema, normaliseLineEndings(content));
       this.files.set(name, { schema, rows });
     }
+    await this.#loadPreferences();
     this.recalculate(false);
+  }
+
+  async importFiles(filePayloads = []) {
+    if (!Array.isArray(filePayloads) || filePayloads.length === 0) {
+      throw new Error('No files provided for import.');
+    }
+    await fsp.mkdir(this.uploadsDir, { recursive: true });
+    const summary = [];
+    for (const payload of filePayloads) {
+      if (!payload || typeof payload.content !== 'string') {
+        continue;
+      }
+      const resolvedName = this.#resolveFileName(payload.detectedName || payload.name, payload.content);
+      const schema = FILE_SCHEMAS[resolvedName];
+      const normalised = normaliseLineEndings(payload.content);
+      const { rows, issues } = this.#parseRows(schema, normalised);
+      this.files.set(resolvedName, { schema, rows });
+      const originalName = payload.name || payload.originalName || resolvedName;
+      summary.push({
+        name: resolvedName,
+        originalName,
+        lines: rows.length,
+        issues,
+      });
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const uploadName = `${timestamp}_${path.basename(originalName).replace(/[^a-z0-9_.-]+/gi, '-')}`;
+      const uploadPath = path.join(this.uploadsDir, uploadName);
+      await fsp.writeFile(uploadPath, normalised ? `${normalised}\n` : '', 'utf8');
+    }
+    this.lastImportSummary = {
+      completedAt: new Date().toISOString(),
+      files: summary,
+    };
+    this.recalculate(false);
+    this.#markDirty();
+    return this.lastImportSummary;
   }
 
   describe() {
@@ -247,6 +296,8 @@ class Workspace {
       files: FILE_ORDER.map(name => this.getFileState(name)),
       status: this.getStatus(),
       references: this.lastReferenceStats,
+      preferences: this.preferences,
+      importSummary: this.lastImportSummary,
     };
   }
 
@@ -257,6 +308,7 @@ class Workspace {
       modifiedAt: this.modifiedAt,
       totalLines: this.getTotalLines(),
       referenceUpdates: this.lastReferenceStats.updated,
+      filesLoaded: this.files.size,
     };
   }
 
@@ -418,6 +470,11 @@ class Workspace {
     return this.lastReferenceStats;
   }
 
+  syncReferences() {
+    const references = this.recalculate();
+    return { references, status: this.getStatus() };
+  }
+
   serializeAll() {
     const result = {};
     for (const name of FILE_ORDER) {
@@ -428,6 +485,26 @@ class Workspace {
         .join('\n');
     }
     return result;
+  }
+
+  serializeFile(name) {
+    const entry = this.#ensureFile(name);
+    return entry.rows
+      .map(row => entry.schema.columns.map(column => row[column.key] ?? ''))
+      .map(cells => joinCsvLine(cells))
+      .join('\n');
+  }
+
+  listFiles() {
+    return FILE_ORDER.map(name => {
+      const entry = this.#ensureFile(name);
+      return {
+        name,
+        label: entry.schema.label,
+        description: entry.schema.description,
+        lines: entry.rows.length,
+      };
+    });
   }
 
   async saveAll() {
@@ -458,6 +535,17 @@ class Workspace {
     return this.describe();
   }
 
+  getPreferences() {
+    return this.preferences;
+  }
+
+  async savePreferences(preferences = {}) {
+    this.preferences = { ...DEFAULT_PREFERENCES, ...this.preferences, ...preferences };
+    await fsp.mkdir(path.dirname(this.preferencesPath), { recursive: true });
+    await fsp.writeFile(this.preferencesPath, JSON.stringify(this.preferences, null, 2), 'utf8');
+    return this.preferences;
+  }
+
   #ensureFile(name) {
     const entry = this.files.get(name);
     if (!entry) {
@@ -474,7 +562,8 @@ class Workspace {
   #parseRows(schema, content) {
     const lines = normaliseLineEndings(content).split('\n');
     const rows = [];
-    lines.forEach(line => {
+    const issues = [];
+    lines.forEach((line, index) => {
       if (!line && lines.length === 1) {
         return;
       }
@@ -482,13 +571,26 @@ class Workspace {
         return;
       }
       const cells = splitCsvLine(line);
+      if (cells.length < schema.columns.length) {
+        issues.push({
+          severity: 'warning',
+          line: index + 1,
+          message: `Missing columns ${cells.length + 1}–${schema.columns.length}`,
+        });
+      } else if (cells.length > schema.columns.length) {
+        issues.push({
+          severity: 'warning',
+          line: index + 1,
+          message: `Extra columns beyond ${schema.columns.length}`,
+        });
+      }
       const row = { __id: generateRowId() };
-      schema.columns.forEach((column, index) => {
-        row[column.key] = cells[index] ?? '';
+      schema.columns.forEach((column, colIndex) => {
+        row[column.key] = cells[colIndex] ?? '';
       });
       rows.push(row);
     });
-    return rows;
+    return { rows, issues };
   }
 
   #createDefaultRow(schema) {
@@ -515,6 +617,88 @@ class Workspace {
       row[column.key] = sanitiseValue(incoming, column);
     });
     return row;
+  }
+
+  async #loadPreferences() {
+    try {
+      const raw = await fsp.readFile(this.preferencesPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      this.preferences = { ...DEFAULT_PREFERENCES, ...parsed };
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        this.preferences = { ...DEFAULT_PREFERENCES };
+        return;
+      }
+      throw error;
+    }
+  }
+
+  #resolveFileName(rawName, content) {
+    if (rawName) {
+      const lookup = String(rawName).trim().toLowerCase();
+      const direct = FILE_ORDER.find(file => file.toLowerCase() === lookup);
+      if (direct) {
+        return direct;
+      }
+      const base = path.basename(String(rawName)).toLowerCase();
+      const baseMatch = FILE_ORDER.find(file => file.toLowerCase() === base);
+      if (baseMatch) {
+        return baseMatch;
+      }
+    }
+    const detected = this.#detectFromContent(content);
+    if (!detected) {
+      throw new Error(`Unable to detect file type for ${rawName || 'uploaded file'}.`);
+    }
+    return detected;
+  }
+
+  #detectFromContent(content) {
+    if (!content) {
+      return null;
+    }
+    const lines = normaliseLineEndings(content)
+      .split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .slice(0, 8);
+    if (!lines.length) {
+      return null;
+    }
+    let bestMatch = null;
+    let bestScore = -Infinity;
+    for (const name of FILE_ORDER) {
+      const schema = FILE_SCHEMAS[name];
+      let score = 0;
+      lines.forEach(line => {
+        const cells = splitCsvLine(line);
+        if (cells.length === schema.columns.length) {
+          score += 5;
+        } else {
+          score -= Math.abs(schema.columns.length - cells.length) * 3;
+        }
+        schema.columns.forEach((column, index) => {
+          const cell = (cells[index] || '').trim();
+          if (!cell) {
+            score += 0.25;
+            return;
+          }
+          if (column.type === 'number') {
+            score += /^-?\d+$/.test(cell) ? 1.5 : -1.5;
+          } else {
+            score += /[A-Za-z]/.test(cell) ? 1 : 0.4;
+          }
+        });
+      });
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = name;
+      }
+    }
+    if (bestScore < 0) {
+      return null;
+    }
+    return bestMatch;
   }
 }
 
