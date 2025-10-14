@@ -159,6 +159,7 @@
       <button id="tab-settings" onclick="setActiveSheet('settings')">⚙️ Settings</button>
       <button id="tab-tasks" onclick="setActiveSheet('tasks')">🧠 Tasks</button>
       <button id="tab-weather" onclick="setActiveSheet('weather')">🌦️ Weather</button>
+      <button id="tab-objectives" onclick="setActiveSheet('objectives')">🎯 Objectives</button>
     </div>
     <div id="controls">
       <div class="control-set active" data-sheet-controls="compobj">
@@ -252,6 +253,19 @@
         <button onclick="deleteRow('weather')">− Delete Selected</button>
         <button onclick="exportTxt('weather')">💾 Export .txt</button>
       </div>
+      <div class="control-set" data-sheet-controls="objectives">
+        <button onclick="triggerFileDialog('objectives','import')">📂 Import .txt</button>
+        <input type="file" id="fileInput-objectives-import" accept=".txt,.csv" onchange="importFile(event,false,'objectives')">
+        <button onclick="triggerFileDialog('objectives','append')">➕ Append .txt</button>
+        <input type="file" id="fileInput-objectives-append" accept=".txt,.csv" onchange="importFile(event,true,'objectives')">
+        <button onclick="addRow('objectives')">+ Add Row (End)</button>
+        <span>| Insert:</span>
+        <input type="number" id="insertCount-objectives" min="1" value="1">
+        <button onclick="insertRows('objectives','above')">↑ Insert Above</button>
+        <button onclick="insertRows('objectives','below')">↓ Insert Below</button>
+        <button onclick="deleteRow('objectives')">− Delete Selected</button>
+        <button onclick="exportTxt('objectives')">💾 Export .txt</button>
+      </div>
     </div>
 
   <div id="lineCount"></div>
@@ -269,8 +283,9 @@ let standings = [];
 let settings = [];
 let tasks = [];
 let weather = [];
+let objectives = [];
 let activeSheet = 'compobj';
-const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null, tasks: null, weather: null };
+const selections = { compobj: null, schedule: null, advancement: null, standings: null, settings: null, tasks: null, weather: null, objectives: null };
 let tempIdCounter = 0;
 const DYNAMIC_TASK_TYPES = new Set(['updatetable', 'fillfromcomptable']);
 const TASK_HIGHLIGHT_DURATION = 5000;
@@ -398,6 +413,7 @@ function renumberCompobjIds() {
 
   updateWeatherIds(idMap);
   updateTaskIds(idMap);
+  updateObjectivesIds(idMap);
 }
 
 function updateWeatherIds(idMap) {
@@ -451,6 +467,17 @@ function updateTaskIds(idMap) {
     }
 
     return changed ? nextRow : row;
+  });
+}
+
+function updateObjectivesIds(idMap) {
+  if (!idMap || !(idMap instanceof Map) || objectives.length === 0) return;
+  objectives = objectives.map((row) => {
+    const current = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (current === '') return row;
+    const mapped = idMap.get(current);
+    if (mapped === undefined || mapped === current) return row;
+    return { ...row, stageGroupId: mapped };
   });
 }
 
@@ -545,7 +572,31 @@ function syncReferencesForManualIdChange(oldValue, newValue) {
     return { ...row, nationId: next };
   });
 
+  objectives = objectives.map((row) => {
+    const stageGroup = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    if (stageGroup !== previous) return row;
+    return { ...row, stageGroupId: next };
+  });
+
   syncTasksForManualIdChange(previous, next);
+}
+
+function renderObjectivesTable() {
+  return `
+      <tr>
+        <th style="width:40px;">#</th>
+        <th style="width:130px;">Stage/Group ID</th>
+        <th>Objective Type</th>
+        <th style="width:90px;">Value</th>
+      </tr>
+      ${objectives.map((row, index) => `
+        <tr class="${selections.objectives===index?'selected':''}" onclick="selectRow(${index})">
+          <td class="num">${index + 1}</td>
+          <td class="num"><input value="${safe(row.stageGroupId)}" oninput="updateField(${index},'stageGroupId',this.value)"></td>
+          <td><input value="${safe(row.objectiveType)}" oninput="updateField(${index},'objectiveType',this.value)"></td>
+          <td class="num"><input value="${safe(row.value)}" oninput="updateField(${index},'value',this.value)"></td>
+        </tr>
+      `).join("")}`;
 }
 
 function render() {
@@ -558,6 +609,7 @@ function render() {
   document.getElementById('tab-settings').classList.toggle('active', activeSheet === 'settings');
   document.getElementById('tab-tasks').classList.toggle('active', activeSheet === 'tasks');
   document.getElementById('tab-weather').classList.toggle('active', activeSheet === 'weather');
+  document.getElementById('tab-objectives').classList.toggle('active', activeSheet === 'objectives');
   updateControlVisibility();
 
   let countLabel = '';
@@ -569,6 +621,8 @@ function render() {
     countLabel = `Advancement: ${advancement.length} links parsed`;
   } else if (activeSheet === 'standings') {
     countLabel = `Standings: ${standings.length} slots parsed`;
+  } else if (activeSheet === 'objectives') {
+    countLabel = `Objectives: ${objectives.length} goals parsed`;
   } else if (activeSheet === 'weather') {
     countLabel = `Weather: ${weather.length} rows parsed`;
   } else if (activeSheet === 'tasks') {
@@ -707,9 +761,11 @@ function render() {
           <td class="num"><input value="${safe(r.snow)}" oninput="updateField(${i},'snow',this.value)"></td>
           <td class="num"><input value="${safe(r.wind)}" oninput="updateField(${i},'wind',this.value)"></td>
           <td class="num"><input value="${safe(r.start)}" oninput="updateField(${i},'start',this.value)"></td>
-          <td class="num"><input value="${safe(r.end)}" oninput="updateField(${i},'end',this.value)"></td>
-        </tr>
+        <td class="num"><input value="${safe(r.end)}" oninput="updateField(${i},'end',this.value)"></td>
+      </tr>
       `).join("")}`;
+  } else if (activeSheet === 'objectives') {
+    table.innerHTML = renderObjectivesTable();
   } else {
     table.innerHTML = `
       <tr>
@@ -745,6 +801,7 @@ function getDataArray(sheet) {
   if (sheet === 'schedule') return schedule;
   if (sheet === 'advancement') return advancement;
   if (sheet === 'standings') return standings;
+  if (sheet === 'objectives') return objectives;
   if (sheet === 'tasks') return tasks;
   if (sheet === 'weather') return weather;
   return settings;
@@ -777,6 +834,9 @@ function defaultRowForSheet(sheet) {
   if (sheet === 'standings') {
     return { groupId: '', slotNumber: '' };
   }
+  if (sheet === 'objectives') {
+    return { stageGroupId: '', objectiveType: '', value: '' };
+  }
   if (sheet === 'tasks') {
     return { trophyId: '', phase: '', taskType: '', targetId: '', refId: '', arg1: '', arg2: '' };
   }
@@ -796,6 +856,8 @@ function addRow(sheet = activeSheet) {
     advancement.push(defaultRowForSheet(sheet));
   } else if (sheet === 'standings') {
     standings.push(defaultRowForSheet(sheet));
+  } else if (sheet === 'objectives') {
+    objectives.push(defaultRowForSheet(sheet));
   } else if (sheet === 'tasks') {
     clearTaskHighlights();
     tasks.push(defaultRowForSheet(sheet));
@@ -833,6 +895,9 @@ function insertRows(sheet, position) {
   } else if (sheet === 'standings') {
     const index = position === 'above' ? selected : selected + 1;
     standings.splice(index, 0, ...newRows);
+  } else if (sheet === 'objectives') {
+    const index = position === 'above' ? selected : selected + 1;
+    objectives.splice(index, 0, ...newRows);
   } else if (sheet === 'tasks') {
     clearTaskHighlights();
     const index = position === 'above' ? selected : selected + 1;
@@ -870,6 +935,9 @@ function deleteRow(sheet = activeSheet) {
   } else if (sheet === 'weather') {
     weather.splice(selected, 1);
     selections.weather = null;
+  } else if (sheet === 'objectives') {
+    objectives.splice(selected, 1);
+    selections.objectives = null;
   } else {
     settings.splice(selected, 1);
     selections.settings = null;
@@ -893,6 +961,9 @@ function exportTxt(sheet = activeSheet) {
   } else if (sheet === 'standings') {
     lines = activeData.map(r => `${r.groupId},${r.slotNumber}`).join('\n');
     filename = 'standings.txt';
+  } else if (sheet === 'objectives') {
+    lines = activeData.map(r => `${r.stageGroupId},${r.objectiveType},${r.value}`).join('\n');
+    filename = 'objectives.txt';
   } else if (sheet === 'weather') {
     lines = activeData.map(r => `${r.nationId},${r.entry},${r.temp},${r.cloud},${r.rain},${r.snow},${r.wind},${r.start},${r.end}`).join('\n');
     filename = 'weather.txt';
@@ -966,6 +1037,17 @@ function importFile(e, append = false, sheetOverride = null) {
         };
       });
       standings = append ? [...standings, ...parsed] : parsed;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+    } else if (sheetTarget === 'objectives') {
+      const parsed = lines.map(l => {
+        const p = l.split(/\t|,/);
+        return {
+          stageGroupId: p[0] || '',
+          objectiveType: p[1] || '',
+          value: p[2] || ''
+        };
+      });
+      objectives = append ? [...objectives, ...parsed] : parsed;
       if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
     } else if (sheetTarget === 'weather') {
       const parsed = lines.map(l => {
@@ -1137,6 +1219,20 @@ weather = [
   { nationId: '1777', entry: '10', temp: '55', cloud: '25', rain: '10', snow: '0', wind: '10', start: '2230', end: '2330' },
   { nationId: '1777', entry: '11', temp: '65', cloud: '15', rain: '10', snow: '0', wind: '10', start: '2300', end: '15' },
   { nationId: '1777', entry: '12', temp: '80', cloud: '5', rain: '10', snow: '0', wind: '5', start: '2330', end: '45' }
+];
+
+objectives = [
+  { stageGroupId: '1624', objectiveType: 'FIGHT_FOR_TITLE', value: '3' },
+  { stageGroupId: '1624', objectiveType: 'HIGH_FINISH', value: '5' },
+  { stageGroupId: '1624', objectiveType: 'MID_TABLE', value: '11' },
+  { stageGroupId: '1624', objectiveType: 'AVOID_LOWLY_FINISH', value: '14' },
+  { stageGroupId: '1628', objectiveType: 'AVOID_LOWLY_FINISH', value: '11' },
+  { stageGroupId: '1630', objectiveType: 'REACH_PLAYOFFS', value: '0' },
+  { stageGroupId: '1631', objectiveType: 'REACH_PLAYOFFS', value: '0' },
+  { stageGroupId: '1633', objectiveType: 'REACH_SEMI_FINALS', value: '0' },
+  { stageGroupId: '1634', objectiveType: 'REACH_SEMI_FINALS', value: '0' },
+  { stageGroupId: '1636', objectiveType: 'CHAMPION', value: '1' },
+  { stageGroupId: '1636', objectiveType: 'REACH_FINALS', value: '0' }
 ];
 
 renumberCompobjIds();
