@@ -84,6 +84,190 @@
 
   input[type="file"] { display: none; }
 
+  .validation-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .validation-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .validation-toolbar__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #444;
+  }
+
+  .validation-summary {
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: #1b5e20;
+  }
+
+  .validation-summary.has-errors {
+    color: #b00020;
+  }
+
+  .validation-summary.has-warnings:not(.has-errors) {
+    color: #7a6000;
+  }
+
+  .validation-status {
+    font-size: 12px;
+    color: #1f3a93;
+    min-height: 16px;
+    white-space: pre-line;
+  }
+
+  .validation-status.is-error { color: #b00020; }
+  .validation-status.is-warning { color: #7a6000; }
+  .validation-status.is-success { color: #1b5e20; }
+
+  #validation-panel {
+    position: fixed;
+    inset: 0;
+    background: rgba(24, 32, 54, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 40;
+  }
+
+  #validation-panel.is-visible {
+    display: flex;
+  }
+
+  .validation-panel__content {
+    background: #fff;
+    width: min(640px, 90vw);
+    max-height: 80vh;
+    border-radius: 8px;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .validation-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #e4e7ec;
+    background: #f5f7fb;
+  }
+
+  .validation-panel__header h2 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .validation-panel__body {
+    padding: 16px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.4;
+    color: #222;
+  }
+
+  .validation-panel__body section + section {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #eef1f7;
+  }
+
+  .validation-panel__body h3 {
+    margin: 0 0 6px;
+    font-size: 13px;
+  }
+
+  .sheet-summary {
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #4a5c79;
+  }
+
+  .issue-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 4px;
+  }
+
+  .issue {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: #f4f6fb;
+  }
+
+  .issue--error {
+    border-color: rgba(176, 0, 32, 0.35);
+    background: rgba(176, 0, 32, 0.08);
+    color: #730012;
+  }
+
+  .issue--warning {
+    border-color: rgba(122, 96, 0, 0.35);
+    background: rgba(255, 197, 61, 0.18);
+    color: #5d4500;
+  }
+
+  .issue--ok {
+    border-color: rgba(27, 94, 32, 0.35);
+    background: rgba(200, 255, 214, 0.4);
+    color: #1b5e20;
+  }
+
+  .validation-placeholder {
+    margin: 0;
+    color: #5f6c85;
+  }
+
+  .all-clear {
+    margin: 0;
+    color: #1b5e20;
+    font-weight: 500;
+  }
+
+  .validation-panel__close {
+    border: none;
+    background: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #44516b;
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  .validation-panel__close:hover {
+    background: rgba(0,0,0,0.05);
+  }
+
+  .error-row td {
+    background-color: rgba(255, 0, 0, 0.15) !important;
+  }
+
+  .warning-row td {
+    background-color: rgba(255, 213, 0, 0.25) !important;
+  }
+
+  .success-row td {
+    background-color: rgba(46, 204, 113, 0.15) !important;
+  }
+
   #lineCount {
     font-size: 12px;
     color: #666;
@@ -151,6 +335,17 @@
 <body>
 
   <div id="container">
+    <div class="validation-toolbar" id="validation-toolbar">
+      <div class="validation-toolbar__actions">
+        <button id="validateButton" type="button">✅ Validate Database</button>
+        <label class="validation-toolbar__toggle">
+          <input type="checkbox" id="autoValidateToggle">
+          Auto-validate on edit
+        </label>
+      </div>
+      <div id="validation-status" class="validation-status"></div>
+    </div>
+    <div id="validation-summary" class="validation-summary"></div>
     <div id="sheet-tabs">
       <button id="tab-compobj" class="active" onclick="setActiveSheet('compobj')">🧩 CompObj</button>
       <button id="tab-schedule" onclick="setActiveSheet('schedule')">📅 Schedule</button>
@@ -272,6 +467,18 @@
 
   <div id="table-wrapper">
     <table id="sheet"></table>
+  </div>
+</div>
+
+<div id="validation-panel">
+  <div class="validation-panel__content">
+    <div class="validation-panel__header">
+      <h2>Database Validation</h2>
+      <button id="closeValidationPanel" class="validation-panel__close" type="button" aria-label="Close validation panel">✕</button>
+    </div>
+    <div class="validation-panel__body">
+      <div id="validationResults"></div>
+    </div>
   </div>
 </div>
 
@@ -1142,6 +1349,1010 @@ function importFile(e, append = false, sheetOverride = null) {
   r.readAsText(f);
 }
 
+const COLUMN_CONFIG = {
+  compobj: { columns: 5, displayName: 'compobj.txt', fieldNames: ['id', 'depth', 'code', 'name', 'parentDisplay'] },
+  schedule: { columns: 6, displayName: 'schedule.txt', fieldNames: ['stageGroupId', 'dayId', 'matchday', 'minMatches', 'maxMatches', 'time'] },
+  advancement: { columns: 4, displayName: 'advancement.txt', fieldNames: ['sourceGroupId', 'placement', 'targetGroupId', 'teamCount'] },
+  standings: { columns: 2, displayName: 'standings.txt', fieldNames: ['groupId', 'slotNumber'] },
+  settings: { columns: 3, displayName: 'settings.txt', fieldNames: ['stageGroupId', 'key', 'value'] },
+  tasks: { columns: 7, displayName: 'tasks.txt', fieldNames: ['trophyId', 'phase', 'taskType', 'targetId', 'refId', 'arg1', 'arg2'] },
+  weather: { columns: 9, displayName: 'weather.txt', fieldNames: ['nationId', 'entry', 'temp', 'cloud', 'rain', 'snow', 'wind', 'start', 'end'] },
+  objectives: { columns: 3, displayName: 'objectives.txt', fieldNames: ['stageGroupId', 'objectiveType', 'value'] }
+};
+
+const SHEET_ORDER = ['compobj', 'schedule', 'advancement', 'standings', 'settings', 'tasks', 'weather', 'objectives'];
+
+const REFERENCE_FIELDS = {
+  schedule: [{ field: 'stageGroupId', label: 'Stage/Group ID' }],
+  advancement: [
+    { field: 'sourceGroupId', label: 'Source Group ID' },
+    { field: 'targetGroupId', label: 'Target Group ID' }
+  ],
+  standings: [{ field: 'groupId', label: 'Group ID' }],
+  settings: [{ field: 'stageGroupId', label: 'Stage/Group ID' }],
+  tasks: [
+    { field: 'trophyId', label: 'Trophy ID' },
+    { field: 'targetId', label: 'Target ID' }
+  ],
+  weather: [{ field: 'nationId', label: 'Nation ID' }],
+  objectives: [{ field: 'stageGroupId', label: 'Stage/Group ID' }]
+};
+
+const SEVERITY_RANK = { ok: 0, warning: 1, error: 2 };
+const SEVERITY_CLASS = { ok: 'success-row', warning: 'warning-row', error: 'error-row' };
+const AUTO_VALIDATE_DELAY = 600;
+
+const validateButton = document.getElementById('validateButton');
+const validationSummaryEl = document.getElementById('validation-summary');
+const validationStatusEl = document.getElementById('validation-status');
+const validationPanelEl = document.getElementById('validation-panel');
+const validationResultsEl = document.getElementById('validationResults');
+const autoValidateToggle = document.getElementById('autoValidateToggle');
+const closeValidationPanelBtn = document.getElementById('closeValidationPanel');
+
+let validationState = null;
+let autoValidateEnabled = false;
+let autoValidateTimer = null;
+
+const sheetMetadata = {};
+SHEET_ORDER.forEach((sheet) => {
+  sheetMetadata[sheet] = { detectedBom: false, lastLineEnding: 'ui' };
+});
+
+function ensureSheetMetadata(sheet) {
+  if (!sheetMetadata[sheet]) {
+    sheetMetadata[sheet] = { detectedBom: false, lastLineEnding: 'ui' };
+  }
+  return sheetMetadata[sheet];
+}
+
+function attachRowMeta(row, sheet, overrides = {}) {
+  if (!row || typeof row !== 'object') return;
+  const spec = COLUMN_CONFIG[sheet] || {};
+  const current = row.__meta || {};
+  const next = {
+    sheet,
+    fieldCount: overrides.fieldCount ?? current.fieldCount ?? spec.columns ?? 0,
+    separatorType: overrides.separatorType ?? current.separatorType ?? 'ui',
+    blankLine: overrides.blankLine ?? current.blankLine ?? false,
+    rawLine: overrides.rawLine ?? current.rawLine ?? '',
+    lineEnding: overrides.lineEnding ?? current.lineEnding ?? null
+  };
+  Object.defineProperty(row, '__meta', {
+    value: next,
+    enumerable: false,
+    configurable: true,
+    writable: true
+  });
+}
+
+function markRowEdited(sheet, row) {
+  if (!row) return;
+  attachRowMeta(row, sheet, {
+    fieldCount: COLUMN_CONFIG[sheet]?.columns ?? getRowFields(sheet, row).length,
+    separatorType: 'ui',
+    blankLine: isRowBlank(sheet, row),
+    rawLine: ''
+  });
+}
+
+function markSheetDirty(sheet) {
+  const meta = ensureSheetMetadata(sheet);
+  meta.lastLineEnding = 'ui';
+  meta.detectedBom = false;
+}
+
+function getRowFields(sheet, row) {
+  const spec = COLUMN_CONFIG[sheet];
+  if (!spec) return [];
+  const target = row || {};
+  return spec.fieldNames.map((fieldName) => {
+    const value = target[fieldName];
+    return value == null ? '' : value;
+  });
+}
+
+function isRowBlank(sheet, row) {
+  return getRowFields(sheet, row).every((value) => String(value ?? '').trim() === '');
+}
+
+function padFields(rawFields, expected) {
+  const result = rawFields.slice(0, expected);
+  while (result.length < expected) {
+    result.push('');
+  }
+  return result;
+}
+
+function splitLine(rawLine, expectedColumns) {
+  const line = rawLine ?? '';
+  const hasTab = line.includes('\t');
+  const hasComma = line.includes(',');
+  if (hasTab && hasComma) {
+    return { fields: line.split(/[\t,]/), separatorType: 'mixed' };
+  }
+  if (hasTab) {
+    return { fields: line.split('\t'), separatorType: 'tab' };
+  }
+  if (hasComma) {
+    return { fields: line.split(','), separatorType: 'comma' };
+  }
+  const trimmed = line.trim();
+  if (trimmed === '') {
+    return { fields: [''], separatorType: 'none' };
+  }
+  const spaceFields = trimmed.split(/\s+/);
+  if (spaceFields.length > 1) {
+    return { fields: spaceFields, separatorType: 'space' };
+  }
+  return { fields: [line], separatorType: 'none' };
+}
+
+function convertFieldsToRow(sheet, rawFields) {
+  const spec = COLUMN_CONFIG[sheet];
+  if (!spec) return {};
+  if (sheet === 'settings') {
+    const stageGroupId = rawFields[0] ?? '';
+    const key = rawFields[1] ?? '';
+    const value = rawFields.length > 2 ? rawFields.slice(2).join(',') : (rawFields[2] ?? '');
+    return { stageGroupId, key, value };
+  }
+  const padded = padFields(rawFields, spec.columns);
+  const row = {};
+  spec.fieldNames.forEach((fieldName, index) => {
+    row[fieldName] = padded[index] ?? '';
+  });
+  return row;
+}
+
+function parseFileContent(content, sheet) {
+  const text = typeof content === 'string' ? content : '';
+  const usesCRLF = /\r\n/.test(text);
+  const usesCR = /\r(?!\n)/.test(text);
+  const lines = text.split(/\r\n|\n|\r/);
+  const rows = [];
+  let detectedBom = false;
+
+  lines.forEach((originalLine, index) => {
+    let line = originalLine;
+    if (index === 0 && line.charCodeAt(0) === 0xFEFF) {
+      detectedBom = true;
+      line = line.slice(1);
+    }
+    const { fields, separatorType } = splitLine(line, COLUMN_CONFIG[sheet]?.columns ?? 0);
+    const row = convertFieldsToRow(sheet, fields);
+    attachRowMeta(row, sheet, {
+      fieldCount: fields.length,
+      separatorType,
+      blankLine: line.trim() === '',
+      rawLine: line
+    });
+    rows.push(row);
+  });
+
+  const lineEnding = usesCRLF ? 'crlf' : (usesCR ? 'cr' : 'lf');
+
+  return { rows, detectedBom, lineEnding };
+}
+
+function severityIcon(severity) {
+  if (severity === 'error') return '❌';
+  if (severity === 'warning') return '⚠️';
+  return '✅';
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function recordIssue(sheetResult, severity, message, rowIndex = null) {
+  sheetResult.issues.push({ severity, message });
+  if (severity === 'error') {
+    sheetResult.errorCount += 1;
+  } else if (severity === 'warning') {
+    sheetResult.warningCount += 1;
+  }
+  if (typeof rowIndex === 'number') {
+    const current = sheetResult.rowStatus.get(rowIndex);
+    if (!current || SEVERITY_RANK[severity] > SEVERITY_RANK[current]) {
+      sheetResult.rowStatus.set(rowIndex, severity);
+    }
+  }
+}
+
+function createSheetResult(sheet, rowCount) {
+  return {
+    sheet,
+    totalRows: rowCount,
+    issues: [],
+    rowStatus: new Map(),
+    errorCount: 0,
+    warningCount: 0,
+    okCount: 0
+  };
+}
+
+function finalizeSheetResult(sheetResult) {
+  let okCount = 0;
+  for (let index = 0; index < sheetResult.totalRows; index += 1) {
+    const status = sheetResult.rowStatus.get(index);
+    if (!status) {
+      sheetResult.rowStatus.set(index, 'ok');
+      okCount += 1;
+    } else if (status === 'ok') {
+      okCount += 1;
+    }
+  }
+  sheetResult.okCount = okCount;
+}
+
+function validateFormatForSheet(sheet, rows, sheetResult) {
+  const spec = COLUMN_CONFIG[sheet] || { columns: 0 };
+  rows.forEach((row, index) => {
+    const lineNumber = index + 1;
+    const meta = row && row.__meta ? row.__meta : {};
+    const expectedColumns = spec.columns || 0;
+    const actualColumns = typeof meta.fieldCount === 'number' ? meta.fieldCount : expectedColumns;
+
+    if (expectedColumns > 0 && actualColumns !== expectedColumns) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: expected ${expectedColumns} columns (found ${actualColumns})`, index);
+    }
+
+    if (expectedColumns > 1 && meta.separatorType === 'mixed') {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: inconsistent separators detected. Use commas consistently.`, index);
+    }
+
+    if (expectedColumns > 1 && meta.separatorType === 'none' && actualColumns < expectedColumns) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: missing commas or invalid separator`, index);
+    }
+
+    if (meta.separatorType === 'space') {
+      recordIssue(sheetResult, 'warning', `Line ${lineNumber}: spaces detected as separators; replace with commas or tabs.`, index);
+    }
+
+    if (meta.blankLine || isRowBlank(sheet, row)) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: blank line detected`, index);
+    }
+
+    const fields = getRowFields(sheet, row);
+    if (fields.some((value) => typeof value === 'string' && value.includes('\uFEFF'))) {
+      recordIssue(sheetResult, 'warning', `Line ${lineNumber}: contains hidden BOM character.`, index);
+    }
+  });
+
+  const metaInfo = sheetMetadata[sheet];
+  if (metaInfo?.detectedBom) {
+    recordIssue(sheetResult, 'warning', 'Imported file included a UTF-8 BOM. Export will remove it automatically.', null);
+  }
+  if (metaInfo && metaInfo.lastLineEnding && metaInfo.lastLineEnding !== 'crlf' && metaInfo.lastLineEnding !== 'ui') {
+    recordIssue(sheetResult, 'warning', `Detected ${metaInfo.lastLineEnding.toUpperCase()} line endings. Export will normalize to CRLF.`, null);
+  }
+}
+
+function validateCompobjReferences(rows, sheetResult) {
+  const indexMap = new Map();
+  let previousId = null;
+
+  rows.forEach((row, index) => {
+    const lineNumber = index + 1;
+    const idRaw = (row?.id ?? '').toString().trim();
+    const idValue = idRaw === '' ? NaN : Number.parseInt(idRaw, 10);
+
+    if (!Number.isInteger(idValue)) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: invalid ID "${idRaw}".`, index);
+    } else {
+      if (indexMap.has(idValue)) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: duplicate ID ${idValue}.`, index);
+      }
+      if (previousId !== null && idValue !== previousId + 1) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: expected sequential ID ${previousId + 1} but found ${idValue}.`, index);
+      }
+    }
+
+    const parentRaw = (row?.parentDisplay ?? '').toString().trim();
+    if (parentRaw !== '') {
+      const parentValue = Number.parseInt(parentRaw, 10);
+      if (!Number.isInteger(parentValue)) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID "${parentRaw}" is not numeric.`, index);
+      } else if (!indexMap.has(parentValue)) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID ${parentValue} must reference a previous line.`, index);
+      } else if (Number.isInteger(idValue) && parentValue === idValue) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID cannot reference itself.`, index);
+      }
+    }
+
+    if (Number.isInteger(idValue)) {
+      indexMap.set(idValue, { index, depth: Number.parseInt(row?.depth ?? '', 10) || null });
+      previousId = idValue;
+    }
+  });
+
+  return indexMap;
+}
+
+function validateGenericReferences(sheet, rows, sheetResult, compobjIndex) {
+  const fields = REFERENCE_FIELDS[sheet];
+  if (!fields || fields.length === 0) return;
+
+  rows.forEach((row, index) => {
+    const lineNumber = index + 1;
+    fields.forEach(({ field, label }) => {
+      const rawValue = (row?.[field] ?? '').toString().trim();
+      if (rawValue === '') return;
+      const parsed = Number.parseInt(rawValue, 10);
+      if (!Number.isInteger(parsed)) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${label} "${rawValue}" is not numeric.`, index);
+      } else if (!compobjIndex.has(parsed)) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${label} ${parsed} does not exist in compobj.`, index);
+      }
+    });
+  });
+}
+
+function collectTopIssues(results, limit = 3) {
+  if (!results) return [];
+  const issues = [];
+  for (const sheet of SHEET_ORDER) {
+    const sheetResult = results.perSheet?.[sheet];
+    if (!sheetResult) continue;
+    for (const issue of sheetResult.issues) {
+      if (issue.severity === 'error') {
+        issues.push(`${COLUMN_CONFIG[sheet].displayName} → ${issue.message}`);
+        if (issues.length >= limit) return issues;
+      }
+    }
+  }
+  return issues;
+}
+
+function validateAllSheets() {
+  const results = { perSheet: {}, totalErrors: 0, totalWarnings: 0, totalOk: 0 };
+
+  const compobjResult = createSheetResult('compobj', compobj.length);
+  validateFormatForSheet('compobj', compobj, compobjResult);
+  const compobjIndex = validateCompobjReferences(compobj, compobjResult);
+  finalizeSheetResult(compobjResult);
+  results.perSheet.compobj = compobjResult;
+  results.totalErrors += compobjResult.errorCount;
+  results.totalWarnings += compobjResult.warningCount;
+  results.totalOk += compobjResult.okCount;
+
+  SHEET_ORDER.slice(1).forEach((sheet) => {
+    const rows = getDataArray(sheet);
+    const sheetResult = createSheetResult(sheet, rows.length);
+    validateFormatForSheet(sheet, rows, sheetResult);
+    validateGenericReferences(sheet, rows, sheetResult, compobjIndex);
+    finalizeSheetResult(sheetResult);
+    results.perSheet[sheet] = sheetResult;
+    results.totalErrors += sheetResult.errorCount;
+    results.totalWarnings += sheetResult.warningCount;
+    results.totalOk += sheetResult.okCount;
+  });
+
+  return results;
+}
+
+function renderValidationResults(results) {
+  if (!validationResultsEl) return;
+  if (!results) {
+    validationResultsEl.innerHTML = '<p class="validation-placeholder">Validation results are out of date. Run validation to refresh.</p>';
+    return;
+  }
+
+  const sections = SHEET_ORDER.map((sheet) => {
+    const spec = COLUMN_CONFIG[sheet];
+    const sheetResult = results.perSheet[sheet];
+    if (!sheetResult) return '';
+    const summary = `✅ ${sheetResult.okCount}/${sheetResult.totalRows} OK | ⚠️ ${sheetResult.warningCount} warnings | ❌ ${sheetResult.errorCount} errors`;
+    const issues = sheetResult.issues.length
+      ? `<ul class="issue-list">${sheetResult.issues.map((issue) => `<li class="issue issue--${issue.severity}">${severityIcon(issue.severity)} ${escapeHtml(issue.message)}</li>`).join('')}</ul>`
+      : '<p class="all-clear">All lines valid.</p>';
+    return `<section><h3>${spec.displayName}</h3><div class="sheet-summary">${summary}</div>${issues}</section>`;
+  }).join('');
+
+  validationResultsEl.innerHTML = sections;
+}
+
+function updateValidationSummary(results) {
+  if (!validationSummaryEl) return;
+  if (!results) {
+    validationSummaryEl.textContent = 'Validation results pending. Click “Validate Database” to check all files.';
+    validationSummaryEl.classList.remove('has-errors', 'has-warnings');
+    return;
+  }
+  const summaryText = `✅ ${results.totalOk} lines OK | ⚠️ ${results.totalWarnings} warnings | ❌ ${results.totalErrors} critical errors`;
+  validationSummaryEl.textContent = summaryText;
+  validationSummaryEl.classList.toggle('has-errors', results.totalErrors > 0);
+  validationSummaryEl.classList.toggle('has-warnings', results.totalWarnings > 0);
+}
+
+function setValidationStatus(message, type = 'info') {
+  if (!validationStatusEl) return;
+  validationStatusEl.textContent = message || '';
+  validationStatusEl.classList.remove('is-error', 'is-warning', 'is-success');
+  if (type === 'error') {
+    validationStatusEl.classList.add('is-error');
+  } else if (type === 'warning') {
+    validationStatusEl.classList.add('is-warning');
+  } else if (type === 'success') {
+    validationStatusEl.classList.add('is-success');
+  }
+}
+
+function openValidationPanel() {
+  if (!validationPanelEl) return;
+  validationPanelEl.classList.add('is-visible');
+}
+
+function closeValidationPanel() {
+  if (!validationPanelEl) return;
+  validationPanelEl.classList.remove('is-visible');
+}
+
+function clearValidationHighlights() {
+  const table = document.getElementById('sheet');
+  if (!table) return;
+  table.querySelectorAll('.error-row, .warning-row, .success-row').forEach((row) => {
+    row.classList.remove('error-row', 'warning-row', 'success-row');
+  });
+}
+
+function applyValidationHighlights() {
+  const table = document.getElementById('sheet');
+  if (!table) return;
+  clearValidationHighlights();
+  if (!validationState) return;
+  const sheetResult = validationState.perSheet?.[activeSheet];
+  if (!sheetResult) return;
+  const rows = Array.from(table.querySelectorAll('tr'));
+  for (let index = 1; index < rows.length; index += 1) {
+    const status = sheetResult.rowStatus.get(index - 1);
+    if (!status) continue;
+    const className = SEVERITY_CLASS[status];
+    if (className) {
+      rows[index].classList.add(className);
+    }
+  }
+}
+
+function invalidateValidation() {
+  if (!validationState) return;
+  validationState = null;
+  updateValidationSummary(null);
+  renderValidationResults(null);
+  clearValidationHighlights();
+  setValidationStatus('Database modified. Validation results cleared.', 'warning');
+}
+
+function scheduleAutoValidation() {
+  clearTimeout(autoValidateTimer);
+  autoValidateTimer = setTimeout(() => {
+    const results = runValidation({ showPanel: false });
+    if (results.totalErrors > 0) {
+      setValidationStatus(`❌ Auto-validation found ${results.totalErrors} critical errors.`, 'error');
+    } else if (results.totalWarnings > 0) {
+      setValidationStatus(`⚠️ Auto-validation completed with ${results.totalWarnings} warnings.`, 'warning');
+    } else {
+      setValidationStatus('✅ Auto-validation complete. All files look good.', 'success');
+    }
+  }, AUTO_VALIDATE_DELAY);
+}
+
+function registerDataMutation(sheets) {
+  const targets = Array.isArray(sheets) ? sheets : [sheets];
+  targets.filter(Boolean).forEach((sheet) => {
+    markSheetDirty(sheet);
+  });
+  invalidateValidation();
+  if (autoValidateEnabled) {
+    scheduleAutoValidation();
+  }
+}
+
+function serializeRow(sheet, row) {
+  const fields = getRowFields(sheet, row);
+  return fields.map((value) => (value == null ? '' : value)).join(',');
+}
+
+function runValidation(options = {}) {
+  clearTimeout(autoValidateTimer);
+  autoValidateTimer = null;
+  const results = validateAllSheets();
+  validationState = results;
+  updateValidationSummary(results);
+  renderValidationResults(results);
+  applyValidationHighlights();
+  if (options.showPanel) {
+    openValidationPanel();
+  }
+  return results;
+}
+
+function updateScheduleIdsFromMap(idMap) {
+  let changed = false;
+  schedule.forEach((row) => {
+    const current = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    const mapped = idMap.get(current);
+    if (mapped !== undefined && mapped !== current) {
+      row.stageGroupId = mapped;
+      markRowEdited('schedule', row);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function updateAdvancementIdsFromMap(idMap) {
+  let changed = false;
+  advancement.forEach((row) => {
+    const source = row.sourceGroupId == null ? '' : String(row.sourceGroupId);
+    const target = row.targetGroupId == null ? '' : String(row.targetGroupId);
+    const mappedSource = idMap.get(source);
+    const mappedTarget = idMap.get(target);
+    let rowChanged = false;
+    if (mappedSource !== undefined && mappedSource !== source) {
+      row.sourceGroupId = mappedSource;
+      rowChanged = true;
+    }
+    if (mappedTarget !== undefined && mappedTarget !== target) {
+      row.targetGroupId = mappedTarget;
+      rowChanged = true;
+    }
+    if (rowChanged) {
+      markRowEdited('advancement', row);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function updateStandingsIdsFromMap(idMap) {
+  let changed = false;
+  standings.forEach((row) => {
+    const group = row.groupId == null ? '' : String(row.groupId);
+    const mapped = idMap.get(group);
+    if (mapped !== undefined && mapped !== group) {
+      row.groupId = mapped;
+      markRowEdited('standings', row);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+function updateSettingsIdsFromMap(idMap) {
+  let changed = false;
+  settings.forEach((row) => {
+    const stage = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    const mapped = idMap.get(stage);
+    if (mapped !== undefined && mapped !== stage) {
+      row.stageGroupId = mapped;
+      markRowEdited('settings', row);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
+updateWeatherIds = function updateWeatherIds(idMap) {
+  if (!idMap || !(idMap instanceof Map)) return false;
+  let changed = false;
+  weather.forEach((row) => {
+    const nation = row.nationId == null ? '' : String(row.nationId);
+    const mapped = idMap.get(nation);
+    if (mapped !== undefined && mapped !== nation) {
+      row.nationId = mapped;
+      markRowEdited('weather', row);
+      changed = true;
+    }
+  });
+  return changed;
+};
+
+updateTaskIds = function updateTaskIds(idMap) {
+  if (!idMap || !(idMap instanceof Map)) return false;
+  let changed = false;
+  tasks.forEach((row, index) => {
+    let rowChanged = false;
+    const trophy = row.trophyId == null ? '' : String(row.trophyId);
+    const mappedTrophy = idMap.get(trophy);
+    if (mappedTrophy !== undefined && mappedTrophy !== trophy) {
+      row.trophyId = mappedTrophy;
+      markTaskHighlight(index, 'trophyId');
+      rowChanged = true;
+    }
+    const target = row.targetId == null ? '' : String(row.targetId);
+    const mappedTarget = idMap.get(target);
+    if (mappedTarget !== undefined && mappedTarget !== target) {
+      row.targetId = mappedTarget;
+      markTaskHighlight(index, 'targetId');
+      rowChanged = true;
+    }
+    const reference = row.refId == null ? '' : String(row.refId);
+    if (reference !== '' && shouldUpdateTaskRefId(row.taskType)) {
+      const mappedReference = idMap.get(reference);
+      if (mappedReference !== undefined && mappedReference !== reference) {
+        row.refId = mappedReference;
+        markTaskHighlight(index, 'refId');
+        rowChanged = true;
+      }
+    }
+    if (rowChanged) {
+      markRowEdited('tasks', row);
+      changed = true;
+    }
+  });
+  return changed;
+};
+
+updateObjectivesIds = function updateObjectivesIds(idMap) {
+  if (!idMap || !(idMap instanceof Map)) return false;
+  let changed = false;
+  objectives.forEach((row) => {
+    const group = row.stageGroupId == null ? '' : String(row.stageGroupId);
+    const mapped = idMap.get(group);
+    if (mapped !== undefined && mapped !== group) {
+      row.stageGroupId = mapped;
+      markRowEdited('objectives', row);
+      changed = true;
+    }
+  });
+  return changed;
+};
+
+syncTasksForManualIdChange = function syncTasksForManualIdChange(previous, next) {
+  const prevValue = previous == null ? '' : String(previous);
+  const nextValue = next == null ? '' : String(next);
+  if (prevValue === nextValue) return false;
+  let changed = false;
+  tasks.forEach((row, index) => {
+    let rowChanged = false;
+    if ((row.trophyId == null ? '' : String(row.trophyId)) === prevValue) {
+      row.trophyId = nextValue;
+      markTaskHighlight(index, 'trophyId');
+      rowChanged = true;
+    }
+    if ((row.targetId == null ? '' : String(row.targetId)) === prevValue) {
+      row.targetId = nextValue;
+      markTaskHighlight(index, 'targetId');
+      rowChanged = true;
+    }
+    const reference = row.refId == null ? '' : String(row.refId);
+    if (reference === prevValue && shouldUpdateTaskRefId(row.taskType)) {
+      row.refId = nextValue;
+      markTaskHighlight(index, 'refId');
+      rowChanged = true;
+    }
+    if (rowChanged) {
+      markRowEdited('tasks', row);
+      changed = true;
+    }
+  });
+  return changed;
+};
+
+syncReferencesForManualIdChange = function syncReferencesForManualIdChange(oldValue, newValue) {
+  const previous = oldValue == null ? '' : String(oldValue);
+  const next = newValue == null ? '' : String(newValue);
+  if (previous === next) return;
+
+  compobj.forEach((row) => {
+    const parent = row.parentDisplay == null ? '' : String(row.parentDisplay);
+    if (parent === previous) {
+      row.parentDisplay = next;
+      markRowEdited('compobj', row);
+    }
+  });
+
+  schedule.forEach((row) => {
+    if ((row.stageGroupId == null ? '' : String(row.stageGroupId)) === previous) {
+      row.stageGroupId = next;
+      markRowEdited('schedule', row);
+    }
+  });
+
+  advancement.forEach((row) => {
+    let rowChanged = false;
+    if ((row.sourceGroupId == null ? '' : String(row.sourceGroupId)) === previous) {
+      row.sourceGroupId = next;
+      rowChanged = true;
+    }
+    if ((row.targetGroupId == null ? '' : String(row.targetGroupId)) === previous) {
+      row.targetGroupId = next;
+      rowChanged = true;
+    }
+    if (rowChanged) {
+      markRowEdited('advancement', row);
+    }
+  });
+
+  standings.forEach((row) => {
+    if ((row.groupId == null ? '' : String(row.groupId)) === previous) {
+      row.groupId = next;
+      markRowEdited('standings', row);
+    }
+  });
+
+  settings.forEach((row) => {
+    if ((row.stageGroupId == null ? '' : String(row.stageGroupId)) === previous) {
+      row.stageGroupId = next;
+      markRowEdited('settings', row);
+    }
+  });
+
+  weather.forEach((row) => {
+    if ((row.nationId == null ? '' : String(row.nationId)) === previous) {
+      row.nationId = next;
+      markRowEdited('weather', row);
+    }
+  });
+
+  objectives.forEach((row) => {
+    if ((row.stageGroupId == null ? '' : String(row.stageGroupId)) === previous) {
+      row.stageGroupId = next;
+      markRowEdited('objectives', row);
+    }
+  });
+
+  if (syncTasksForManualIdChange(previous, next)) {
+    markSheetDirty('tasks');
+  }
+
+  ['compobj', 'schedule', 'advancement', 'standings', 'settings', 'weather', 'objectives'].forEach((sheet) => markSheetDirty(sheet));
+};
+
+renumberCompobjIds = function renumberCompobjIds() {
+  const touched = new Set();
+  const idMap = new Map();
+
+  compobj.forEach((row, index) => {
+    const oldId = row.id == null ? '' : String(row.id);
+    const newId = String(index);
+    if (oldId !== '') {
+      idMap.set(oldId, newId);
+    }
+    if (row.id !== newId) {
+      row.id = newId;
+      markRowEdited('compobj', row);
+      touched.add('compobj');
+    }
+  });
+
+  compobj.forEach((row) => {
+    const parent = row.parentDisplay == null ? '' : String(row.parentDisplay);
+    if (!parent) return;
+    const mapped = idMap.get(parent);
+    if (mapped !== undefined && mapped !== parent) {
+      row.parentDisplay = mapped;
+      markRowEdited('compobj', row);
+      touched.add('compobj');
+    }
+  });
+
+  if (updateScheduleIdsFromMap(idMap)) touched.add('schedule');
+  if (updateAdvancementIdsFromMap(idMap)) touched.add('advancement');
+  if (updateStandingsIdsFromMap(idMap)) touched.add('standings');
+  if (updateSettingsIdsFromMap(idMap)) touched.add('settings');
+  if (updateWeatherIds(idMap)) touched.add('weather');
+  if (updateTaskIds(idMap)) touched.add('tasks');
+  if (updateObjectivesIds(idMap)) touched.add('objectives');
+
+  return Array.from(touched);
+};
+
+createDefaultCompobjRow = (function wrapCreateDefaultCompobjRow(original) {
+  return function wrappedCreateDefaultCompobjRow(config = {}) {
+    const row = original(config);
+    attachRowMeta(row, 'compobj');
+    return row;
+  };
+})(createDefaultCompobjRow);
+
+defaultRowForSheet = (function wrapDefaultRowForSheet(original) {
+  return function wrappedDefaultRowForSheet(sheet) {
+    const row = original(sheet);
+    attachRowMeta(row, sheet);
+    return row;
+  };
+})(defaultRowForSheet);
+
+updateField = function updateField(i, field, value) {
+  const target = getDataArray(activeSheet);
+  const row = target?.[i];
+  if (!row) return;
+  const previousValue = row[field];
+  if (previousValue === value) return;
+  row[field] = value;
+  markRowEdited(activeSheet, row);
+  if (activeSheet === 'compobj' && field === 'id') {
+    syncReferencesForManualIdChange(previousValue, value);
+  }
+  registerDataMutation(activeSheet);
+};
+
+addRow = function addRow(sheet = activeSheet) {
+  if (sheet === 'compobj') {
+    const newRow = createDefaultCompobjRow();
+    compobj.push(newRow);
+    const touched = renumberCompobjIds();
+    registerDataMutation(['compobj', ...touched]);
+  } else {
+    const target = getDataArray(sheet);
+    if (sheet === 'tasks') {
+      clearTaskHighlights();
+    }
+    target.push(defaultRowForSheet(sheet));
+    registerDataMutation(sheet);
+  }
+  render();
+};
+
+insertRows = function insertRows(sheet, position) {
+  const selected = getSelectedIndex(sheet);
+  if (selected === null) return alert('Select a row first.');
+  const insertInput = document.getElementById(`insertCount-${sheet}`);
+  const count = parseInt(insertInput.value, 10) || 1;
+  const newRows = Array.from({ length: count }, () => defaultRowForSheet(sheet));
+  const target = getDataArray(sheet);
+  const index = position === 'above' ? selected : selected + 1;
+
+  if (sheet === 'compobj') {
+    compobj.splice(index, 0, ...newRows);
+    const touched = renumberCompobjIds();
+    registerDataMutation(['compobj', ...touched]);
+  } else {
+    if (sheet === 'tasks') {
+      clearTaskHighlights();
+    }
+    target.splice(index, 0, ...newRows);
+    registerDataMutation(sheet);
+  }
+  render();
+};
+
+deleteRow = function deleteRow(sheet = activeSheet) {
+  const selected = getSelectedIndex(sheet);
+  if (selected === null) return alert('Select a row first.');
+  const target = getDataArray(sheet);
+  if (!target[selected]) return;
+
+  if (sheet === 'tasks') {
+    clearTaskHighlights();
+  }
+
+  target.splice(selected, 1);
+  selections[sheet] = null;
+
+  if (sheet === 'compobj') {
+    const touched = renumberCompobjIds();
+    registerDataMutation(['compobj', ...touched]);
+  } else {
+    registerDataMutation(sheet);
+  }
+
+  render();
+};
+
+importFile = function importFile(event, append = false, sheetOverride = null) {
+  const file = event.target?.files?.[0];
+  const sheetTarget = sheetOverride || event.target?.dataset?.sheet || activeSheet;
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function onLoad(ev) {
+    const content = ev.target?.result ?? '';
+    const { rows, detectedBom, lineEnding } = parseFileContent(content, sheetTarget);
+    const meta = ensureSheetMetadata(sheetTarget);
+    meta.detectedBom = detectedBom;
+    meta.lastLineEnding = lineEnding;
+
+    if (sheetTarget === 'compobj') {
+      compobj = append ? [...compobj, ...rows] : rows;
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+      const touched = renumberCompobjIds();
+      registerDataMutation(['compobj', ...touched]);
+    } else {
+      if (sheetTarget === 'schedule') {
+        schedule = append ? [...schedule, ...rows] : rows;
+      } else if (sheetTarget === 'advancement') {
+        advancement = append ? [...advancement, ...rows] : rows;
+      } else if (sheetTarget === 'standings') {
+        standings = append ? [...standings, ...rows] : rows;
+      } else if (sheetTarget === 'settings') {
+        settings = append ? [...settings, ...rows] : rows;
+      } else if (sheetTarget === 'tasks') {
+        clearTaskHighlights();
+        tasks = append ? [...tasks, ...rows] : rows;
+      } else if (sheetTarget === 'weather') {
+        weather = append ? [...weather, ...rows] : rows;
+      } else if (sheetTarget === 'objectives') {
+        objectives = append ? [...objectives, ...rows] : rows;
+      }
+      if (activeSheet !== sheetTarget) setActiveSheet(sheetTarget);
+      registerDataMutation(sheetTarget);
+    }
+
+    render();
+  };
+
+  reader.readAsText(file);
+};
+
+exportTxt = function exportTxt(sheet = activeSheet) {
+  const results = runValidation({ showPanel: false });
+  if (results.totalErrors > 0) {
+    const topIssues = collectTopIssues(results, 3);
+    const detail = topIssues.length ? `\n${topIssues.map((issue) => `- ${issue}`).join('\n')}` : '';
+    setValidationStatus(`❌ Export aborted — ${results.totalErrors} critical errors detected.${detail}`, 'error');
+    openValidationPanel();
+    return;
+  }
+
+  const activeData = getDataArray(sheet);
+  const payload = activeData.map((row) => serializeRow(sheet, row)).join('\r\n');
+  const blob = new Blob([payload], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${sheet}.txt`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 0);
+  setValidationStatus('✅ Export successful! All files validated.', 'success');
+};
+
+const originalRender = render;
+render = function wrappedRender() {
+  originalRender();
+  applyValidationHighlights();
+};
+
+if (validateButton) {
+  validateButton.addEventListener('click', () => {
+    const results = runValidation({ showPanel: true });
+    if (results.totalErrors > 0) {
+      setValidationStatus(`❌ Validation found ${results.totalErrors} critical errors.`, 'error');
+    } else if (results.totalWarnings > 0) {
+      setValidationStatus(`⚠️ Validation completed with ${results.totalWarnings} warnings.`, 'warning');
+    } else {
+      setValidationStatus('✅ Validation passed. All files look good.', 'success');
+    }
+  });
+}
+
+if (autoValidateToggle) {
+  autoValidateToggle.addEventListener('change', (event) => {
+    autoValidateEnabled = event.target.checked;
+    if (autoValidateEnabled) {
+      setValidationStatus('Auto-validation enabled. Edits will trigger background validation.', 'info');
+      if (validationState) {
+        scheduleAutoValidation();
+      }
+    } else {
+      clearTimeout(autoValidateTimer);
+      autoValidateTimer = null;
+      setValidationStatus('Auto-validation disabled.', 'info');
+    }
+  });
+}
+
+if (closeValidationPanelBtn) {
+  closeValidationPanelBtn.addEventListener('click', closeValidationPanel);
+}
+
+if (validationPanelEl) {
+  validationPanelEl.addEventListener('click', (event) => {
+    if (event.target === validationPanelEl) {
+      closeValidationPanel();
+    }
+  });
+}
+
+updateValidationSummary(null);
+renderValidationResults(null);
+setValidationStatus('', 'info');
+
 function updateControlVisibility() {
   document.querySelectorAll('#controls .control-set').forEach((el) => {
     el.classList.toggle('active', el.dataset.sheetControls === activeSheet);
@@ -1277,6 +2488,12 @@ objectives = [
   { stageGroupId: '1636', objectiveType: 'CHAMPION', value: '1' },
   { stageGroupId: '1636', objectiveType: 'REACH_FINALS', value: '0' }
 ];
+
+SHEET_ORDER.forEach((sheet) => {
+  const rows = getDataArray(sheet);
+  rows.forEach((row) => attachRowMeta(row, sheet));
+  markSheetDirty(sheet);
+});
 
 renumberCompobjIds();
 render();
