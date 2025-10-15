@@ -93,6 +93,16 @@
     flex-wrap: wrap;
   }
 
+  .btn.btn-info {
+    background: #e3f2fd;
+    border-color: #64b5f6;
+    color: #0d47a1;
+  }
+
+  .btn.btn-info:hover {
+    background: #d0e6fb;
+  }
+
   .validation-toolbar__actions {
     display: flex;
     align-items: center;
@@ -198,6 +208,41 @@
     color: #4a5c79;
   }
 
+  .validation-overview {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .validation-overview li {
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid #e3e8f3;
+    background: #f7f9fc;
+    font-weight: 500;
+    color: #344156;
+  }
+
+  .validation-overview li.validation-overview__error {
+    border-color: rgba(176, 0, 32, 0.35);
+    background: rgba(176, 0, 32, 0.08);
+    color: #730012;
+  }
+
+  .validation-overview li.validation-overview__warning {
+    border-color: rgba(122, 96, 0, 0.35);
+    background: rgba(255, 197, 61, 0.18);
+    color: #5d4500;
+  }
+
+  .validation-overview li.validation-overview__success {
+    border-color: rgba(27, 94, 32, 0.35);
+    background: rgba(200, 255, 214, 0.4);
+    color: #1b5e20;
+  }
+
   .issue-list {
     list-style: none;
     padding: 0;
@@ -257,15 +302,15 @@
   }
 
   .error-row td {
-    background-color: rgba(255, 0, 0, 0.15) !important;
+    background-color: rgba(255, 0, 0, 0.25) !important;
   }
 
   .warning-row td {
-    background-color: rgba(255, 213, 0, 0.25) !important;
+    background-color: rgba(255, 255, 0, 0.25) !important;
   }
 
-  .success-row td {
-    background-color: rgba(46, 204, 113, 0.15) !important;
+  .valid-row td {
+    background-color: rgba(0, 255, 0, 0.1) !important;
   }
 
   #lineCount {
@@ -337,7 +382,7 @@
   <div id="container">
     <div class="validation-toolbar" id="validation-toolbar">
       <div class="validation-toolbar__actions">
-        <button id="validateButton" type="button">✅ Validate Database</button>
+        <button id="validateButton" class="btn btn-info" type="button">Validate Database</button>
         <label class="validation-toolbar__toggle">
           <input type="checkbox" id="autoValidateToggle">
           Auto-validate on edit
@@ -1362,24 +1407,70 @@ const COLUMN_CONFIG = {
 
 const SHEET_ORDER = ['compobj', 'schedule', 'advancement', 'standings', 'settings', 'tasks', 'weather', 'objectives'];
 
-const REFERENCE_FIELDS = {
-  schedule: [{ field: 'stageGroupId', label: 'Stage/Group ID' }],
+const LEVEL_NAMES = {
+  0: 'FIFA Root',
+  1: 'Confederation',
+  2: 'Nation',
+  3: 'Competition/Trophy',
+  4: 'Stage',
+  5: 'Group',
+  6: 'Custom Entry'
+};
+
+const LEVEL_PARENT_HINT = {
+  1: 'Confederations must reference the FIFA root (level 0).',
+  2: 'Nations must reference a Confederation (level 1).',
+  3: 'Competitions must reference a Nation (level 2).',
+  4: 'Stages must reference a Competition/Trophy (level 3).',
+  5: 'Groups must only point to a Stage (level 4).',
+  6: 'Custom entries must reference a Nation or Competition (levels 2-3).'
+};
+
+const PARENT_LEVEL_RULES = {
+  0: [],
+  1: [0],
+  2: [1],
+  3: [2],
+  4: [3],
+  5: [4],
+  6: [2, 3]
+};
+
+const CROSS_REFERENCE_RULES = {
+  schedule: [
+    { field: 'stageGroupId', label: 'Stage/Group ID', allowedLevels: [4, 5], required: true }
+  ],
   advancement: [
-    { field: 'sourceGroupId', label: 'Source Group ID' },
-    { field: 'targetGroupId', label: 'Target Group ID' }
+    { field: 'sourceGroupId', label: 'Source Group ID', allowedLevels: [4, 5], required: true },
+    { field: 'targetGroupId', label: 'Target Group ID', allowedLevels: [4, 5], required: true }
   ],
-  standings: [{ field: 'groupId', label: 'Group ID' }],
-  settings: [{ field: 'stageGroupId', label: 'Stage/Group ID' }],
+  standings: [
+    { field: 'groupId', label: 'Group ID', allowedLevels: [4, 5], required: true }
+  ],
+  settings: [
+    { field: 'stageGroupId', label: 'Stage/Nation ID', allowedLevels: [2, 4], required: true }
+  ],
   tasks: [
-    { field: 'trophyId', label: 'Trophy ID' },
-    { field: 'targetId', label: 'Target ID' }
+    { field: 'trophyId', label: 'Trophy ID', allowedLevels: [3], required: true },
+    { field: 'targetId', label: 'Target ID', allowedLevels: [4, 5], required: true },
+    {
+      field: 'refId',
+      label: 'Reference ID',
+      allowedLevels: [4, 5],
+      required: (row) => shouldUpdateTaskRefId(row.taskType),
+      conditional: (row) => shouldUpdateTaskRefId(row.taskType)
+    }
   ],
-  weather: [{ field: 'nationId', label: 'Nation ID' }],
-  objectives: [{ field: 'stageGroupId', label: 'Stage/Group ID' }]
+  weather: [
+    { field: 'nationId', label: 'Nation ID', allowedLevels: [2], required: true }
+  ],
+  objectives: [
+    { field: 'stageGroupId', label: 'Stage/Group ID', allowedLevels: [4, 5], required: true }
+  ]
 };
 
 const SEVERITY_RANK = { ok: 0, warning: 1, error: 2 };
-const SEVERITY_CLASS = { ok: 'success-row', warning: 'warning-row', error: 'error-row' };
+const SEVERITY_CLASS = { ok: 'valid-row', warning: 'warning-row', error: 'error-row' };
 const AUTO_VALIDATE_DELAY = 600;
 
 const validateButton = document.getElementById('validateButton');
@@ -1560,6 +1651,10 @@ function recordIssue(sheetResult, severity, message, rowIndex = null) {
     if (!current || SEVERITY_RANK[severity] > SEVERITY_RANK[current]) {
       sheetResult.rowStatus.set(rowIndex, severity);
     }
+    if (!sheetResult.rowMessages.has(rowIndex)) {
+      sheetResult.rowMessages.set(rowIndex, []);
+    }
+    sheetResult.rowMessages.get(rowIndex).push(message);
   }
 }
 
@@ -1569,6 +1664,7 @@ function createSheetResult(sheet, rowCount) {
     totalRows: rowCount,
     issues: [],
     rowStatus: new Map(),
+    rowMessages: new Map(),
     errorCount: 0,
     warningCount: 0,
     okCount: 0
@@ -1589,7 +1685,7 @@ function finalizeSheetResult(sheetResult) {
   sheetResult.okCount = okCount;
 }
 
-function validateFormatForSheet(sheet, rows, sheetResult) {
+function validateFileFormat(sheet, rows, sheetResult) {
   const spec = COLUMN_CONFIG[sheet] || { columns: 0 };
   rows.forEach((row, index) => {
     const lineNumber = index + 1;
@@ -1632,8 +1728,28 @@ function validateFormatForSheet(sheet, rows, sheetResult) {
   }
 }
 
-function validateCompobjReferences(rows, sheetResult) {
-  const indexMap = new Map();
+function formatLevelLabel(level) {
+  if (typeof level !== 'number' || Number.isNaN(level)) {
+    return 'an unknown level';
+  }
+  const name = LEVEL_NAMES[level];
+  if (name) {
+    return `${name} (level ${level})`;
+  }
+  return `level ${level}`;
+}
+
+function describeAllowedLevels(levels) {
+  if (!Array.isArray(levels) || levels.length === 0) return 'a valid compobj entry';
+  if (levels.length === 1) return formatLevelLabel(levels[0]);
+  const parts = levels.map((lvl) => formatLevelLabel(lvl));
+  const last = parts.pop();
+  return `${parts.join(', ')} or ${last}`;
+}
+
+function checkParentHierarchy(rows, sheetResult) {
+  const lookup = new Map();
+  const pending = [];
   let previousId = null;
 
   rows.forEach((row, index) => {
@@ -1644,49 +1760,165 @@ function validateCompobjReferences(rows, sheetResult) {
     if (!Number.isInteger(idValue)) {
       recordIssue(sheetResult, 'error', `Line ${lineNumber}: invalid ID "${idRaw}".`, index);
     } else {
-      if (indexMap.has(idValue)) {
+      if (lookup.has(idValue)) {
         recordIssue(sheetResult, 'error', `Line ${lineNumber}: duplicate ID ${idValue}.`, index);
       }
       if (previousId !== null && idValue !== previousId + 1) {
         recordIssue(sheetResult, 'error', `Line ${lineNumber}: expected sequential ID ${previousId + 1} but found ${idValue}.`, index);
       }
+      previousId = idValue;
+    }
+
+    const depthRaw = (row?.depth ?? '').toString().trim();
+    const depthValue = depthRaw === '' ? NaN : Number.parseInt(depthRaw, 10);
+    if (!Number.isInteger(depthValue)) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: invalid level "${depthRaw}".`, index);
     }
 
     const parentRaw = (row?.parentDisplay ?? '').toString().trim();
-    if (parentRaw !== '') {
-      const parentValue = Number.parseInt(parentRaw, 10);
-      if (!Number.isInteger(parentValue)) {
+    const hasParentReference = parentRaw !== '' && parentRaw !== '-1';
+    let parentId = null;
+    let parentValueInvalid = false;
+    if (hasParentReference) {
+      const parsedParent = Number.parseInt(parentRaw, 10);
+      if (!Number.isInteger(parsedParent)) {
+        parentValueInvalid = true;
         recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID "${parentRaw}" is not numeric.`, index);
-      } else if (!indexMap.has(parentValue)) {
-        recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID ${parentValue} must reference a previous line.`, index);
-      } else if (Number.isInteger(idValue) && parentValue === idValue) {
-        recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID cannot reference itself.`, index);
+      } else {
+        parentId = parsedParent;
       }
     }
 
+    pending.push({
+      index,
+      lineNumber,
+      idValue,
+      depthValue,
+      parentId,
+      parentValueInvalid,
+      hasParentReference
+    });
+
     if (Number.isInteger(idValue)) {
-      indexMap.set(idValue, { index, depth: Number.parseInt(row?.depth ?? '', 10) || null });
-      previousId = idValue;
+      lookup.set(idValue, {
+        index,
+        level: Number.isInteger(depthValue) ? depthValue : null,
+        parentId: Number.isInteger(parentId) ? parentId : null
+      });
     }
   });
 
-  return indexMap;
+  pending.forEach((entry) => {
+    const { index, lineNumber, idValue, depthValue, parentId, parentValueInvalid, hasParentReference } = entry;
+
+    if (!Number.isInteger(depthValue)) {
+      return;
+    }
+
+    const allowedParents = PARENT_LEVEL_RULES[depthValue];
+    if (!allowedParents) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: unsupported level ${depthValue}.`, index);
+      return;
+    }
+
+    if (allowedParents.length === 0) {
+      if (hasParentReference) {
+        recordIssue(
+          sheetResult,
+          'error',
+          `Line ${lineNumber}: ${LEVEL_NAMES[depthValue] || `Level ${depthValue}`} entries cannot define a parent.`,
+          index
+        );
+      }
+      return;
+    }
+
+    if (!hasParentReference) {
+      const hint = LEVEL_PARENT_HINT[depthValue] ? ` ${LEVEL_PARENT_HINT[depthValue]}` : '';
+      recordIssue(
+        sheetResult,
+        'error',
+        `Line ${lineNumber}: missing parent reference for ${LEVEL_NAMES[depthValue] || `level ${depthValue}`} entries.${hint}`,
+        index
+      );
+      return;
+    }
+
+    if (parentValueInvalid) {
+      return;
+    }
+
+    if (!lookup.has(parentId)) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID ${parentId} does not exist in compobj.`, index);
+      return;
+    }
+
+    if (Number.isInteger(idValue) && parentId === idValue) {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: parent ID cannot reference itself.`, index);
+    }
+
+    const parentEntry = lookup.get(parentId);
+    const parentLevel = parentEntry?.level;
+    if (typeof parentLevel !== 'number') {
+      recordIssue(sheetResult, 'error', `Line ${lineNumber}: unable to determine parent level for ID ${parentId}.`, index);
+      return;
+    }
+
+    if (!allowedParents.includes(parentLevel)) {
+      const expectation = describeAllowedLevels(allowedParents);
+      const hint = LEVEL_PARENT_HINT[depthValue] ? ` ${LEVEL_PARENT_HINT[depthValue]}` : ` Expected parent level: ${expectation}.`;
+      recordIssue(
+        sheetResult,
+        'error',
+        `Line ${lineNumber}: invalid parent ${parentId} (level ${depthValue} → parent level ${parentLevel}).${hint}`,
+        index
+      );
+    }
+  });
+
+  return lookup;
 }
 
-function validateGenericReferences(sheet, rows, sheetResult, compobjIndex) {
-  const fields = REFERENCE_FIELDS[sheet];
-  if (!fields || fields.length === 0) return;
+function validateCrossFileReferences(sheet, rows, sheetResult, compobjIndex) {
+  const fieldRules = CROSS_REFERENCE_RULES[sheet];
+  if (!fieldRules || fieldRules.length === 0) return;
 
   rows.forEach((row, index) => {
     const lineNumber = index + 1;
-    fields.forEach(({ field, label }) => {
-      const rawValue = (row?.[field] ?? '').toString().trim();
-      if (rawValue === '') return;
+    fieldRules.forEach((rule) => {
+      const shouldValidate = typeof rule.conditional === 'function' ? rule.conditional(row) : true;
+      const rawValue = (row?.[rule.field] ?? '').toString().trim();
+      const isRequired = typeof rule.required === 'function' ? rule.required(row) : !!rule.required;
+      if (rawValue === '') {
+        if (isRequired) {
+          recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${rule.label} is required.`, index);
+        }
+        return;
+      }
+      if (!shouldValidate) {
+        return;
+      }
       const parsed = Number.parseInt(rawValue, 10);
       if (!Number.isInteger(parsed)) {
-        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${label} "${rawValue}" is not numeric.`, index);
-      } else if (!compobjIndex.has(parsed)) {
-        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${label} ${parsed} does not exist in compobj.`, index);
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${rule.label} "${rawValue}" is not numeric.`, index);
+        return;
+      }
+      const reference = compobjIndex.get(parsed);
+      if (!reference) {
+        recordIssue(sheetResult, 'error', `Line ${lineNumber}: ${rule.label} ${parsed} does not exist in compobj.`, index);
+        return;
+      }
+      if (rule.allowedLevels && rule.allowedLevels.length > 0) {
+        const referenceLevel = reference.level;
+        if (typeof referenceLevel !== 'number' || !rule.allowedLevels.includes(referenceLevel)) {
+          const expectation = describeAllowedLevels(rule.allowedLevels);
+          recordIssue(
+            sheetResult,
+            'error',
+            `Line ${lineNumber}: ${rule.label} ${parsed} is ${formatLevelLabel(referenceLevel)}. Expected ${expectation}.`,
+            index
+          );
+        }
       }
     });
   });
@@ -1712,8 +1944,8 @@ function validateAllSheets() {
   const results = { perSheet: {}, totalErrors: 0, totalWarnings: 0, totalOk: 0 };
 
   const compobjResult = createSheetResult('compobj', compobj.length);
-  validateFormatForSheet('compobj', compobj, compobjResult);
-  const compobjIndex = validateCompobjReferences(compobj, compobjResult);
+  validateFileFormat('compobj', compobj, compobjResult);
+  const compobjIndex = checkParentHierarchy(compobj, compobjResult);
   finalizeSheetResult(compobjResult);
   results.perSheet.compobj = compobjResult;
   results.totalErrors += compobjResult.errorCount;
@@ -1723,8 +1955,8 @@ function validateAllSheets() {
   SHEET_ORDER.slice(1).forEach((sheet) => {
     const rows = getDataArray(sheet);
     const sheetResult = createSheetResult(sheet, rows.length);
-    validateFormatForSheet(sheet, rows, sheetResult);
-    validateGenericReferences(sheet, rows, sheetResult, compobjIndex);
+    validateFileFormat(sheet, rows, sheetResult);
+    validateCrossFileReferences(sheet, rows, sheetResult, compobjIndex);
     finalizeSheetResult(sheetResult);
     results.perSheet[sheet] = sheetResult;
     results.totalErrors += sheetResult.errorCount;
@@ -1742,18 +1974,38 @@ function renderValidationResults(results) {
     return;
   }
 
+  const pluralize = (count, singular, plural = `${singular}s`) => `${count} ${count === 1 ? singular : plural}`;
+
+  const overviewItems = ['<li class="validation-overview__success">✅ Validation complete</li>'];
+
   const sections = SHEET_ORDER.map((sheet) => {
     const spec = COLUMN_CONFIG[sheet];
     const sheetResult = results.perSheet[sheet];
     if (!sheetResult) return '';
-    const summary = `✅ ${sheetResult.okCount}/${sheetResult.totalRows} OK | ⚠️ ${sheetResult.warningCount} warnings | ❌ ${sheetResult.errorCount} errors`;
+    let overviewIcon = '✅';
+    let overviewClass = 'validation-overview__success';
+    let overviewLabel = `${spec.displayName} – all checks passed`;
+    if (sheetResult.errorCount > 0) {
+      overviewIcon = '❌';
+      overviewClass = 'validation-overview__error';
+      overviewLabel = `${spec.displayName} – ${pluralize(sheetResult.errorCount, 'critical error')}`;
+    } else if (sheetResult.warningCount > 0) {
+      overviewIcon = '⚠️';
+      overviewClass = 'validation-overview__warning';
+      overviewLabel = `${spec.displayName} – ${pluralize(sheetResult.warningCount, 'warning')}`;
+    }
+    overviewItems.push(`<li class="${overviewClass}">${overviewIcon} ${overviewLabel}</li>`);
+
+    const summary = `✅ ${sheetResult.okCount}/${sheetResult.totalRows} valid | ⚠️ ${sheetResult.warningCount} warnings | ❌ ${sheetResult.errorCount} errors`;
     const issues = sheetResult.issues.length
       ? `<ul class="issue-list">${sheetResult.issues.map((issue) => `<li class="issue issue--${issue.severity}">${severityIcon(issue.severity)} ${escapeHtml(issue.message)}</li>`).join('')}</ul>`
       : '<p class="all-clear">All lines valid.</p>';
     return `<section><h3>${spec.displayName}</h3><div class="sheet-summary">${summary}</div>${issues}</section>`;
   }).join('');
 
-  validationResultsEl.innerHTML = sections;
+  const overviewHtml = `<ul class="validation-overview">${overviewItems.join('')}</ul>`;
+
+  validationResultsEl.innerHTML = overviewHtml + sections;
 }
 
 function updateValidationSummary(results) {
@@ -1763,7 +2015,7 @@ function updateValidationSummary(results) {
     validationSummaryEl.classList.remove('has-errors', 'has-warnings');
     return;
   }
-  const summaryText = `✅ ${results.totalOk} lines OK | ⚠️ ${results.totalWarnings} warnings | ❌ ${results.totalErrors} critical errors`;
+  const summaryText = `✅ ${results.totalOk} valid lines | ⚠️ ${results.totalWarnings} warnings | ❌ ${results.totalErrors} errors`;
   validationSummaryEl.textContent = summaryText;
   validationSummaryEl.classList.toggle('has-errors', results.totalErrors > 0);
   validationSummaryEl.classList.toggle('has-warnings', results.totalWarnings > 0);
@@ -1795,8 +2047,9 @@ function closeValidationPanel() {
 function clearValidationHighlights() {
   const table = document.getElementById('sheet');
   if (!table) return;
-  table.querySelectorAll('.error-row, .warning-row, .success-row').forEach((row) => {
-    row.classList.remove('error-row', 'warning-row', 'success-row');
+  table.querySelectorAll('.error-row, .warning-row, .valid-row, .success-row').forEach((row) => {
+    row.classList.remove('error-row', 'warning-row', 'valid-row', 'success-row');
+    row.removeAttribute('title');
   });
 }
 
@@ -1811,9 +2064,20 @@ function applyValidationHighlights() {
   for (let index = 1; index < rows.length; index += 1) {
     const status = sheetResult.rowStatus.get(index - 1);
     if (!status) continue;
+    const rowEl = rows[index];
     const className = SEVERITY_CLASS[status];
     if (className) {
-      rows[index].classList.add(className);
+      rowEl.classList.add(className);
+    }
+    if (status === 'ok') {
+      rowEl.removeAttribute('title');
+    } else {
+      const messages = sheetResult.rowMessages.get(index - 1);
+      if (messages && messages.length) {
+        rowEl.title = messages.join('\n');
+      } else {
+        rowEl.removeAttribute('title');
+      }
     }
   }
 }
